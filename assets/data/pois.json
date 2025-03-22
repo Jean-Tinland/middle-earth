@@ -1,0 +1,35 @@
+{
+  "$schema": "../schemas/pois.json",
+  "pois": [
+    {
+      "kind": "region",
+      "name": "Eriador",
+      "position": [30, 40]
+    },
+    {
+      "kind": "sub-region",
+      "name": "Arnor",
+      "position": [37, 13]
+    },
+    {
+      "kind": "region",
+      "name": "Rhovanion",
+      "position": [63, 31]
+    },
+    {
+      "kind": "sub-region",
+      "name": "Rohan",
+      "position": [51, 58]
+    },
+    {
+      "kind": "sub-region",
+      "name": "Gondor",
+      "position": [58, 75]
+    },
+    {
+      "kind": "region",
+      "name": "Mordor",
+      "position": [83, 73]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pois.json",
+  "title": "Middle-Earth interactive map pois JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "pois": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "region",
+              "sub-region",
+              "capital",
+              "city",
+              "village",
+              "river",
+              "mountain"
+            ],
+            "description": "The kind of point of interest"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the point of interest"
+          },
+          "position": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "The position of the point of interest on the map: [x, y]",
+            "items": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
