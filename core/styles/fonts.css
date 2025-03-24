@@ -1,0 +1,24 @@
+/* Fonts */
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/assets/fonts/EBGaramond-VariableFont_wght.ttf");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/assets/fonts/EBGaramond-Italic-VariableFont_wght.ttf");
+  font-style: italic;
+}
+
+@font-face {
+  font-family: Aniron;
+  src: url("/assets/fonts/Aniron.ttf");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: Aniron;
+  src: url("/assets/fonts/AnironBold.ttf");
+  font-weight: 700;
+}

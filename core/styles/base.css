@@ -1,0 +1,17 @@
+/* Base */
+
+html,
+body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  vertical-align: baseline;
+  font-family: var(--content-font);
+  font-size: 16px;
+  line-height: 1.3;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
