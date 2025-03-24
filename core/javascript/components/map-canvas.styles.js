@@ -10,6 +10,11 @@ const styles = /* css */ `
   justify-content: center;
   background-color: var(--black);
   user-select: none;
+  opacity: 0;
+}
+
+:host([ready]) {
+  opacity: 1;
 }
 
 .canvas {
@@ -26,7 +31,7 @@ const styles = /* css */ `
   touch-action: manipulation;
   outline: 1px solid var(--primary);
   outline-offset: calc(3px - var(--padding));
-  will-change: transform;
+  backface-visibility: hidden; 
 }
 
 .canvas::before,
@@ -60,6 +65,7 @@ const styles = /* css */ `
   max-width: inherit;
   height: inherit;
   max-height: inherit;
+  pointer-events: none;
 }
 
 .map > svg {
