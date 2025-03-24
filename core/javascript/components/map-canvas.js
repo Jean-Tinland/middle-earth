@@ -254,8 +254,10 @@ export default class MapCanvas extends HTMLElement {
 
   #getPercentageCoordinates = async (e) => {
     const { left, top, width, height } = this.canvas.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
+    const scaledX = (e.clientX - left) / this.scale;
+    const scaledY = (e.clientY - top) / this.scale;
+    const x = (scaledX / (width / this.scale)) * 100;
+    const y = (scaledY / (height / this.scale)) * 100;
     await navigator.clipboard.writeText(`[${x.toFixed(2)}, ${y.toFixed(2)}]`);
   };
 
