@@ -60,7 +60,7 @@ const styles = /* css */ `
 }
 
 .map {
-  aspect-ratio: 3200 / 2400;
+  aspect-ratio: 3600 / 2600;
   width: inherit;
   max-width: inherit;
   height: inherit;
@@ -100,7 +100,8 @@ map-pois {
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
+  // display: flex;
+  display: none;
   overflow: hidden;
   pointer-events: none;
   z-index: 1;
