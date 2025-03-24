@@ -4,91 +4,126 @@
     {
       "kind": "region",
       "name": "Eriador",
-      "position": [30, 40],
+      "position": [28, 36],
       "zoom": 0,
       "size": 3
     },
     {
       "kind": "region",
       "name": "Northern Waste",
-      "position": [66.65, 6.2],
+      "position": [66, 5],
       "zoom": 0,
       "size": 2
     },
     {
       "kind": "region",
       "name": "Arnor",
-      "position": [37, 13],
+      "position": [33, 11],
       "zoom": 0,
       "size": 2
     },
     {
       "kind": "region",
       "name": "Rhûn",
-      "position": [91.79, 29.35],
+      "position": [83.5, 26.89],
+      "zoom": 0,
+      "size": 2
+    },
+    {
+      "kind": "region",
+      "name": "HaradWaith",
+      "position": [63.27, 90.85],
       "zoom": 0,
       "size": 2
     },
     {
       "kind": "region",
       "name": "Near Harad",
-      "position": [79.86, 93.21],
-      "zoom": 0,
-      "size": 2
+      "position": [74.15, 84.49],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Far Harad",
+      "position": [52.93, 93.74],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Umbar",
+      "position": [46.0, 96.74],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Khand",
+      "position": [91.83, 75.34],
+      "zoom": 1,
+      "size": 1
     },
     {
       "kind": "region",
       "name": "Rhovanion",
-      "position": [63, 31],
+      "position": [57.46, 29.83],
       "zoom": 0,
       "size": 3
     },
     {
       "kind": "region",
       "name": "Rohan",
-      "position": [51, 58],
+      "position": [46, 54.97],
       "zoom": 0,
       "size": 2
     },
     {
       "kind": "region",
       "name": "Gondor",
-      "position": [58, 75],
+      "position": [50.63, 69.85],
       "zoom": 0,
       "size": 2
     },
     {
       "kind": "region",
       "name": "South Gondor",
-      "position": [58.92, 88.04],
+      "position": [52.82, 82.5],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Anfalas",
-      "position": [37.04, 75],
+      "position": [33.4, 69.25],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Belfalas",
+      "position": [43.68, 74.94],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Mordor",
-      "position": [83, 73],
+      "position": [73.45, 68.18],
       "zoom": 0,
       "size": 3
     },
     {
       "kind": "region",
       "name": "Forlindon",
-      "position": [6.66, 21.2],
+      "position": [5.47, 19.65],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "mountain",
       "name": "Emyn Uial",
-      "position": [25.66, 12.93],
+      "position": [22.42, 12.57],
       "size": 2,
       "zoom": 1
     },
@@ -102,100 +137,163 @@
     {
       "kind": "mountain",
       "name": "Iron Hills",
-      "position": [78.83, 14.48],
+      "position": [69.31, 13.84],
       "size": 3,
       "zoom": 1
     },
     {
       "kind": "mountain",
       "name": "Ered Mithrim",
-      "position": [52.26, 10.3],
+      "position": [49.02, 8.67],
       "size": 3,
       "zoom": 1
     },
     {
       "kind": "region",
       "name": "Harlindon",
-      "position": [10.15, 35.04],
+      "position": [8.92, 32.78],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Arthedain",
-      "position": [29.01, 17.58],
+      "position": [25.47, 15.47],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Cardolan",
-      "position": [36.81, 34.39],
+      "position": [31.96, 30.63],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Rhudaur",
-      "position": [46.99, 23.01],
+      "position": [42.19, 20.92],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "The Shire",
-      "position": [28.28, 30.77],
+      "position": [25.41, 28.8],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Minhiriath",
-      "position": [26.73, 45.9],
+      "position": [24.5, 40],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Enedwaith",
-      "position": [33.9, 55.07],
+      "position": [29.89, 48.45],
       "zoom": 1,
       "size": 1
     },
     {
       "kind": "forest",
       "name": "Mirkwood",
-      "position": [62.41, 27.15],
+      "position": [55.8, 25.62],
       "size": 3,
       "zoom": 1
     },
     {
       "kind": "forest",
       "name": "Lorien",
-      "position": [52.04, 41.11],
+      "position": [46.09, 37.95],
       "size": 1,
       "zoom": 2
     },
     {
       "kind": "forest",
       "name": "Trollshaws",
-      "position": [45.54, 25.9],
+      "position": [40.46, 24.11],
       "size": 1,
       "zoom": 2
     },
     {
       "kind": "forest",
       "name": "Old Forest",
-      "position": [29.44, 28.41],
+      "position": [26.21, 26.17],
       "size": 1,
       "zoom": 2
     },
     {
       "kind": "forest",
       "name": "Fangorn",
-      "position": [49.42, 50.29],
+      "position": [43.79, 46.22],
       "size": 2,
       "zoom": 1
+    },
+    {
+      "kind": "sea",
+      "name": "Belegaer",
+      "position": [12.8, 63.64],
+      "size": 3,
+      "zoom": 0
+    },
+    {
+      "kind": "sea",
+      "name": "Gulf of Lune",
+      "position": [8.66, 27.29],
+      "size": 1,
+      "zoom": 2
+    },
+    {
+      "kind": "sea",
+      "name": "Sea of Nùrnen",
+      "position": [73.18, 73.03],
+      "size": 1,
+      "zoom": 1
+    },
+    {
+      "kind": "sea",
+      "name": "Sea of Rhûn",
+      "position": [80.02, 38.82],
+      "size": 1,
+      "zoom": 1
+    },
+    {
+      "kind": "common-place",
+      "name": "Himling",
+      "position": [3.92, 10.1],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "common-place",
+      "name": "Andrast",
+      "position": [22.25, 74.3],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "common-place",
+      "name": "Tolfalas",
+      "position": [46.29, 80.27],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "city",
+      "name": "Mithlond",
+      "position": [14.59, 25.53],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "city",
+      "name": "Michel Delwing",
+      "position": [21.32, 25.62],
+      "size": 1,
+      "zoom": 2
     }
   ]
 }

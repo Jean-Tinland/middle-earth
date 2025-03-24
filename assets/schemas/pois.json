@@ -14,7 +14,16 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["region", "zone", "city", "river", "mountain", "forest"],
+            "enum": [
+              "region",
+              "zone",
+              "city",
+              "river",
+              "mountain",
+              "forest",
+              "sea",
+              "common-place"
+            ],
             "description": "The kind of point of interest"
           },
           "name": {
