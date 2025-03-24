@@ -4,32 +4,198 @@
     {
       "kind": "region",
       "name": "Eriador",
-      "position": [30, 40]
+      "position": [30, 40],
+      "zoom": 0,
+      "size": 3
     },
     {
-      "kind": "sub-region",
+      "kind": "region",
+      "name": "Northern Waste",
+      "position": [66.65, 6.2],
+      "zoom": 0,
+      "size": 2
+    },
+    {
+      "kind": "region",
       "name": "Arnor",
-      "position": [37, 13]
+      "position": [37, 13],
+      "zoom": 0,
+      "size": 2
+    },
+    {
+      "kind": "region",
+      "name": "Rhûn",
+      "position": [91.79, 29.35],
+      "zoom": 0,
+      "size": 2
+    },
+    {
+      "kind": "region",
+      "name": "Near Harad",
+      "position": [79.86, 93.21],
+      "zoom": 0,
+      "size": 2
     },
     {
       "kind": "region",
       "name": "Rhovanion",
-      "position": [63, 31]
+      "position": [63, 31],
+      "zoom": 0,
+      "size": 3
     },
     {
-      "kind": "sub-region",
+      "kind": "region",
       "name": "Rohan",
-      "position": [51, 58]
+      "position": [51, 58],
+      "zoom": 0,
+      "size": 2
     },
     {
-      "kind": "sub-region",
+      "kind": "region",
       "name": "Gondor",
-      "position": [58, 75]
+      "position": [58, 75],
+      "zoom": 0,
+      "size": 2
+    },
+    {
+      "kind": "region",
+      "name": "South Gondor",
+      "position": [58.92, 88.04],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Anfalas",
+      "position": [37.04, 75],
+      "zoom": 1,
+      "size": 1
     },
     {
       "kind": "region",
       "name": "Mordor",
-      "position": [83, 73]
+      "position": [83, 73],
+      "zoom": 0,
+      "size": 3
+    },
+    {
+      "kind": "region",
+      "name": "Forlindon",
+      "position": [6.66, 21.2],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "mountain",
+      "name": "Emyn Uial",
+      "position": [25.66, 12.93],
+      "size": 2,
+      "zoom": 1
+    },
+    {
+      "kind": "mountain",
+      "name": "Ered Luin",
+      "position": [15.48, 9.57],
+      "size": 2,
+      "zoom": 1
+    },
+    {
+      "kind": "mountain",
+      "name": "Iron Hills",
+      "position": [78.83, 14.48],
+      "size": 3,
+      "zoom": 1
+    },
+    {
+      "kind": "mountain",
+      "name": "Ered Mithrim",
+      "position": [52.26, 10.3],
+      "size": 3,
+      "zoom": 1
+    },
+    {
+      "kind": "region",
+      "name": "Harlindon",
+      "position": [10.15, 35.04],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Arthedain",
+      "position": [29.01, 17.58],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Cardolan",
+      "position": [36.81, 34.39],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Rhudaur",
+      "position": [46.99, 23.01],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "The Shire",
+      "position": [28.28, 30.77],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Minhiriath",
+      "position": [26.73, 45.9],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Enedwaith",
+      "position": [33.9, 55.07],
+      "zoom": 1,
+      "size": 1
+    },
+    {
+      "kind": "forest",
+      "name": "Mirkwood",
+      "position": [62.41, 27.15],
+      "size": 3,
+      "zoom": 1
+    },
+    {
+      "kind": "forest",
+      "name": "Lorien",
+      "position": [52.04, 41.11],
+      "size": 1,
+      "zoom": 2
+    },
+    {
+      "kind": "forest",
+      "name": "Trollshaws",
+      "position": [45.54, 25.9],
+      "size": 1,
+      "zoom": 2
+    },
+    {
+      "kind": "forest",
+      "name": "Old Forest",
+      "position": [29.44, 28.41],
+      "size": 1,
+      "zoom": 2
+    },
+    {
+      "kind": "forest",
+      "name": "Fangorn",
+      "position": [49.42, 50.29],
+      "size": 2,
+      "zoom": 1
     }
   ]
 }
