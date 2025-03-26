@@ -40,28 +40,28 @@
       "kind": "region",
       "name": "Near Harad",
       "position": [74.15, 84.49],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Far Harad",
       "position": [52.93, 93.74],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Umbar",
       "position": [46.0, 96.74],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Khand",
       "position": [91.83, 75.34],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
@@ -89,21 +89,21 @@
       "kind": "region",
       "name": "South Gondor",
       "position": [52.82, 82.5],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Anfalas",
       "position": [33.4, 69.25],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Belfalas",
       "position": [43.68, 74.94],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
@@ -117,7 +117,7 @@
       "kind": "region",
       "name": "Forlindon",
       "position": [5.47, 19.65],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
@@ -125,76 +125,153 @@
       "name": "Emyn Uial",
       "position": [22.42, 12.57],
       "size": 2,
-      "zoom": 1
+      "zoom": 2
+    },
+    {
+      "kind": "mountain",
+      "name": "Emyn Muil",
+      "position": [55.61, 53.54],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "mountain",
+      "name": "Pinnath Gelin",
+      "position": [35.92, 66.74],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "mountain",
+      "name": "Ered Lithui",
+      "position": [70.48, 56.42],
+      "size": 3,
+      "zoom": 2
+    },
+    {
+      "kind": "mountain",
+      "name": "Ered Dúath",
+      "position": [60.92, 73.17],
+      "size": 2,
+      "zoom": 2
     },
     {
       "kind": "mountain",
       "name": "Ered Luin",
-      "position": [15.48, 9.57],
+      "position": [13.06, 9.03],
       "size": 2,
-      "zoom": 1
+      "zoom": 2
     },
     {
       "kind": "mountain",
       "name": "Iron Hills",
       "position": [69.31, 13.84],
       "size": 3,
-      "zoom": 1
+      "zoom": 2
     },
     {
       "kind": "mountain",
       "name": "Ered Mithrim",
       "position": [49.02, 8.67],
       "size": 3,
-      "zoom": 1
+      "zoom": 2
+    },
+    {
+      "kind": "region",
+      "name": "Moria",
+      "position": [41.99, 34.72],
+      "zoom": 2,
+      "size": 2
     },
     {
       "kind": "region",
       "name": "Harlindon",
       "position": [8.92, 32.78],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Arthedain",
       "position": [25.47, 15.47],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Cardolan",
       "position": [31.96, 30.63],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Rhudaur",
       "position": [42.19, 20.92],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "The Shire",
       "position": [25.41, 28.8],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Minhiriath",
       "position": [24.5, 40],
-      "zoom": 1,
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Eregion",
+      "position": [37.3, 34.26],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Dunland",
+      "position": [37.04, 42.34],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "The Wold",
+      "position": [49.28, 48.59],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "East Emnet",
+      "position": [48.24, 57.29],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "The Brown Lands",
+      "position": [48.24, 57.29],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Dagorlad",
+      "position": [61.72, 54.53],
+      "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "Enedwaith",
       "position": [29.89, 48.45],
-      "zoom": 1,
+      "zoom": 2,
       "size": 1
     },
     {
@@ -202,35 +279,35 @@
       "name": "Mirkwood",
       "position": [55.8, 25.62],
       "size": 3,
-      "zoom": 1
+      "zoom": 2
     },
     {
       "kind": "forest",
       "name": "Lorien",
       "position": [46.09, 37.95],
       "size": 1,
-      "zoom": 2
+      "zoom": 3
     },
     {
       "kind": "forest",
       "name": "Trollshaws",
       "position": [40.46, 24.11],
       "size": 1,
-      "zoom": 2
+      "zoom": 3
     },
     {
       "kind": "forest",
       "name": "Old Forest",
       "position": [26.21, 26.17],
       "size": 1,
-      "zoom": 2
+      "zoom": 3
     },
     {
       "kind": "forest",
       "name": "Fangorn",
       "position": [43.79, 46.22],
       "size": 2,
-      "zoom": 1
+      "zoom": 2
     },
     {
       "kind": "sea",
@@ -243,41 +320,34 @@
       "kind": "sea",
       "name": "Gulf of Lune",
       "position": [8.66, 27.29],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "sea",
+      "name": "Ice bay of Forochel",
+      "position": [20.36, 5.25],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "sea",
+      "name": "Lake Evendim",
+      "position": [23.35, 17.31],
       "size": 1,
-      "zoom": 2
+      "zoom": 3
     },
     {
       "kind": "sea",
       "name": "Sea of Nùrnen",
       "position": [73.18, 73.03],
-      "size": 1,
-      "zoom": 1
+      "size": 2,
+      "zoom": 2
     },
     {
       "kind": "sea",
       "name": "Sea of Rhûn",
       "position": [80.02, 38.82],
-      "size": 1,
-      "zoom": 1
-    },
-    {
-      "kind": "common-place",
-      "name": "Himling",
-      "position": [3.92, 10.1],
-      "size": 2,
-      "zoom": 2
-    },
-    {
-      "kind": "common-place",
-      "name": "Andrast",
-      "position": [22.25, 74.3],
-      "size": 2,
-      "zoom": 2
-    },
-    {
-      "kind": "common-place",
-      "name": "Tolfalas",
-      "position": [46.29, 80.27],
       "size": 2,
       "zoom": 2
     },
@@ -290,10 +360,612 @@
     },
     {
       "kind": "city",
+      "name": "Bree",
+      "position": [28.61, 25.36],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "city",
+      "name": "Minas Tirith",
+      "position": [56.2, 65.91],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "city",
+      "name": "Dol Amroth",
+      "position": [42.03, 72.28],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "city",
+      "name": "Minas Morgul",
+      "position": [59.4, 64.54],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Osgiliath",
+      "position": [57.61, 65.19],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Pelargir",
+      "position": [55.21, 73.42],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Calembel",
+      "position": [46.28, 65.99],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Erech",
+      "position": [43.81, 61.88],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Linhir",
+      "position": [49.48, 72.77],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Edhellond",
+      "position": [43.55, 69.86],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Michel Delwing",
       "position": [21.32, 25.62],
       "size": 1,
-      "zoom": 2
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Hobbiton",
+      "position": [23.09, 23.96],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Annúminas",
+      "position": [22.13, 19.97],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Rivendell",
+      "position": [42.61, 24.13],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Carn Dûm",
+      "position": [35.35, 8.43],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Tharbad",
+      "position": [32.27, 36.3],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Ost-in-edhil",
+      "position": [37.13, 37.23],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Lond Daer",
+      "position": [25.96, 45.19],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Isengard",
+      "position": [38.7, 52.27],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Edoras",
+      "position": [43.62, 57.89],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "City of the corsairs",
+      "position": [47.35, 94.91],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Framsburg",
+      "position": [47.37, 14.2],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Eagles Eyrie",
+      "position": [47.14, 19.3],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Esgaroth",
+      "position": [59.37, 17.69],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Dale",
+      "position": [59.64, 16.39],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "river",
+      "name": "R. Lhûm",
+      "position": [17.2, 17.24],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "The River Running",
+      "position": [66.7, 27.27],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Barandduin",
+      "position": [23.77, 33.39],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Gwathló",
+      "position": [30.01, 38.86],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "Sirannon",
+      "position": [38.68, 36.81],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Glanduin",
+      "position": [39.26, 38.0],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Mitheithel",
+      "position": [37.52, 27.72],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Bruinen",
+      "position": [40.19, 27.87],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Langwell",
+      "position": [45.9, 13.67],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Greylin",
+      "position": [48.1, 12.54],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "Forest River",
+      "position": [50.47, 13.0],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "Enchanted River",
+      "position": [55.52, 19.16],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Rhimdath",
+      "position": [47.06, 17.76],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Anduin",
+      "position": [50.0, 25.71],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Ninglor",
+      "position": [46.06, 29.51],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Silverlode",
+      "position": [43.88, 36.38],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Nimrodel",
+      "position": [43.74, 38.33],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Limlight",
+      "position": [47.17, 43.88],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Ondló",
+      "position": [46.11, 50.3],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Snowbourne",
+      "position": [45.04, 57.3],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "Mering Stream",
+      "position": [50.91, 61.02],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Adorn",
+      "position": [34.53, 55.66],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Angren",
+      "position": [28.29, 54.8],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Lefnui",
+      "position": [30.62, 64.08],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Morthond",
+      "position": [42.58, 66.4],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Ciril",
+      "position": [46.4, 64.57],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Ringló",
+      "position": [48.2, 65.2],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Gilrain",
+      "position": [50.94, 68.34],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Serni",
+      "position": [51.13, 71.44],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Celos",
+      "position": [53.62, 67.69],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Sirith",
+      "position": [54.53, 70.24],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Erui",
+      "position": [56.56, 68.47],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Poros",
+      "position": [54.48, 77.08],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Harnen",
+      "position": [55.57, 88.9],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Himling",
+      "position": [3.92, 10.1],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Andrast",
+      "position": [22.25, 74.3],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Tolfalas",
+      "position": [46.29, 80.27],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Gap of Rohan",
+      "position": [42.14, 53.52],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "The Angle",
+      "position": [38.15, 29.4],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Ettenmoors",
+      "position": [39.47, 15.67],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Coldfells",
+      "position": [43.25, 18.06],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Forlond",
+      "position": [6.24, 25.55],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Harlond",
+      "position": [10.55, 29.31],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Fornost",
+      "position": [28.42, 18.82],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "East Road",
+      "position": [35.56, 23.84],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "The Harad Road",
+      "position": [56.35, 80.44],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Sarn Ford",
+      "position": [26.63, 30.48],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Midge Water Marshes",
+      "position": [31.13, 23.99],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Amon Sûl",
+      "position": [32.62, 25.15],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Last bridge",
+      "position": [37.92, 23.17],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "The Ford of Bruinen",
+      "position": [41.41, 25.61],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "The Green Way",
+      "position": [30.41, 33.16],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Gate of Moria",
+      "position": [40.62, 35.77],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Nîn-in-Eilph",
+      "position": [34.0, 35.93],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "North-South Road",
+      "position": [34.34, 45.2],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Helm's Deep",
+      "position": [41.68, 57.06],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Morannon",
+      "position": [59.65, 56.72],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Dead Marshes",
+      "position": [56.78, 55.69],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Nindalf",
+      "position": [55.38, 58.91],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Cair Andros",
+      "position": [57.18, 62.43],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Mount Doom",
+      "position": [63.32, 61.26],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Mount Gundabad",
+      "position": [43.98, 10.35],
+      "size": 1,
+      "zoom": 4
     }
   ]
 }

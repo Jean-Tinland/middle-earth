@@ -10,9 +10,9 @@ const styles = /* css */ `
     pointer-events: none;
   }
 
-  @media (max-width: 700px) {
+  @supports (-webkit-touch-callout: none) {
     :host {
-      --font-size: calc(var(--font-size-ref) * 1.3);
+      --font-size: calc(var(--font-size-ref) * 2);
     }
   }
 
@@ -28,7 +28,7 @@ const styles = /* css */ `
   .poi[data-kind="region"],
   .poi[data-kind="forest"],
   .poi[data-kind="mountain"],
-  .poi[data-kind="sea"] {
+  .poi[data-kind="sea"]:not([data-size="1"]) {
     font-family: var(--title-font);
     text-transform: uppercase;
   }
@@ -38,7 +38,7 @@ const styles = /* css */ `
   }
 
   .poi[data-kind="region"][data-size="1"] {
-    font-size: calc(var(--font-size) * 0.55);
+    font-size: calc(var(--font-size) * 0.4);
     text-transform: none;
   }
   
@@ -76,40 +76,51 @@ const styles = /* css */ `
   }
 
   .poi[data-kind="common-place"][data-size="1"] {
-    font-size: calc(var(--font-size) * 0.6);
-    text-transform: uppercase;
+    font-size: calc(var(--font-size) * 0.45);
   }
 
   .poi[data-kind="common-place"][data-size="2"] {
-    font-size: calc(var(--font-size) * 0.7);
+    font-size: calc(var(--font-size) * 0.55);
   }
 
   .poi[data-kind="common-place"][data-size="3"] {
-    font-size: calc(var(--font-size) * 0.8);
+    font-size: calc(var(--font-size) * 0.65);
   }
 
   .poi[data-kind="sea"][data-size="1"] {
-    font-size: calc(var(--font-size) * 0.4);
+    font-size: calc(var(--font-size) * 0.45);
   }
 
   .poi[data-kind="sea"][data-size="2"] {
-    font-size: calc(var(--font-size) * 0.5);
+    font-size: calc(var(--font-size) * 0.4);
   }
 
   .poi[data-kind="sea"][data-size="3"] {
-    font-size: calc(var(--font-size) * 0.6);
+    font-size: calc(var(--font-size) * 0.5);
   }
 
   .poi[data-kind="city"][data-size="1"] {
-    font-size: calc(var(--font-size) * 0.6);
+    font-size: calc(var(--font-size) * 0.45);
   }
 
   .poi[data-kind="city"][data-size="2"] {
-    font-size: calc(var(--font-size) * 0.7);
+    font-size: calc(var(--font-size) * 0.55);
   }
 
   .poi[data-kind="city"][data-size="3"] {
-    font-size: calc(var(--font-size) * 0.8);
+    font-size: calc(var(--font-size) * 0.65);
+  }
+
+  .poi[data-kind="river"][data-size="1"] {
+    font-size: calc(var(--font-size) * 0.4);
+  }
+
+  .poi[data-kind="river"][data-size="2"] {
+    font-size: calc(var(--font-size) * 0.45);
+  }
+
+  .poi[data-kind="river"][data-size="3"] {
+    font-size: calc(var(--font-size) * 0.5);
   }
 
   .name {
@@ -131,38 +142,47 @@ const styles = /* css */ `
     color: var(--black);
   }
 
-  .poi[data-kind="sea"] .name {
-    color: var(--sea-label);
+  .poi[data-kind="sea"] .name,
+  .poi[data-kind="river"] .name {
+    color: var(--water-label);
+  }
+
+  .poi[data-kind="river"] .name {
+    font-style: italic;
   }
 
   .poi[data-kind="city"] .name {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 2px);
     left: 50%;
     transform: translateX(-50%);
   }
 
   .poi[data-kind="city"] .dot {
-    position: absolute;
-    border-radius: 50%;
+    position: relative;
     background-color: var(--primary);
-    transform: translate(-50%, -50%);
-    box-shadow: 0px 0px 0px calc(var(--top-shadow) * 2) var(--shadow);
+    outline: var(--top-shadow) solid var(--shadow);
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    .poi[data-kind="city"] .dot {
+      outline: none;
+    }
   }
 
   .poi[data-kind="city"][data-size="1"] .dot {
+    width: calc(var(--font-size-ref) * 0.3);
+    height: calc(var(--font-size-ref) * 0.3);
+  }
+
+  .poi[data-kind="city"][data-size="2"] .dot {
     width: calc(var(--font-size-ref) * 0.4);
     height: calc(var(--font-size-ref) * 0.4);
   }
 
-  .poi[data-kind="city"][data-size="2"] .dot {
+  .poi[data-kind="city"][data-size="3"] .dot {
     width: calc(var(--font-size-ref) * 0.5);
     height: calc(var(--font-size-ref) * 0.5);
-  }
-
-  .poi[data-kind="city"][data-size="3"] .dot {
-    width: calc(var(--font-size-ref) * 0.6);
-    height: calc(var(--font-size-ref) * 0.6);
   }
 `;
 
