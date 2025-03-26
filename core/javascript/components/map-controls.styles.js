@@ -8,10 +8,11 @@ const styles = /* css */ `
   color: var(--primary);
   background-color: var(--paper);
   box-shadow: var(--shadow-100), 0 0 8px var(--primary) inset;
-  border: 1px solid var(--primary); 
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
 }
 
-@media (pointer:coarse) {
+@media (pointer: coarse) {
   .controls {
     top: calc(100vh - 150px);
     right: 16px;
@@ -33,9 +34,10 @@ const styles = /* css */ `
   border: 0;
   outline: none;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-@media (pointer:coarse) {
+@media (pointer: coarse) {
   .control {
     --size: 48px;
   }

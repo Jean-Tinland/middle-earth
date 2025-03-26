@@ -8,7 +8,7 @@
 
   --paper: #f0e8d7;
   --water: #e5faff;
-  --sea-label: #151142;
+  --water-label: #616a6c;
 
   --title-font: Aniron, serif;
   --content-font: "EB Garamond", serif;
@@ -16,6 +16,8 @@
   --focus-ring-color: var(--primary);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+
+  --radius: 4px;
 
   --shadow-100: 0px 3px 6px rgba(0, 0, 0, 0.12);
   --shadow-200: 0 5px 10px rgba(0, 0, 0, 0.12);

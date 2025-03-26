@@ -10,6 +10,7 @@ const styles = /* css */ `
   white-space: nowrap;
   box-shadow: var(--shadow-100), 0 0 5px var(--primary) inset;
   border: 1px solid var(--primary);
+  border-radius: var(--radius);
   z-index: 1;
   user-select: none;
   pointer-events: none;

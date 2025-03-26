@@ -25,13 +25,14 @@ const styles = /* css */ `
   max-width: 100vw;
   height: auto;
   max-height: 100vh;
-  box-sizing: border-box;
+  display: flex;
   background-color: var(--water);
   cursor: grab;
   touch-action: manipulation;
   outline: 1px solid var(--primary);
   outline-offset: calc(3px - var(--padding));
-  backface-visibility: hidden; 
+  transition: transform 320ms var(--transition-easing);
+  backface-visibility: hidden;
 }
 
 .canvas::before,
@@ -77,7 +78,7 @@ const styles = /* css */ `
   position: absolute;
   bottom: 16px;
   left: 16px;
-  width: min(180px, 20vw);
+  width: min(220px, 20cqw);
   height: auto;
 }
 
@@ -100,8 +101,7 @@ map-pois {
   left: 0;
   width: 100%;
   height: 100%;
-  // display: flex;
-  display: none;
+  display: flex;
   overflow: hidden;
   pointer-events: none;
   z-index: 1;
