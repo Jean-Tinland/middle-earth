@@ -44,6 +44,7 @@ export default class MapCanvas extends HTMLElement {
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+    this.wheelDisabled = false;
 
     this.root = this.attachShadow({ mode: "closed" });
 
@@ -71,12 +72,18 @@ export default class MapCanvas extends HTMLElement {
    * Zooms in the canvas.
    */
   zoomIn = (e) => {
+    if (this.scale === MAX_SCALE) return;
     e.preventDefault();
-
     this.scale = Math.min(this.scale + SCALE_STEP, MAX_SCALE);
     this.zoom += 1;
 
+    if (e.type === "wheel" || e.type === "dblclick") {
+      this.translateX -= (e.clientX - window.innerWidth / 2) / this.scale;
+      this.translateY -= (e.clientY - window.innerHeight / 2) / this.scale;
+    }
+
     this.mapPois.render(this.zoom);
+    this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateFontSizeRef();
     this.#updateControls();
@@ -86,6 +93,7 @@ export default class MapCanvas extends HTMLElement {
    * Zooms out the canvas.
    */
   zoomOut = (e) => {
+    if (this.scale === MIN_SCALE) return;
     e.preventDefault();
     this.scale = Math.max(this.scale - SCALE_STEP, MIN_SCALE);
     this.zoom -= 1;
@@ -94,6 +102,7 @@ export default class MapCanvas extends HTMLElement {
     if (this.scale === MIN_SCALE) {
       return this.#reset();
     }
+    this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
   };
@@ -124,11 +133,12 @@ export default class MapCanvas extends HTMLElement {
    */
   #updateFontSizeRef = () => {
     // The font size reference is inversely proportional to the scale.
-    // `cqmax` unit is used to make the font size relative to the canvas width.
-    this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / 1.7);
+    // `cqw` unit is used to make the font size relative to the canvas width.
+    const divider = this.zoom === 0 ? 1.5 : 3;
+    this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / divider);
     this.canvas.style.setProperty(
       "--font-size-ref",
-      `${this.fontSizeRef}cqmax`
+      `${this.fontSizeRef.toFixed(2)}cqw`
     );
   };
 
@@ -142,6 +152,7 @@ export default class MapCanvas extends HTMLElement {
     e.stopPropagation();
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
+    this.canvas.style.setProperty("transition", "none");
   };
 
   /**
@@ -154,11 +165,19 @@ export default class MapCanvas extends HTMLElement {
     e.stopPropagation();
     this.canvas.removeEventListener("pointermove", this.#dragging);
     this.canvas.style.removeProperty("cursor");
+    this.canvas.style.removeProperty("transition");
 
     if (this.scale === MIN_SCALE) {
       return this.#reset();
     }
 
+    this.#checkAndFixBoundaries();
+    this.#updateCanvas();
+
+    this.previousTouch = undefined;
+  };
+
+  #checkAndFixBoundaries = () => {
     const canvasBounds = this.canvas.getBoundingClientRect();
     const bodyBounds = document.body.getBoundingClientRect();
 
@@ -174,10 +193,6 @@ export default class MapCanvas extends HTMLElement {
     if (canvasBounds.bottom < bodyBounds.bottom) {
       this.translateY += (bodyBounds.bottom - canvasBounds.bottom) / this.scale;
     }
-
-    this.#updateCanvas();
-
-    this.previousTouch = undefined;
   };
 
   /**
@@ -192,6 +207,8 @@ export default class MapCanvas extends HTMLElement {
     // Touch events do not have movementX and movementY properties.
     // We calculate them using the previous touch event.
     if (e.type === "touchmove") {
+      this.canvas.style.setProperty("transition", "none");
+
       const touch = e.touches[0];
 
       e.movementX = this.previousTouch
@@ -241,6 +258,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the double click event on the canvas.
+   * Zooms in or out depending on the shift key.
    * @param {MouseEvent} e - The mouse event.
    * @private
    */
@@ -252,6 +270,28 @@ export default class MapCanvas extends HTMLElement {
     }
   };
 
+  /**
+   * Handles the mouse wheel event.
+   * Zooms in or out depending on the wheel direction.
+   * @param {WheelEvent} e - The wheel event.
+   * @private
+   */
+  #handleMouseWheel = (e) => {
+    if (this.wheelDisabled) return;
+    if (e.deltaY > 0) {
+      this.zoomOut(e);
+    } else {
+      this.zoomIn(e);
+    }
+    this.wheelDisabled = true;
+    setTimeout(() => (this.wheelDisabled = false), 320);
+  };
+
+  /**
+   * Gets the percentage coordinates of the clicked point.
+   * @param {MouseEvent} e - The mouse event.
+   * @private
+   */
   #getPercentageCoordinates = async (e) => {
     const { left, top, width, height } = this.canvas.getBoundingClientRect();
     const scaledX = (e.clientX - left) / this.scale;
@@ -280,6 +320,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.addEventListener("touchmove", this.#dragging);
     this.canvas.addEventListener("touchend", this.#dragEnd);
     this.canvas.addEventListener("click", this.#getPercentageCoordinates);
+    window.addEventListener("wheel", this.#handleMouseWheel);
     window.addEventListener("mouseout", this.#dragEnd);
   }
 
@@ -288,6 +329,7 @@ export default class MapCanvas extends HTMLElement {
    */
   disconnectedCallback() {
     window.removeEventListener("mouseout", this.#dragEnd);
+    window.removeEventListener("wheel", this.#handleMouseWheel);
     this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
     this.canvas.removeEventListener("touchend", this.#dragEnd);
     this.canvas.removeEventListener("touchmove", this.#dragging);
