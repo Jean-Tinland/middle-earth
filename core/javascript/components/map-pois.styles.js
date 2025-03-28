@@ -76,7 +76,8 @@ const styles = /* css */ `
   }
 
   .poi[data-kind="common-place"][data-size="1"] {
-    font-size: calc(var(--font-size) * 0.45);
+    font-size: calc(var(--font-size) * 0.4);
+    font-weight: 700;
   }
 
   .poi[data-kind="common-place"][data-size="2"] {
@@ -138,7 +139,8 @@ const styles = /* css */ `
     color: var(--white);
   }
 
-  .poi[data-kind="mountain"] .name {
+  .poi[data-kind="mountain"] .name,
+  .poi[data-kind="common-place"][data-size="1"] .name {
     color: var(--black);
   }
 
