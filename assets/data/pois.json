@@ -74,7 +74,7 @@
     {
       "kind": "region",
       "name": "Rohan",
-      "position": [46, 54.97],
+      "position": [45.83, 54.16],
       "zoom": 0,
       "size": 2
     },
@@ -154,6 +154,20 @@
       "position": [60.92, 73.17],
       "size": 2,
       "zoom": 2
+    },
+    {
+      "kind": "mountain",
+      "name": "Ered Nimrais",
+      "position": [35.05, 58.11],
+      "size": 2,
+      "zoom": 2
+    },
+    {
+      "kind": "mountain",
+      "name": "Mountains of Shadow",
+      "position": [67.85, 77.83],
+      "size": 1,
+      "zoom": 3
     },
     {
       "kind": "mountain",
@@ -248,15 +262,22 @@
     },
     {
       "kind": "region",
+      "name": "West Emnet",
+      "position": [44.73, 55.76],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
       "name": "East Emnet",
-      "position": [48.24, 57.29],
+      "position": [48.42, 56.7],
       "zoom": 2,
       "size": 1
     },
     {
       "kind": "region",
       "name": "The Brown Lands",
-      "position": [48.24, 57.29],
+      "position": [56.49, 45.75],
       "zoom": 2,
       "size": 1
     },
@@ -528,6 +549,13 @@
     },
     {
       "kind": "city",
+      "name": "Elvenking's Hall",
+      "position": [57.08, 17.0],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Dale",
       "position": [59.64, 16.39],
       "size": 1,
@@ -542,8 +570,22 @@
     },
     {
       "kind": "river",
+      "name": "Mouth of Anduin",
+      "position": [49.0, 76.93],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
       "name": "The River Running",
       "position": [66.7, 27.27],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "R. Carnen",
+      "position": [68.53, 18.9],
       "size": 1,
       "zoom": 4
     },
@@ -775,43 +817,78 @@
       "kind": "common-place",
       "name": "Himling",
       "position": [3.92, 10.1],
-      "size": 2,
+      "size": 3,
       "zoom": 3
     },
     {
       "kind": "common-place",
       "name": "Andrast",
       "position": [22.25, 74.3],
-      "size": 2,
+      "size": 3,
       "zoom": 3
     },
     {
       "kind": "common-place",
       "name": "Tolfalas",
       "position": [46.29, 80.27],
-      "size": 2,
+      "size": 3,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Nurn",
+      "position": [66.41, 72.68],
+      "size": 3,
       "zoom": 3
     },
     {
       "kind": "common-place",
       "name": "Gap of Rohan",
       "position": [42.14, 53.52],
-      "size": 2,
+      "size": 3,
       "zoom": 3
     },
     {
       "kind": "common-place",
       "name": "The Angle",
       "position": [38.15, 29.4],
-      "size": 1,
-      "zoom": 4
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Westfold",
+      "position": [42.18, 57.17],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Fold",
+      "position": [44.48, 59.43],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Eastfold",
+      "position": [45.68, 60.68],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "common-place",
+      "name": "Anórien",
+      "position": [53.4, 63.42],
+      "size": 2,
+      "zoom": 3
     },
     {
       "kind": "common-place",
       "name": "Ettenmoors",
       "position": [39.47, 15.67],
-      "size": 1,
-      "zoom": 4
+      "size": 2,
+      "zoom": 3
     },
     {
       "kind": "common-place",
@@ -838,6 +915,48 @@
       "kind": "common-place",
       "name": "Fornost",
       "position": [28.42, 18.82],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Firien Wood",
+      "position": [51.38, 61.87],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Druadan Forest",
+      "position": [55.05, 62.97],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Emyn Arnen",
+      "position": [58.02, 67.66],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Eryn Vorn",
+      "position": [18.98, 41.29],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Nan Curunír",
+      "position": [39.94, 52.09],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Havens of Umbar",
+      "position": [46.12, 96.2],
       "size": 1,
       "zoom": 4
     },
@@ -921,7 +1040,7 @@
     {
       "kind": "common-place",
       "name": "Helm's Deep",
-      "position": [41.68, 57.06],
+      "position": [40.64, 54.93],
       "size": 1,
       "zoom": 4
     },
@@ -955,8 +1074,85 @@
     },
     {
       "kind": "common-place",
-      "name": "Mount Doom",
+      "name": "Cair Andros",
+      "position": [48.52, 20.96],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "The Garrock",
       "position": [63.32, 61.26],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Old Ford",
+      "position": [48.68, 23.01],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Old Forest Road",
+      "position": [50.71, 22.51],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Gladden Fields",
+      "position": [49.29, 30.09],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Caras Galadon",
+      "position": [47.32, 38.82],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Field of Celebrandt",
+      "position": [50.17, 44.26],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Tower Hills",
+      "position": [16.92, 27.38],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Far Downs",
+      "position": [18.65, 24.47],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "White Downs",
+      "position": [20.42, 28.03],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Barrow Downs",
+      "position": [27.62, 28.52],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "South Downs",
+      "position": [30.98, 28.91],
       "size": 1,
       "zoom": 4
     },
@@ -964,6 +1160,13 @@
       "kind": "common-place",
       "name": "Mount Gundabad",
       "position": [43.98, 10.35],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Mount Gram",
+      "position": [38.84, 12.9],
       "size": 1,
       "zoom": 4
     }
