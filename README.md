@@ -1,6 +1,6 @@
 # Middle-Earth interactive map
 
-This project aims to provide an **interactive map of Middle-Earth** as **imaged by J.R.R. Tolkien** in his books.  
+This project aims to provide an **interactive map of Middle-Earth** as **imagined by J.R.R. Tolkien** in his books.  
 All points of interest were collected on various representations of Middle-Earth existing maps.
 
 ![Middle-Earth interactive map](./assets/images/preview.jpg)
