@@ -35,6 +35,12 @@ const styles = /* css */ `
   backface-visibility: hidden;
 }
 
+@supports (-webkit-touch-callout: none) {
+  .canvas {
+    --padding: 6px;
+  }
+}
+
 .canvas::before,
 .canvas::after {
   content: "";
@@ -74,17 +80,37 @@ const styles = /* css */ `
   height: 100%;
 }
 
-.compass-rose {
+.decorations {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
-  width: min(220px, 20cqw);
+  bottom: 28px;
+  left: 28px;
+  width: 11.8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .decorations {
+    bottom: 16px;
+    left: 16px;
+  }
+}
+
+:host([ready]) .decorations,
+:host([ready]) map-pois {
+  display: flex !important;
+}
+
+.compass-rose {
+  width: min(110px, 10cqw);
   height: auto;
 }
 
-:host([ready]) .compass-rose,
-:host([ready]) map-pois {
-  display: block !important;
+.scale {
+  width: 100%;
+  heigh: auto;
 }
 
 map-pois {
