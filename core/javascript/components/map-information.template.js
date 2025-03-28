@@ -39,13 +39,13 @@ export const content = /* html */ `
       <h2>Credits</h2>
       <ul>
         <li>
-          Map drawn in Figma with custom terrain & landmark elements
+          Map drawn by myself from existing Middle-Earth maps in Figma with custom terrain & landmark elements
         </li>
         <li>
-          Button's icons: extracted from Remix Icon collection (https://remixicon.com/)
+          Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>
         </li>
         <li>
-          Favicon: <a target="_blank" href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" ref="nofollow noopener" href="https://icons8.com">Icons8</a>
+          Favicon: <a href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" ref="nofollow noopener" href="https://icons8.com">Icons8</a>
         </li>
         <li>
           Map texture overlay: <a href="https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture" target="_blank" rel="nofollow noopener">Image by rawpixel.com on Freepik</a>
