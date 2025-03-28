@@ -11,8 +11,16 @@ const styles = /* css */ `
   :host {
     --size: 48px;
 
-    top: calc(100vh - 150px);
+    bottom: 16px;
     left: 16px;
+    right: unset;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  :host {
+    top: calc(100vh - 150px);
+    bottom: unset;
   }
 }
 
