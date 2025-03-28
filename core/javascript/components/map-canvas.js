@@ -290,10 +290,12 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Gets the percentage coordinates of the clicked point.
+   * Only active when the debugMap is enabled on window.
    * @param {MouseEvent} e - The mouse event.
    * @private
    */
   #getPercentageCoordinates = async (e) => {
+    if (!window.debugMap) return;
     const { left, top, width, height } = this.canvas.getBoundingClientRect();
     const scaledX = (e.clientX - left) / this.scale;
     const scaledY = (e.clientY - top) / this.scale;
