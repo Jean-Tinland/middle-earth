@@ -390,8 +390,8 @@
       "kind": "city",
       "name": "Mithlond",
       "position": [14.59, 25.53],
-      "size": 2,
-      "zoom": 2
+      "size": 1,
+      "zoom": 3
     },
     {
       "kind": "city",
@@ -418,6 +418,13 @@
       "kind": "city",
       "name": "Minas Morgul",
       "position": [59.4, 64.54],
+      "size": 1,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Dol Guldur",
+      "position": [52.45, 38.32],
       "size": 1,
       "zoom": 3
     },
@@ -530,8 +537,8 @@
       "kind": "city",
       "name": "Edoras",
       "position": [43.62, 57.89],
-      "size": 1,
-      "zoom": 3
+      "size": 2,
+      "zoom": 2
     },
     {
       "kind": "city",
@@ -1174,6 +1181,13 @@
       "kind": "common-place",
       "name": "Crossing of Poros",
       "position": [58.43, 74.95],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Highpass",
+      "position": [45.52, 23.68],
       "size": 1,
       "zoom": 4
     },
