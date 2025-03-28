@@ -59,7 +59,7 @@ export default class MapModal extends HTMLElement {
 
   #handleKeyPress = (e) => {
     if (e.key !== "Escape") return;
-    const allModals = document.querySelectorAll("cms-modal");
+    const allModals = document.querySelectorAll("map-modal");
     const isLastModal = allModals[allModals.length - 1];
     if (this !== isLastModal) return;
     this.close();
@@ -138,7 +138,7 @@ export default class MapModal extends HTMLElement {
       this.closeButton.removeEventListener("click", this.close);
     }
 
-    const otherModals = document.querySelectorAll("cms-modal");
+    const otherModals = document.querySelectorAll("map-modal");
     if (otherModals.length === 0) {
       document.body.style.removeProperty("overflow");
     }
