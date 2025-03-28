@@ -12,6 +12,7 @@ All points of interest were collected on various representations of Middle-Earth
 - Favicon: [One Ring](https://icons8.com/icon/20169/one-ring) icon by [Icons8](https://icons8.com).
 - Map texture overlay: [Image by rawpixel.com on Freepik](https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture).
 - Compass rose (modified): [Image by freepik](https://www.freepik.com/free-vector/hand-drawn-map-compass-background_1582142.htm#fromView=search&page=1&position=23&uuid=90506e90-3cbb-4891-bf73-4316a0f28b13&query=compass+rose).
+- Fonts: [Aniron](https://www.dafont.com/aniron.font) and [EB Garamond](https://fonts.google.com/specimen/EB+Garamond)
 
 ## Contribute
 
