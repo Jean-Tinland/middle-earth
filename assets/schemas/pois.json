@@ -16,7 +16,6 @@
             "type": "string",
             "enum": [
               "region",
-              "zone",
               "city",
               "river",
               "mountain",
