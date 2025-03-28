@@ -12,5 +12,6 @@ export default function template() {
       </div>
     </div>
     <map-controls></map-controls>
+    <map-information></map-information>
   `;
 }

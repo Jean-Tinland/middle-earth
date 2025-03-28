@@ -1,5 +1,6 @@
 import "./map-button.js";
 import "./map-controls.js";
+import "./map-information.js";
 import MapPois from "./map-pois.js";
 import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
