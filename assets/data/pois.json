@@ -290,6 +290,13 @@
     },
     {
       "kind": "region",
+      "name": "South Ithilien",
+      "position": [55.66, 75.43],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
       "name": "Enedwaith",
       "position": [29.89, 48.45],
       "zoom": 2,
@@ -341,6 +348,13 @@
       "kind": "sea",
       "name": "Gulf of Lune",
       "position": [8.66, 27.29],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "sea",
+      "name": "The Bay of Belfalas",
+      "position": [37.81, 82.36],
       "size": 2,
       "zoom": 3
     },
@@ -1153,6 +1167,13 @@
       "kind": "common-place",
       "name": "South Downs",
       "position": [30.98, 28.91],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Crossing of Poros",
+      "position": [58.43, 74.95],
       "size": 1,
       "zoom": 4
     },
