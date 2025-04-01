@@ -67,7 +67,7 @@
     {
       "kind": "region",
       "name": "Rhovanion",
-      "position": [57.46, 29.83],
+      "position": [55.76, 29.99],
       "zoom": 0,
       "size": 3
     },
@@ -390,196 +390,217 @@
       "kind": "city",
       "name": "Mithlond",
       "position": [14.59, 25.53],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Bree",
       "position": [28.61, 25.36],
-      "size": 2,
+      "size": 3,
       "zoom": 2
     },
     {
       "kind": "city",
       "name": "Minas Tirith",
       "position": [56.2, 65.91],
-      "size": 2,
+      "size": 3,
       "zoom": 2
     },
     {
       "kind": "city",
       "name": "Dol Amroth",
       "position": [42.03, 72.28],
-      "size": 2,
+      "size": 3,
       "zoom": 2
     },
     {
       "kind": "city",
       "name": "Minas Morgul",
       "position": [59.4, 64.54],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Dol Guldur",
       "position": [52.45, 38.32],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Osgiliath",
       "position": [57.61, 65.19],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Pelargir",
       "position": [55.21, 73.42],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Calembel",
       "position": [46.28, 65.99],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Erech",
       "position": [43.81, 61.88],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Linhir",
       "position": [49.48, 72.77],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Edhellond",
       "position": [43.55, 69.86],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Michel Delwing",
       "position": [21.32, 25.62],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Hobbiton",
-      "position": [23.09, 23.96],
-      "size": 1,
+      "position": [23.11, 24.32],
+      "size": 2,
       "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Overhill",
+      "position": [23.19, 23.43],
+      "size": 1,
+      "zoom": 7
+    },
+    {
+      "kind": "city",
+      "name": "Frogmorton",
+      "position": [23.66, 24.01],
+      "size": 1,
+      "zoom": 7
+    },
+    {
+      "kind": "city",
+      "name": "Whitfurrows",
+      "position": [24.31, 23.8],
+      "size": 1,
+      "zoom": 7
     },
     {
       "kind": "city",
       "name": "Annúminas",
       "position": [22.13, 19.97],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Rivendell",
       "position": [42.61, 24.13],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Carn Dûm",
       "position": [35.35, 8.43],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Tharbad",
       "position": [32.27, 36.3],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Ost-in-edhil",
       "position": [37.13, 37.23],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Lond Daer",
       "position": [25.96, 45.19],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Isengard",
       "position": [38.7, 52.27],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Edoras",
       "position": [43.62, 57.89],
-      "size": 2,
+      "size": 3,
       "zoom": 2
     },
     {
       "kind": "city",
       "name": "City of the corsairs",
       "position": [47.35, 94.91],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Framsburg",
       "position": [47.37, 14.2],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Eagles Eyrie",
       "position": [47.14, 19.3],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Esgaroth",
       "position": [59.37, 17.69],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Elvenking's Hall",
       "position": [57.08, 17.0],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
       "kind": "city",
       "name": "Dale",
       "position": [59.64, 16.39],
-      "size": 1,
+      "size": 2,
       "zoom": 3
     },
     {
@@ -843,6 +864,13 @@
     },
     {
       "kind": "common-place",
+      "name": "Bag End",
+      "position": [22.49, 23.88],
+      "size": 1,
+      "zoom": 7
+    },
+    {
+      "kind": "common-place",
       "name": "Andrast",
       "position": [22.25, 74.3],
       "size": 3,
@@ -1020,6 +1048,13 @@
       "kind": "common-place",
       "name": "Last bridge",
       "position": [37.92, 23.17],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Bridge of Stonebows",
+      "position": [24.75, 24.18],
       "size": 1,
       "zoom": 4
     },

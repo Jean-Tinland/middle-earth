@@ -8,7 +8,7 @@ import styles from "./map-canvas.styles.js";
 /** The step for scaling the map. */
 const SCALE_STEP = 1;
 /** The maximum scale of the map. */
-const MAX_SCALE = 8;
+const MAX_SCALE = 29;
 /** The minimum scale of the map. */
 const MIN_SCALE = 1;
 /**
@@ -23,7 +23,7 @@ const MIN_SCALE = 1;
  * @readonly
  */
 const DEFAULTS = Object.freeze({
-  FONT_SIZE_REF: 1,
+  FONT_SIZE_REF: 16,
   SCALE: 1,
   ZOOM: 0,
   TRANSLATE_X: 0,
@@ -75,8 +75,9 @@ export default class MapCanvas extends HTMLElement {
   zoomIn = (e) => {
     if (this.scale === MAX_SCALE) return;
     e.preventDefault();
-    this.scale = Math.min(this.scale + SCALE_STEP, MAX_SCALE);
     this.zoom += 1;
+    const scaleStep = SCALE_STEP * this.zoom;
+    this.scale = Math.min(this.scale + scaleStep, MAX_SCALE);
 
     if (e.type === "wheel" || e.type === "dblclick") {
       this.translateX -= (e.clientX - window.innerWidth / 2) / this.scale;
@@ -96,8 +97,9 @@ export default class MapCanvas extends HTMLElement {
   zoomOut = (e) => {
     if (this.scale === MIN_SCALE) return;
     e.preventDefault();
-    this.scale = Math.max(this.scale - SCALE_STEP, MIN_SCALE);
     this.zoom -= 1;
+    const scaleStep = SCALE_STEP * (this.zoom + 1);
+    this.scale = Math.max(this.scale - scaleStep, MIN_SCALE);
     this.#updateFontSizeRef();
     this.mapPois.render(this.zoom);
     if (this.scale === MIN_SCALE) {
@@ -134,12 +136,11 @@ export default class MapCanvas extends HTMLElement {
    */
   #updateFontSizeRef = () => {
     // The font size reference is inversely proportional to the scale.
-    // `cqw` unit is used to make the font size relative to the canvas width.
-    const divider = this.zoom === 0 ? 1.5 : 3;
+    const divider = this.zoom === 0 ? 1.5 : 2;
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / divider);
     this.canvas.style.setProperty(
       "--font-size-ref",
-      `${this.fontSizeRef.toFixed(2)}cqw`
+      `${this.fontSizeRef.toFixed(2)}px`
     );
   };
 
@@ -295,7 +296,9 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #getPercentageCoordinates = async (e) => {
-    if (!window.debugMap) return;
+    const params = new URLSearchParams(window.location.search);
+    const debugEnabled = params.has("debug");
+    if (!debugEnabled) return;
     const { left, top, width, height } = this.canvas.getBoundingClientRect();
     const scaledX = (e.clientX - left) / this.scale;
     const scaledY = (e.clientY - top) / this.scale;
