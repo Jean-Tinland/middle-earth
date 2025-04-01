@@ -42,7 +42,7 @@
           "zoom": {
             "type": "number",
             "minimum": 0,
-            "maximum": 8,
+            "maximum": 7,
             "description": "The zoom level at which the point of interest should be displayed"
           },
           "size": {
