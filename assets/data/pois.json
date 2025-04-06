@@ -108,6 +108,20 @@
     },
     {
       "kind": "region",
+      "name": "Dor-En-Ernil",
+      "position": [47.59, 72.41],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Lebennin",
+      "position": [52.44, 71.22],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
       "name": "Mordor",
       "position": [73.45, 68.18],
       "zoom": 0,
@@ -290,8 +304,15 @@
     },
     {
       "kind": "region",
+      "name": "North Ithilien",
+      "position": [57.95, 63.52],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
       "name": "South Ithilien",
-      "position": [55.66, 75.43],
+      "position": [57.7, 70.68],
       "zoom": 2,
       "size": 1
     },
@@ -451,6 +472,13 @@
     },
     {
       "kind": "city",
+      "name": "Ethring",
+      "position": [47.65, 66.47],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Erech",
       "position": [43.81, 61.88],
       "size": 2,
@@ -483,27 +511,6 @@
       "position": [23.11, 24.32],
       "size": 2,
       "zoom": 3
-    },
-    {
-      "kind": "city",
-      "name": "Overhill",
-      "position": [23.19, 23.43],
-      "size": 1,
-      "zoom": 7
-    },
-    {
-      "kind": "city",
-      "name": "Frogmorton",
-      "position": [23.66, 24.01],
-      "size": 1,
-      "zoom": 7
-    },
-    {
-      "kind": "city",
-      "name": "Whitfurrows",
-      "position": [24.31, 23.8],
-      "size": 1,
-      "zoom": 7
     },
     {
       "kind": "city",
@@ -570,6 +577,27 @@
     },
     {
       "kind": "city",
+      "name": "Ramlond",
+      "position": [49.91, 89.76],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Gobel Ancalimon",
+      "position": [54.76, 89.57],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Amrûn",
+      "position": [62.04, 88.86],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Framsburg",
       "position": [47.37, 14.2],
       "size": 2,
@@ -614,6 +642,13 @@
       "kind": "river",
       "name": "Mouth of Anduin",
       "position": [49.0, 76.93],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "river",
+      "name": "Mouth of Entwash",
+      "position": [52.3, 59.52],
       "size": 1,
       "zoom": 4
     },
@@ -865,9 +900,9 @@
     {
       "kind": "common-place",
       "name": "Bag End",
-      "position": [22.49, 23.88],
+      "position": [22.84, 23.85],
       "size": 1,
-      "zoom": 7
+      "zoom": 5
     },
     {
       "kind": "common-place",
@@ -978,6 +1013,41 @@
       "kind": "common-place",
       "name": "Druadan Forest",
       "position": [55.05, 62.97],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Argonath",
+      "position": [52.51, 54.61],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Amon Hen",
+      "position": [52.6, 57.17],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Falls of Rauros",
+      "position": [53.33, 56.51],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "North Undeep",
+      "position": [51.29, 45.54],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "South Undeep",
+      "position": [52.43, 48.21],
       "size": 1,
       "zoom": 4
     },
