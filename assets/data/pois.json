@@ -682,6 +682,13 @@
     },
     {
       "kind": "city",
+      "name": "Everhaven",
+      "position": [31.48, 72.99],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "city",
       "name": "Methrast",
       "position": [44.42, 77.9],
       "size": 1,
@@ -1279,6 +1286,20 @@
       "kind": "common-place",
       "name": "Cair Andros",
       "position": [57.18, 62.43],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Horin Tower",
+      "position": [27.75, 72.52],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Angbor Citadel",
+      "position": [50.23, 67.89],
       "size": 1,
       "zoom": 4
     },
