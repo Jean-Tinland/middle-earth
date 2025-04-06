@@ -41,7 +41,7 @@ const styles = /* css */ `
     font-size: calc(var(--font-size) * 0.45);
     text-transform: none;
   }
-  
+
   .poi[data-kind="region"][data-size="2"] {
     font-size: calc(var(--font-size) * 0.7);
   }
@@ -127,8 +127,8 @@ const styles = /* css */ `
   .name {
     color: var(--primary);
     white-space: nowrap;
-    text-shadow: var(--top-shadow) var(--top-shadow) 0px var(--shadow), 
-      var(--top-shadow) var(--bottom-shadow) 0px var(--shadow), 
+    text-shadow: var(--top-shadow) var(--top-shadow) 0px var(--shadow),
+      var(--top-shadow) var(--bottom-shadow) 0px var(--shadow),
       var(--bottom-shadow) var(--top-shadow) 0px var(--shadow),
       var(--bottom-shadow) var(--bottom-shadow) 0px var(--shadow);
   }
@@ -179,7 +179,7 @@ const styles = /* css */ `
 
   .poi[data-kind="city"][data-size="3"] .dot {
     --multiplier: 0.55;
-    
+
     border-radius: 0;
   }
 
