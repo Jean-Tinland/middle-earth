@@ -430,6 +430,20 @@
     },
     {
       "kind": "city",
+      "name": "Forlond",
+      "position": [6.71, 23.98],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Harlond",
+      "position": [10.11, 29.15],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Bree",
       "position": [28.61, 25.36],
       "size": 3,
