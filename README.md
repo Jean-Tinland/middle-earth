@@ -1,7 +1,7 @@
 # Middle-Earth interactive map
 
-This project aims to provide an **interactive map of Middle-Earth** as **imagined by J.R.R. Tolkien** in his books.  
-All points of interest were collected on various representations of Middle-Earth existing maps.
+This project aims to provide an **interactive map of Middle-Earth** during the Third Age as **imagined by J.R.R. Tolkien** in his books.
+All points of interest were collected on various representations of existing Middle-Earth maps.
 
 [Open Middle-Earth map](https://middle-earth.jeantinland.com).
 

@@ -30,9 +30,9 @@ export const content = /* html */ `
   <div class="content">
     <div class="description">
       <p>
-        This project aims to provide an <b>interactive map of Middle-Earth</b> as <b>imagined by J.R.R. Tolkien</b> in his books.
+        This project aims to provide an <b>interactive map of Middle-Earth</b> during the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
         <br />
-        All points of interest were collected on various representation of Middle-Earth existing maps.
+        All points of interest were collected on various representation of existing Middle-Earth maps.
       </p>
     </div>
     <div class="credits">
