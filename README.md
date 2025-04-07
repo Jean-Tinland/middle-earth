@@ -5,7 +5,7 @@ All points of interest were collected on various representations of existing Mid
 
 [Open Middle-Earth map](https://middle-earth.jeantinland.com).
 
-![Middle-Earth interactive map](./assets/images/preview.jpg)
+![Middle-Earth interactive map](./assets/images/preview.png)
 
 ## Credits
 
