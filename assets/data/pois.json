@@ -430,6 +430,20 @@
     },
     {
       "kind": "city",
+      "name": "Forlond",
+      "position": [6.71, 23.98],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
+      "name": "Harlond",
+      "position": [10.11, 29.15],
+      "size": 2,
+      "zoom": 3
+    },
+    {
+      "kind": "city",
       "name": "Bree",
       "position": [28.61, 25.36],
       "size": 3,
@@ -663,6 +677,13 @@
       "kind": "city",
       "name": "Endil",
       "position": [42.75, 75.18],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "city",
+      "name": "Everhaven",
+      "position": [31.48, 72.99],
       "size": 1,
       "zoom": 4
     },
@@ -1265,6 +1286,20 @@
       "kind": "common-place",
       "name": "Cair Andros",
       "position": [57.18, 62.43],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Horin Tower",
+      "position": [27.75, 72.52],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Angbor Citadel",
+      "position": [50.23, 67.89],
       "size": 1,
       "zoom": 4
     },
