@@ -1,4 +1,3 @@
-import template from "./map-pois.template.js";
 import styles from "./map-pois.styles.js";
 
 /**
@@ -14,31 +13,73 @@ export default class MapPois extends HTMLElement {
     super();
 
     this.pois = pois;
+    this.poiElements = [];
 
     this.root = this.attachShadow({ mode: "closed" });
 
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
-    this.root.innerHTML = template(this.#getDisplayedPois(0));
+
+    this.#buildPois();
+    this.render(0);
   }
 
   /**
-   * Renders the points of interest on the map.
-   * @param {number} zoom - The zoom level of the map.
+   * Creates all POI DOM elements once upfront.
+   * @private
    */
-  render = (zoom) => {
-    const displayedPois = this.#getDisplayedPois(zoom);
-    this.root.innerHTML = template(displayedPois);
+  #buildPois = () => {
+    const fragment = document.createDocumentFragment();
+
+    for (const poi of this.pois) {
+      const el = this.#createPoiElement(poi);
+      this.poiElements.push({ element: el, zoom: poi.zoom });
+      fragment.appendChild(el);
+    }
+
+    this.root.appendChild(fragment);
   };
 
   /**
-   * Gets the points of interest to display on the map.
-   * @param {number} zoom - The zoom level of the map.
+   * Creates a single POI DOM element.
+   * @param {Object} poi - The point of interest data.
+   * @returns {HTMLElement}
    * @private
    */
-  #getDisplayedPois = (zoom) => {
-    return this.pois.filter((poi) => poi.zoom <= zoom);
+  #createPoiElement = (poi) => {
+    const { name, kind, position, size } = poi;
+    const [x, y] = position;
+
+    const el = document.createElement("div");
+    el.className = "poi";
+    el.style.cssText = `top: ${y}%; left: ${x}%;`;
+    el.dataset.kind = kind;
+    el.dataset.size = size;
+    el.hidden = true;
+
+    if (kind === "city") {
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      el.appendChild(dot);
+    }
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "name";
+    nameEl.textContent = name;
+    el.appendChild(nameEl);
+
+    return el;
+  };
+
+  /**
+   * Shows/hides POIs based on the current zoom level.
+   * @param {number} zoom - The zoom level of the map.
+   */
+  render = (zoom) => {
+    for (const { element, zoom: poiZoom } of this.poiElements) {
+      element.hidden = poiZoom > zoom;
+    }
   };
 
   connectedCallback() {}
