@@ -28,7 +28,7 @@ const styles = /* css */ `
   display: flex;
   background-color: var(--water);
   cursor: grab;
-  touch-action: manipulation;
+  touch-action: none;
   outline: 1px solid var(--primary);
   outline-offset: calc(3px - var(--padding));
   transition: transform 320ms var(--transition-easing);

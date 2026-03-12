@@ -55,6 +55,9 @@ export default class MapCanvas extends HTMLElement {
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.willChangeTimeoutId = null;
+    this.isPinching = false;
+    this.pinchStartDistance = 0;
+    this.pinchStartScale = 1;
 
     this.root = this.attachShadow({ mode: "closed" });
 
@@ -167,6 +170,34 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Calculates the distance between two touch points.
+   * @param {TouchList} touches
+   * @returns {number}
+   * @private
+   */
+  #getPinchDistance = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+
+  /**
+   * Handles the start of a touch event.
+   * Detects pinch gestures to prevent native iOS viewport zoom.
+   * @param {TouchEvent} e
+   * @private
+   */
+  #touchStart = (e) => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    this.isPinching = true;
+    this.pinchStartDistance = this.#getPinchDistance(e.touches);
+    this.pinchStartScale = this.scale;
+    this.canvas.style.setProperty("transition", "none");
+    this.canvas.style.setProperty("will-change", "transform");
+  };
+
+  /**
    * Handles the start of a drag event.
    * @param {PointerEvent} e - The pointer event.
    * @private
@@ -208,6 +239,8 @@ export default class MapCanvas extends HTMLElement {
     this.#updateCanvas();
 
     this.previousTouch = undefined;
+    this.isPinching = false;
+    this.pinchStartDistance = 0;
   };
 
   #checkAndFixBoundaries = () => {
@@ -236,6 +269,20 @@ export default class MapCanvas extends HTMLElement {
   #dragging = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (e.touches?.length === 2 && this.isPinching) {
+      const distance = this.#getPinchDistance(e.touches);
+      const rawScale =
+        (distance / this.pinchStartDistance) * this.pinchStartScale;
+      this.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, rawScale));
+      this.zoom = Math.round(
+        ((this.scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * (MAX_SCALE - 1),
+      );
+      this.#updateFontSizeRef();
+      this.mapPois.render(this.zoom);
+      this.#updateCanvas();
+      return;
+    }
 
     // Touch events do not have movementX and movementY properties.
     // We calculate them using the previous touch event.
@@ -380,8 +427,13 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
     this.canvas.addEventListener("mousedown", this.#dragStart);
     this.canvas.addEventListener("mouseup", this.#dragEnd);
-    this.canvas.addEventListener("touchmove", this.#dragging);
-    this.canvas.addEventListener("touchend", this.#dragEnd);
+    this.canvas.addEventListener("touchstart", this.#touchStart, {
+      passive: false,
+    });
+    this.canvas.addEventListener("touchmove", this.#dragging, {
+      passive: false,
+    });
+    this.canvas.addEventListener("touchend", this.#dragEnd, { passive: false });
     this.canvas.addEventListener("click", this.#getPercentageCoordinates);
     window.addEventListener("wheel", this.#handleMouseWheel);
     window.addEventListener("mouseout", this.#dragEnd);
@@ -403,6 +455,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
     this.canvas.removeEventListener("touchend", this.#dragEnd);
     this.canvas.removeEventListener("touchmove", this.#dragging);
+    this.canvas.removeEventListener("touchstart", this.#touchStart);
     this.canvas.removeEventListener("mouseup", this.#dragEnd);
     this.canvas.removeEventListener("mousedown", this.#dragStart);
     this.canvas.removeEventListener("dblclick", this.#handleCanvasDoubleClick);
