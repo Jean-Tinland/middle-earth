@@ -23,6 +23,11 @@ const styles = /* css */ `
 
     position: absolute;
     transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+
+  .poi[hidden] {
+    display: none;
   }
 
   .poi[data-kind="region"],
@@ -127,6 +132,7 @@ const styles = /* css */ `
   .name {
     color: var(--primary);
     white-space: nowrap;
+    text-rendering: geometricPrecision;
     text-shadow: var(--top-shadow) var(--top-shadow) 0px var(--shadow),
       var(--top-shadow) var(--bottom-shadow) 0px var(--shadow),
       var(--bottom-shadow) var(--top-shadow) 0px var(--shadow),
@@ -165,6 +171,7 @@ const styles = /* css */ `
     background-color: var(--primary);
     width: calc(var(--font-size-ref) * var(--multiplier));
     height: calc(var(--font-size-ref) * var(--multiplier));
+    aspect-ratio: 1;
     border-radius: 50%;
     box-shadow: 0 0 0 calc(var(--font-size-ref) / 15) white inset;
   }
