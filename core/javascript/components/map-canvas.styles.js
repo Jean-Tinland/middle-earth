@@ -33,6 +33,8 @@ const styles = /* css */ `
   outline-offset: calc(3px - var(--padding));
   transition: transform 320ms var(--transition-easing);
   backface-visibility: hidden;
+  contain: layout style;
+  transform-origin: center center;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -58,7 +60,6 @@ const styles = /* css */ `
   background-size: cover;
   opacity: 50%;
   mix-blend-mode: multiply;
-  filter: blur(1px);
 }
 
 .canvas::after {
