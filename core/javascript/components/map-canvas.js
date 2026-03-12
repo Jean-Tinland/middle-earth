@@ -11,6 +11,8 @@ const SCALE_STEP = 1;
 const MAX_SCALE = 29;
 /** The minimum scale of the map. */
 const MIN_SCALE = 1;
+/** The accumulated deltaY required to trigger one zoom step. */
+const WHEEL_THRESHOLD = 100;
 /**
  * Default values for the map canvas.
  * @type {Object}
@@ -45,7 +47,14 @@ export default class MapCanvas extends HTMLElement {
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-    this.wheelDisabled = false;
+    this.wheelRafId = null;
+    this.lastWheelEvent = null;
+    this.lastWheelDirection = 0;
+    this.wheelDeltaAccumulator = 0;
+    this.dragRafId = null;
+    this.pendingMovementX = 0;
+    this.pendingMovementY = 0;
+    this.willChangeTimeoutId = null;
 
     this.root = this.attachShadow({ mode: "closed" });
 
@@ -60,7 +69,7 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #reset = () => {
-    this.canvas.style.removeProperty("transform");
+    this.canvas.style.setProperty("transform", "scale(1) translate(0px, 0px)");
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF;
     this.zoom = DEFAULTS.ZOOM;
     this.translateX = DEFAULTS.TRANSLATE_X;
@@ -126,7 +135,7 @@ export default class MapCanvas extends HTMLElement {
   #updateCanvas = () => {
     this.canvas.style.setProperty(
       "transform",
-      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`
+      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
     );
   };
 
@@ -140,7 +149,20 @@ export default class MapCanvas extends HTMLElement {
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / divider);
     this.canvas.style.setProperty(
       "--font-size-ref",
-      `${this.fontSizeRef.toFixed(2)}px`
+      `${this.fontSizeRef.toFixed(2)}px`,
+    );
+  };
+
+  /**
+   * Defers the removal of will-change until after the CSS transition completes.
+   * Prevents Chrome from tearing down the compositing layer mid-transition.
+   * @private
+   */
+  #scheduleWillChangeRemoval = () => {
+    clearTimeout(this.willChangeTimeoutId);
+    this.willChangeTimeoutId = setTimeout(
+      () => this.canvas.style.removeProperty("will-change"),
+      320,
     );
   };
 
@@ -155,6 +177,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
     this.canvas.style.setProperty("transition", "none");
+    this.canvas.style.setProperty("will-change", "transform");
   };
 
   /**
@@ -168,6 +191,14 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.removeEventListener("pointermove", this.#dragging);
     this.canvas.style.removeProperty("cursor");
     this.canvas.style.removeProperty("transition");
+    this.#scheduleWillChangeRemoval();
+
+    if (this.dragRafId !== null) {
+      cancelAnimationFrame(this.dragRafId);
+      this.dragRafId = null;
+      this.pendingMovementX = 0;
+      this.pendingMovementY = 0;
+    }
 
     if (this.scale === MIN_SCALE) {
       return this.#reset();
@@ -223,11 +254,19 @@ export default class MapCanvas extends HTMLElement {
       this.previousTouch = touch;
     }
 
-    const { movementX, movementY } = e;
-    this.translateX += movementX / this.scale;
-    this.translateY += movementY / this.scale;
+    this.pendingMovementX += e.movementX;
+    this.pendingMovementY += e.movementY;
 
-    this.#updateCanvas();
+    if (this.dragRafId !== null) return;
+
+    this.dragRafId = requestAnimationFrame(() => {
+      this.dragRafId = null;
+      this.translateX += this.pendingMovementX / this.scale;
+      this.translateY += this.pendingMovementY / this.scale;
+      this.pendingMovementX = 0;
+      this.pendingMovementY = 0;
+      this.#updateCanvas();
+    });
   };
 
   /**
@@ -279,14 +318,32 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #handleMouseWheel = (e) => {
-    if (this.wheelDisabled) return;
-    if (e.deltaY > 0) {
-      this.zoomOut(e);
-    } else {
-      this.zoomIn(e);
-    }
-    this.wheelDisabled = true;
-    setTimeout(() => (this.wheelDisabled = false), 320);
+    this.wheelDeltaAccumulator += e.deltaY;
+
+    if (Math.abs(this.wheelDeltaAccumulator) < WHEEL_THRESHOLD) return;
+
+    this.lastWheelEvent = e;
+    this.lastWheelDirection = this.wheelDeltaAccumulator > 0 ? 1 : -1;
+    this.wheelDeltaAccumulator = 0;
+
+    if (this.wheelRafId !== null) return;
+
+    this.canvas.style.setProperty("transition", "none");
+    this.canvas.style.setProperty("will-change", "transform");
+
+    this.wheelRafId = requestAnimationFrame(() => {
+      this.wheelRafId = null;
+      const event = this.lastWheelEvent;
+      const direction = this.lastWheelDirection;
+      this.lastWheelEvent = null;
+      if (direction > 0) {
+        this.zoomOut(event);
+      } else {
+        this.zoomIn(event);
+      }
+      this.canvas.style.removeProperty("transition");
+      this.#scheduleWillChangeRemoval();
+    });
   };
 
   /**
@@ -334,6 +391,13 @@ export default class MapCanvas extends HTMLElement {
    * Called when the element is disconnected from the document's DOM.
    */
   disconnectedCallback() {
+    if (this.wheelRafId !== null) {
+      cancelAnimationFrame(this.wheelRafId);
+    }
+    if (this.dragRafId !== null) {
+      cancelAnimationFrame(this.dragRafId);
+    }
+    clearTimeout(this.willChangeTimeoutId);
     window.removeEventListener("mouseout", this.#dragEnd);
     window.removeEventListener("wheel", this.#handleMouseWheel);
     this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
