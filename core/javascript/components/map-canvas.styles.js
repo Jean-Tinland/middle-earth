@@ -32,8 +32,6 @@ const styles = /* css */ `
   outline: 1px solid var(--primary);
   outline-offset: calc(3px - var(--padding));
   transition: transform 320ms var(--transition-easing);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
   contain: layout style;
   transform-origin: center center;
 }

@@ -72,7 +72,7 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #reset = () => {
-    this.canvas.style.setProperty("transform", "scale(1) translate3d(0px, 0px, 0px)");
+    this.canvas.style.setProperty("transform", "scale(1) translate(0px, 0px)");
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF;
     this.zoom = DEFAULTS.ZOOM;
     this.translateX = DEFAULTS.TRANSLATE_X;
@@ -138,7 +138,7 @@ export default class MapCanvas extends HTMLElement {
   #updateCanvas = () => {
     this.canvas.style.setProperty(
       "transform",
-      `scale(${this.scale}) translate3d(${this.translateX}px, ${this.translateY}px, 0px)`,
+      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
     );
   };
 
