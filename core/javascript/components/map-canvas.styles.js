@@ -61,6 +61,12 @@ const styles = /* css */ `
   mix-blend-mode: multiply;
 }
 
+@supports (-webkit-touch-callout: none) {
+  .canvas::before {
+    mix-blend-mode: normal;
+  }
+}
+
 .canvas::after {
   outline: 1px solid var(--primary);
   outline-offset: calc(-1px - var(--padding))
@@ -78,6 +84,7 @@ const styles = /* css */ `
 .map > svg {
   width: 100%;
   height: 100%;
+  pointer-events: none;
 }
 
 .decorations {

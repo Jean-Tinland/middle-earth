@@ -317,6 +317,17 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Loads the SVG map and injects it inline so iOS Safari renders it as vector,
+   * producing sharp output at every zoom level.
+   * @private
+   */
+  #loadMap = async () => {
+    const response = await fetch("./assets/images/map.svg");
+    const svgText = await response.text();
+    this.map.innerHTML = svgText;
+  };
+
+  /**
    * Loads the points of interest (POIs).
    * @private
    */
@@ -419,9 +430,8 @@ export default class MapCanvas extends HTMLElement {
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
 
-    this.map.addEventListener("load", this.#onMapLoad);
-
-    await this.#loadPois();
+    await Promise.all([this.#loadMap(), this.#loadPois()]);
+    this.#onMapLoad();
     this.#updateFontSizeRef();
 
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
@@ -459,8 +469,6 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.removeEventListener("mouseup", this.#dragEnd);
     this.canvas.removeEventListener("mousedown", this.#dragStart);
     this.canvas.removeEventListener("dblclick", this.#handleCanvasDoubleClick);
-
-    this.map.removeEventListener("load", this.#onMapLoad);
   }
 }
 
