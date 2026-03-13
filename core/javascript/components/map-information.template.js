@@ -73,6 +73,9 @@ export const content = /* html */ `
           <b>On all browsers</b>: points of interest are moving a bit when dragging or zooming the map. This is a consequence of some performance optimizations that I made in order to make the map less laggy.
         </li>
         <li>
+          <b>On all browsers</b>: the map can seems unresponsive when zooming out. I haven't found a way around this issue yet.
+        </li>
+        <li>
           <b>On Safari (mobile & desktop)</b>: the more you zoom in, the more the map is blurry while zooming and dragging for the same reason as above.
         </li>
       </ul>
