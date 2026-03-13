@@ -76,11 +76,11 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #reset = () => {
-    this.fontSizeRef = DEFAULTS.FONT_SIZE_REF;
     this.zoom = DEFAULTS.ZOOM;
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+    this.#updateFontSizeRef();
     this.#updateControls();
     this.#enterSettledState();
   };
