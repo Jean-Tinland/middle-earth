@@ -66,5 +66,16 @@ export const content = /* html */ `
         Feel free to open issue or contribute if you'd like anything fixed or added.
       </p>
     </div>
+    <div class="known-issues">
+      <h2>Known issues</h2>
+      <ul>
+        <li>
+          <b>On all browsers</b>: points of interest are moving a bit when dragging or zooming the map. This is a consequence of some performance optimizations that I made in order to make the map less laggy.
+        </li>
+        <li>
+          <b>On Safari (mobile & desktop)</b>: the more you zoom in, the more the map is blurry while zooming and dragging for the same reason as above.
+        </li>
+      </ul>
+    </div>
   </div>
 `;
