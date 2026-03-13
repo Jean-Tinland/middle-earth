@@ -23,7 +23,6 @@ const styles = /* css */ `
 
     position: absolute;
     transform: translate(-50%, -50%);
-    will-change: transform;
   }
 
   .poi[hidden] {
