@@ -286,18 +286,21 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the start of a touch event.
-   * Detects pinch gestures to prevent native iOS viewport zoom.
+   * Enters interaction state for all touches to keep the canvas visually consistent
+   * during single-finger drags on iOS. Also detects pinch gestures.
    * @param {TouchEvent} e
    * @private
    */
   #touchStart = (e) => {
-    if (e.touches.length !== 2) return;
     e.preventDefault();
+    this.canvas.style.setProperty("transition", "none");
+    this.#enterInteractionState();
+
+    if (e.touches.length !== 2) return;
+
     this.isPinching = true;
     this.pinchStartDistance = this.#getPinchDistance(e.touches);
     this.pinchStartScale = this.scale;
-    this.canvas.style.setProperty("transition", "none");
-    this.#enterInteractionState();
   };
 
   /**
