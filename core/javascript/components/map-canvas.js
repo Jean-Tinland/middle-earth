@@ -55,6 +55,7 @@ export default class MapCanvas extends HTMLElement {
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.willChangeTimeoutId = null;
+    this.isDragging = false;
     this.isPinching = false;
     this.pinchStartDistance = 0;
     this.pinchStartScale = 1;
@@ -293,6 +294,7 @@ export default class MapCanvas extends HTMLElement {
    */
   #touchStart = (e) => {
     e.preventDefault();
+    this.isDragging = true;
     this.canvas.style.setProperty("transition", "none");
     this.#enterInteractionState();
 
@@ -311,6 +313,7 @@ export default class MapCanvas extends HTMLElement {
   #dragStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    this.isDragging = true;
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
     this.canvas.style.setProperty("transition", "none");
@@ -323,6 +326,8 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #dragEnd = (e) => {
+    if (!this.isDragging) return;
+    this.isDragging = false;
     e.preventDefault();
     e.stopPropagation();
     this.canvas.removeEventListener("pointermove", this.#dragging);
