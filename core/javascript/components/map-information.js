@@ -22,6 +22,7 @@ export default class MapInformation extends HTMLElement {
 
   #openModal = () => {
     const modal = new MapModal({
+      width: 800,
       icon: "question",
       title: "Information & credits",
       content,
