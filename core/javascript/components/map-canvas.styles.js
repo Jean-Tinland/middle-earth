@@ -5,6 +5,7 @@ const styles = /* css */ `
   left: 0;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +32,6 @@ const styles = /* css */ `
   touch-action: none;
   outline: 1px solid var(--primary);
   outline-offset: calc(3px - var(--padding));
-  transition: transform 320ms var(--transition-easing);
   contain: layout style;
   transform-origin: center center;
 }

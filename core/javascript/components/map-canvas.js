@@ -58,6 +58,8 @@ export default class MapCanvas extends HTMLElement {
     this.isPinching = false;
     this.pinchStartDistance = 0;
     this.pinchStartScale = 1;
+    this.canvasNaturalWidth = 0;
+    this.canvasNaturalHeight = 0;
 
     this.root = this.attachShadow({ mode: "closed" });
 
@@ -72,13 +74,13 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #reset = () => {
-    this.canvas.style.setProperty("transform", "scale(1) translate(0px, 0px)");
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF;
     this.zoom = DEFAULTS.ZOOM;
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
     this.#updateControls();
+    this.#enterSettledState();
   };
 
   /**
@@ -87,6 +89,24 @@ export default class MapCanvas extends HTMLElement {
   zoomIn = (e) => {
     if (this.scale === MAX_SCALE) return;
     e.preventDefault();
+
+    if (e.type !== "wheel") {
+      // Leave settled state invisibly: strip physical-size overrides, restore scale
+      // transform instantly (transition: none). No will-change here so the CSS
+      // transition that follows runs via the software renderer — always sharp on iOS.
+      this.canvas.style.setProperty("transition", "none");
+      this.canvas.style.removeProperty("width");
+      this.canvas.style.removeProperty("height");
+      this.canvas.style.removeProperty("max-width");
+      this.canvas.style.removeProperty("max-height");
+      this.#updateCanvas();
+      this.canvas.getBoundingClientRect(); // flush to commit transition:none
+      this.canvas.style.setProperty(
+        "transition",
+        "transform 320ms var(--transition-easing)",
+      );
+    }
+
     this.zoom += 1;
     const scaleStep = SCALE_STEP * this.zoom;
     this.scale = Math.min(this.scale + scaleStep, MAX_SCALE);
@@ -101,6 +121,10 @@ export default class MapCanvas extends HTMLElement {
     this.#updateCanvas();
     this.#updateFontSizeRef();
     this.#updateControls();
+
+    if (e.type !== "wheel") {
+      this.#scheduleWillChangeRemoval();
+    }
   };
 
   /**
@@ -109,6 +133,21 @@ export default class MapCanvas extends HTMLElement {
   zoomOut = (e) => {
     if (this.scale === MIN_SCALE) return;
     e.preventDefault();
+
+    if (e.type !== "wheel") {
+      this.canvas.style.setProperty("transition", "none");
+      this.canvas.style.removeProperty("width");
+      this.canvas.style.removeProperty("height");
+      this.canvas.style.removeProperty("max-width");
+      this.canvas.style.removeProperty("max-height");
+      this.#updateCanvas();
+      this.canvas.getBoundingClientRect();
+      this.canvas.style.setProperty(
+        "transition",
+        "transform 320ms var(--transition-easing)",
+      );
+    }
+
     this.zoom -= 1;
     const scaleStep = SCALE_STEP * (this.zoom + 1);
     this.scale = Math.max(this.scale - scaleStep, MIN_SCALE);
@@ -120,6 +159,10 @@ export default class MapCanvas extends HTMLElement {
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
+
+    if (e.type !== "wheel") {
+      this.#scheduleWillChangeRemoval();
+    }
   };
 
   /**
@@ -163,10 +206,70 @@ export default class MapCanvas extends HTMLElement {
    */
   #scheduleWillChangeRemoval = () => {
     clearTimeout(this.willChangeTimeoutId);
-    this.willChangeTimeoutId = setTimeout(
-      () => this.canvas.style.removeProperty("will-change"),
-      320,
+    this.willChangeTimeoutId = setTimeout(() => this.#enterSettledState(), 320);
+  };
+
+  /**
+   * Stores the canvas's natural (un-zoomed) dimensions.
+   * Must be called after the map has been laid out.
+   * @private
+   */
+  #measureNaturalDimensions = () => {
+    const { width, height } = this.canvas.getBoundingClientRect();
+    this.canvasNaturalWidth = width;
+    this.canvasNaturalHeight = height;
+  };
+
+  /**
+   * Prepares the canvas for a GPU-composited interaction (drag, pinch, wheel).
+   * Strips the physical-size overrides set by #enterSettledState, adds will-change,
+   * and restores the scale transform so GPU compositing works at natural dimensions.
+   * @private
+   */
+  #enterInteractionState = () => {
+    this.canvas.style.removeProperty("width");
+    this.canvas.style.removeProperty("height");
+    this.canvas.style.removeProperty("max-width");
+    this.canvas.style.removeProperty("max-height");
+    this.canvas.style.setProperty("will-change", "transform");
+    this.canvas.style.setProperty(
+      "--font-size-ref",
+      `${this.fontSizeRef.toFixed(2)}px`,
     );
+    this.#updateCanvas();
+  };
+
+  /**
+   * Sets the canvas to its physically-zoomed size so iOS Safari rasterizes the
+   * inline SVG at full resolution instead of upscaling a composited texture.
+   * The CSS scale transform is replaced by an equivalent translate-only transform.
+   * @private
+   */
+  #enterSettledState = () => {
+    this.canvas.style.removeProperty("transition");
+    const settledX = this.translateX * this.scale;
+    const settledY = this.translateY * this.scale;
+    this.canvas.style.setProperty("max-width", "none");
+    this.canvas.style.setProperty("max-height", "none");
+    this.canvas.style.setProperty(
+      "width",
+      `${this.canvasNaturalWidth * this.scale}px`,
+    );
+    this.canvas.style.setProperty(
+      "height",
+      `${this.canvasNaturalHeight * this.scale}px`,
+    );
+    this.canvas.style.setProperty(
+      "transform",
+      `translate(${settledX}px, ${settledY}px)`,
+    );
+    // Without CSS scale(), --font-size-ref must be multiplied by scale so POIs
+    // render at the same physical size as they would in the interaction state.
+    this.canvas.style.setProperty(
+      "--font-size-ref",
+      `${(this.fontSizeRef * this.scale).toFixed(2)}px`,
+    );
+    this.canvas.style.removeProperty("will-change");
   };
 
   /**
@@ -194,7 +297,7 @@ export default class MapCanvas extends HTMLElement {
     this.pinchStartDistance = this.#getPinchDistance(e.touches);
     this.pinchStartScale = this.scale;
     this.canvas.style.setProperty("transition", "none");
-    this.canvas.style.setProperty("will-change", "transform");
+    this.#enterInteractionState();
   };
 
   /**
@@ -208,7 +311,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
     this.canvas.style.setProperty("transition", "none");
-    this.canvas.style.setProperty("will-change", "transform");
+    this.#enterInteractionState();
   };
 
   /**
@@ -387,7 +490,7 @@ export default class MapCanvas extends HTMLElement {
     if (this.wheelRafId !== null) return;
 
     this.canvas.style.setProperty("transition", "none");
-    this.canvas.style.setProperty("will-change", "transform");
+    this.#enterInteractionState();
 
     this.wheelRafId = requestAnimationFrame(() => {
       this.wheelRafId = null;
@@ -433,6 +536,8 @@ export default class MapCanvas extends HTMLElement {
     await Promise.all([this.#loadMap(), this.#loadPois()]);
     this.#onMapLoad();
     this.#updateFontSizeRef();
+    this.#measureNaturalDimensions();
+    this.#enterSettledState();
 
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
     this.canvas.addEventListener("mousedown", this.#dragStart);
