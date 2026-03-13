@@ -76,7 +76,7 @@ export const content = /* html */ `
           <b>On all browsers</b>: the map can seems unresponsive when zooming out. I haven't found a way around this issue yet.
         </li>
         <li>
-          <b>On Safari (mobile & desktop)</b>: the more you zoom in, the more the map is blurry while zooming and dragging for the same reason as above.
+          <b>On Safari</b>: the more you zoom in, the more the map is blurry while zooming and dragging for the same reason as above.
         </li>
         <li>
           <b>On Firefox</b>: the map is overall less smooth and responsive than on other browsers, especially when zooming in.
