@@ -343,16 +343,22 @@ export default class MapCanvas extends HTMLElement {
       this.pendingMovementY = 0;
     }
 
+    this.previousTouch = undefined;
+
+    if (this.isPinching) {
+      this.isPinching = false;
+      this.pinchStartDistance = 0;
+      this.scale = MIN_SCALE + (this.zoom * (this.zoom + 1)) / 2;
+      this.#updateFontSizeRef();
+      this.#updateControls();
+    }
+
     if (this.scale === MIN_SCALE) {
       return this.#reset();
     }
 
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
-
-    this.previousTouch = undefined;
-    this.isPinching = false;
-    this.pinchStartDistance = 0;
   };
 
   #checkAndFixBoundaries = () => {
