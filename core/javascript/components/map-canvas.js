@@ -59,6 +59,7 @@ export default class MapCanvas extends HTMLElement {
     this.willChangeTimeoutId = null;
     this.isDragging = false;
     this.isPinching = false;
+    this.isInteractionState = false;
     this.pinchStartDistance = 0;
     this.pinchStartScale = 1;
     this.canvasNaturalWidth = 0;
@@ -98,10 +99,7 @@ export default class MapCanvas extends HTMLElement {
       // transform instantly (transition: none). No will-change here so the CSS
       // transition that follows runs via the software renderer — always sharp on iOS.
       this.canvas.style.setProperty("transition", "none");
-      this.canvas.style.removeProperty("width");
-      this.canvas.style.removeProperty("height");
-      this.canvas.style.removeProperty("max-width");
-      this.canvas.style.removeProperty("max-height");
+      this.#setNaturalCanvasSize();
       this.#updateCanvas();
       this.canvas.getBoundingClientRect(); // flush to commit transition:none
       this.canvas.style.setProperty(
@@ -139,10 +137,7 @@ export default class MapCanvas extends HTMLElement {
 
     if (e.type !== "wheel") {
       this.canvas.style.setProperty("transition", "none");
-      this.canvas.style.removeProperty("width");
-      this.canvas.style.removeProperty("height");
-      this.canvas.style.removeProperty("max-width");
-      this.canvas.style.removeProperty("max-height");
+      this.#setNaturalCanvasSize();
       this.#updateCanvas();
       this.canvas.getBoundingClientRect();
       this.canvas.style.setProperty(
@@ -182,9 +177,17 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #updateCanvas = () => {
+    if (this.isInteractionState) {
+      this.canvas.style.setProperty(
+        "transform",
+        `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
+      );
+      return;
+    }
+
     this.canvas.style.setProperty(
       "transform",
-      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
+      `translate(${this.translateX * this.scale}px, ${this.translateY * this.scale}px)`,
     );
   };
 
@@ -224,21 +227,33 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Applies the measured natural canvas size in pixels.
+   * Keeps dimensions stable while transform-based interactions are active.
+   * @private
+   */
+  #setNaturalCanvasSize = () => {
+    this.canvas.style.setProperty("max-width", "none");
+    this.canvas.style.setProperty("max-height", "none");
+    this.canvas.style.setProperty("width", `${this.canvasNaturalWidth}px`);
+    this.canvas.style.setProperty("height", `${this.canvasNaturalHeight}px`);
+  };
+
+  /**
    * Prepares the canvas for a GPU-composited interaction (drag, pinch, wheel).
    * Strips the physical-size overrides set by #enterSettledState, adds will-change,
    * and restores the scale transform so GPU compositing works at natural dimensions.
    * @private
    */
   #enterInteractionState = () => {
-    this.canvas.style.removeProperty("width");
-    this.canvas.style.removeProperty("height");
-    this.canvas.style.removeProperty("max-width");
-    this.canvas.style.removeProperty("max-height");
+    if (this.isInteractionState) return;
+
+    this.#setNaturalCanvasSize();
     this.canvas.style.setProperty("will-change", "transform");
     this.canvas.style.setProperty(
       "--font-size-ref",
       `${this.fontSizeRef.toFixed(2)}px`,
     );
+    this.isInteractionState = true;
     this.#updateCanvas();
   };
 
@@ -250,8 +265,6 @@ export default class MapCanvas extends HTMLElement {
    */
   #enterSettledState = () => {
     this.canvas.style.removeProperty("transition");
-    const settledX = this.translateX * this.scale;
-    const settledY = this.translateY * this.scale;
     this.canvas.style.setProperty("max-width", "none");
     this.canvas.style.setProperty("max-height", "none");
     this.canvas.style.setProperty(
@@ -262,10 +275,8 @@ export default class MapCanvas extends HTMLElement {
       "height",
       `${this.canvasNaturalHeight * this.scale}px`,
     );
-    this.canvas.style.setProperty(
-      "transform",
-      `translate(${settledX}px, ${settledY}px)`,
-    );
+    this.isInteractionState = false;
+    this.#updateCanvas();
     // Without CSS scale(), --font-size-ref must be multiplied by scale so POIs
     // render at the same physical size as they would in the interaction state.
     this.canvas.style.setProperty(
@@ -313,16 +324,16 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the start of a touch event.
-   * Enters interaction state for all touches to keep the canvas visually consistent
-   * during single-finger drags on iOS. Also detects pinch gestures.
+   * Starts dragging immediately for single-touch gestures and switches to
+   * interaction state only when a pinch gesture is detected.
    * @param {TouchEvent} e
    * @private
    */
   #touchStart = (e) => {
     e.preventDefault();
     this.isDragging = true;
+    clearTimeout(this.willChangeTimeoutId);
     this.canvas.style.setProperty("transition", "none");
-    this.#enterInteractionState();
 
     if (e.touches.length === 1) {
       const touch = e.touches[0];
@@ -334,6 +345,7 @@ export default class MapCanvas extends HTMLElement {
 
     if (e.touches.length !== 2) return;
 
+    this.#enterInteractionState();
     this.isPinching = true;
     this.pinchStartDistance = this.#getPinchDistance(e.touches);
     this.pinchStartScale = this.scale;
@@ -363,6 +375,7 @@ export default class MapCanvas extends HTMLElement {
     e.preventDefault();
     e.stopPropagation();
     this.isDragging = true;
+    clearTimeout(this.willChangeTimeoutId);
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
     this.canvas.style.setProperty("transition", "none");
@@ -382,7 +395,9 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.removeEventListener("pointermove", this.#dragging);
     this.canvas.style.removeProperty("cursor");
     this.canvas.style.removeProperty("transition");
-    this.#scheduleWillChangeRemoval();
+    if (this.isInteractionState) {
+      this.#scheduleWillChangeRemoval();
+    }
 
     if (this.dragRafId !== null) {
       cancelAnimationFrame(this.dragRafId);

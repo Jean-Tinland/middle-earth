@@ -57,6 +57,7 @@ const styles = /* css */ `
   background-size: cover;
   opacity: 30%;
   mix-blend-mode: multiply;
+  z-index: 1;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -84,16 +85,6 @@ const styles = /* css */ `
 
 :host([ready]) map-pois {
   display: flex !important;
-}
-
-.compass-rose {
-  width: min(110px, 10cqw);
-  height: auto;
-}
-
-.scale {
-  width: 100%;
-  heigh: auto;
 }
 
 map-pois {
