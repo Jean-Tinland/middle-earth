@@ -104,6 +104,44 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Returns the focal point used to keep zoom centered.
+   * Wheel and double click zoom around the pointer.
+   * Control button clicks zoom around the viewport center.
+   * @param {Event} e
+   * @returns {{x: number, y: number}}
+   * @private
+   */
+  #getZoomFocalPoint = (e) => {
+    const viewportCenter = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+
+    if (!e || e.type === "click") return viewportCenter;
+
+    if (Number.isFinite(e.clientX) && Number.isFinite(e.clientY)) {
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    return viewportCenter;
+  };
+
+  /**
+   * Prepares a smooth transform-based zoom transition.
+   * @private
+   */
+  #prepareAnimatedZoom = () => {
+    clearTimeout(this.willChangeTimeoutId);
+    this.canvas.style.setProperty("transition", "none");
+    this.#enterInteractionState();
+    this.canvas.getBoundingClientRect();
+    this.canvas.style.setProperty(
+      "transition",
+      "transform 320ms var(--transition-easing)",
+    );
+  };
+
+  /**
    * Zooms in the canvas.
    */
   zoomIn = (e) => {
@@ -111,27 +149,17 @@ export default class MapCanvas extends HTMLElement {
     e.preventDefault();
 
     if (e.type !== "wheel") {
-      // Leave settled state invisibly: strip physical-size overrides, restore scale
-      // transform instantly (transition: none). No will-change here so the CSS
-      // transition that follows runs via the software renderer — always sharp on iOS.
-      this.canvas.style.setProperty("transition", "none");
-      this.#setNaturalCanvasSize();
-      this.#updateCanvas();
-      this.canvas.getBoundingClientRect(); // flush to commit transition:none
-      this.canvas.style.setProperty(
-        "transition",
-        "transform 320ms var(--transition-easing)",
-      );
+      this.#prepareAnimatedZoom();
     }
+
+    const focalPoint = this.#getZoomFocalPoint(e);
 
     this.zoom += 1;
     const scaleStep = SCALE_STEP * this.zoom;
     this.scale = Math.min(this.scale + scaleStep, MAX_SCALE);
 
-    if (e.type === "wheel" || e.type === "dblclick") {
-      this.translateX -= (e.clientX - window.innerWidth / 2) / this.scale;
-      this.translateY -= (e.clientY - window.innerHeight / 2) / this.scale;
-    }
+    this.translateX -= (focalPoint.x - window.innerWidth / 2) / this.scale;
+    this.translateY -= (focalPoint.y - window.innerHeight / 2) / this.scale;
 
     this.mapPois.render(this.zoom);
     this.#checkAndFixBoundaries();
@@ -152,19 +180,16 @@ export default class MapCanvas extends HTMLElement {
     e.preventDefault();
 
     if (e.type !== "wheel") {
-      this.canvas.style.setProperty("transition", "none");
-      this.#setNaturalCanvasSize();
-      this.#updateCanvas();
-      this.canvas.getBoundingClientRect();
-      this.canvas.style.setProperty(
-        "transition",
-        "transform 320ms var(--transition-easing)",
-      );
+      this.#prepareAnimatedZoom();
     }
+
+    const focalPoint = this.#getZoomFocalPoint(e);
 
     this.zoom -= 1;
     const scaleStep = SCALE_STEP * (this.zoom + 1);
     this.scale = Math.max(this.scale - scaleStep, MIN_SCALE);
+    this.translateX += (focalPoint.x - window.innerWidth / 2) / this.scale;
+    this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
     this.#updateFontSizeRef();
     this.mapPois.render(this.zoom);
     if (this.scale === MIN_SCALE) {
