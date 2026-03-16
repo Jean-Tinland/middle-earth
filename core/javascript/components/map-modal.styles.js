@@ -1,6 +1,6 @@
 const styles = /* css */ `
 :host {
-  --vertical-padding: 40px;
+  --vertical-padding: 26px;
 
   position: fixed;
   top: 0;
@@ -8,7 +8,7 @@ const styles = /* css */ `
   width: 100%;
   height: 100%;
   display: flex;
-  padding: var(--vertical-padding) 16px;
+  padding: var(--vertical-padding) 12px;
   box-sizing: border-box;
   font-family: var(--content-font);
   font-weight: 400;
@@ -44,7 +44,7 @@ const styles = /* css */ `
 
 .modal {
   position: relative;
-  max-width: 95%;
+  max-width: 100%;
   min-height: 150px;
   display: flex;
   flex-direction: column;
