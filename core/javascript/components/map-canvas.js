@@ -324,11 +324,34 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.style.setProperty("transition", "none");
     this.#enterInteractionState();
 
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      this.previousTouch = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+      };
+    }
+
     if (e.touches.length !== 2) return;
 
     this.isPinching = true;
     this.pinchStartDistance = this.#getPinchDistance(e.touches);
     this.pinchStartScale = this.scale;
+    this.previousTouch = undefined;
+  };
+
+  /**
+   * Applies the queued drag movement immediately.
+   * @private
+   */
+  #applyPendingDrag = () => {
+    if (this.pendingMovementX === 0 && this.pendingMovementY === 0) return;
+
+    this.translateX += this.pendingMovementX / this.scale;
+    this.translateY += this.pendingMovementY / this.scale;
+    this.pendingMovementX = 0;
+    this.pendingMovementY = 0;
+    this.#updateCanvas();
   };
 
   /**
@@ -436,13 +459,16 @@ export default class MapCanvas extends HTMLElement {
       const touch = e.touches[0];
 
       e.movementX = this.previousTouch
-        ? touch.pageX - this.previousTouch.pageX
-        : 1;
+        ? touch.clientX - this.previousTouch.clientX
+        : 0;
       e.movementY = this.previousTouch
-        ? touch.pageY - this.previousTouch.pageY
-        : 1;
+        ? touch.clientY - this.previousTouch.clientY
+        : 0;
 
-      this.previousTouch = touch;
+      this.previousTouch = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+      };
     }
 
     this.pendingMovementX += e.movementX;
@@ -450,13 +476,11 @@ export default class MapCanvas extends HTMLElement {
 
     if (this.dragRafId !== null) return;
 
+    this.#applyPendingDrag();
+
     this.dragRafId = requestAnimationFrame(() => {
       this.dragRafId = null;
-      this.translateX += this.pendingMovementX / this.scale;
-      this.translateY += this.pendingMovementY / this.scale;
-      this.pendingMovementX = 0;
-      this.pendingMovementY = 0;
-      this.#updateCanvas();
+      this.#applyPendingDrag();
     });
   };
 
@@ -479,7 +503,6 @@ export default class MapCanvas extends HTMLElement {
     const pois = await fetch("/assets/data/pois.json");
     const data = await pois.json();
     this.pois = data.pois;
-    this.#drawPois();
   };
 
   /**
@@ -488,7 +511,7 @@ export default class MapCanvas extends HTMLElement {
    */
   #drawPois = () => {
     this.mapPois = new MapPois(this.pois);
-    this.canvas.appendChild(this.mapPois);
+    this.map.appendChild(this.mapPois);
   };
 
   /**
@@ -575,6 +598,7 @@ export default class MapCanvas extends HTMLElement {
     this.controls = this.root.querySelector("map-controls");
 
     await Promise.all([this.#loadMap(), this.#loadPois()]);
+    this.#drawPois();
     this.#onMapLoad();
     this.#updateFontSizeRef();
     this.#measureNaturalDimensions();

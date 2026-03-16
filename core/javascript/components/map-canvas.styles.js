@@ -66,11 +66,13 @@ const styles = /* css */ `
 }
 
 .map {
+  position: relative;
   aspect-ratio: 3600 / 2600;
   width: inherit;
   max-width: inherit;
   height: inherit;
   max-height: inherit;
+  display: flex;
   pointer-events: none;
 }
 
@@ -96,6 +98,7 @@ const styles = /* css */ `
 
 map-pois {
   display: none;
+  z-index: 1;
 }
 
 .cover {
@@ -103,7 +106,7 @@ map-pois {
 }
 
 :host([ready]) .cover {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
