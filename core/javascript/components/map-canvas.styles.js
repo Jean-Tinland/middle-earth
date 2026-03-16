@@ -30,8 +30,6 @@ const styles = /* css */ `
   background-color: var(--water);
   cursor: grab;
   touch-action: none;
-  outline: 1px solid var(--primary);
-  outline-offset: calc(3px - var(--padding));
   contain: layout style;
   transform-origin: center center;
 }
@@ -65,11 +63,6 @@ const styles = /* css */ `
   .canvas::before {
     mix-blend-mode: normal;
   }
-}
-
-.canvas::after {
-  outline: 1px solid var(--primary);
-  outline-offset: calc(-1px - var(--padding))
 }
 
 .map {
