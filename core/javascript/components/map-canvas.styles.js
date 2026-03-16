@@ -87,25 +87,6 @@ const styles = /* css */ `
   pointer-events: none;
 }
 
-.decorations {
-  position: absolute;
-  bottom: 28px;
-  left: 28px;
-  width: 11.8%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-@supports (-webkit-touch-callout: none) {
-  .decorations {
-    bottom: 16px;
-    left: 16px;
-  }
-}
-
-:host([ready]) .decorations,
 :host([ready]) map-pois {
   display: flex !important;
 }
