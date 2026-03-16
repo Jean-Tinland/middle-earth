@@ -388,7 +388,7 @@ export default class MapCanvas extends HTMLElement {
         (distance / this.pinchStartDistance) * this.pinchStartScale;
       this.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, rawScale));
       this.zoom = Math.round(
-        ((this.scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * (MAX_SCALE - 1),
+        (-1 + Math.sqrt(1 + 8 * (this.scale - MIN_SCALE))) / 2,
       );
       this.#updateFontSizeRef();
       this.mapPois.render(this.zoom);
