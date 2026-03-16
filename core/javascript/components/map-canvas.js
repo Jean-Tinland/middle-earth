@@ -53,6 +53,7 @@ export default class MapCanvas extends HTMLElement {
     this.lastWheelDirection = 0;
     this.wheelDeltaAccumulator = 0;
     this.dragRafId = null;
+    this.resizeRafId = null;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.willChangeTimeoutId = null;
@@ -272,6 +273,30 @@ export default class MapCanvas extends HTMLElement {
       `${(this.fontSizeRef * this.scale).toFixed(2)}px`,
     );
     this.canvas.style.removeProperty("will-change");
+  };
+
+  /**
+   * Handles window resize events by re-measuring the canvas natural dimensions,
+   * fixing any boundary violations, and re-entering the settled state.
+   * @private
+   */
+  #handleResize = () => {
+    if (this.resizeRafId !== null) return;
+    this.resizeRafId = requestAnimationFrame(() => {
+      this.resizeRafId = null;
+      this.canvas.style.removeProperty("width");
+      this.canvas.style.removeProperty("height");
+      this.canvas.style.removeProperty("max-width");
+      this.canvas.style.removeProperty("max-height");
+      this.canvas.style.removeProperty("transform");
+      this.#measureNaturalDimensions();
+      if (this.scale === MIN_SCALE) {
+        return this.#reset();
+      }
+      this.#updateCanvas();
+      this.#checkAndFixBoundaries();
+      this.#enterSettledState();
+    });
   };
 
   /**
@@ -568,6 +593,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.addEventListener("click", this.#getPercentageCoordinates);
     window.addEventListener("wheel", this.#handleMouseWheel);
     window.addEventListener("mouseout", this.#dragEnd);
+    window.addEventListener("resize", this.#handleResize);
   }
 
   /**
@@ -581,6 +607,10 @@ export default class MapCanvas extends HTMLElement {
       cancelAnimationFrame(this.dragRafId);
     }
     clearTimeout(this.willChangeTimeoutId);
+    if (this.resizeRafId !== null) {
+      cancelAnimationFrame(this.resizeRafId);
+    }
+    window.removeEventListener("resize", this.#handleResize);
     window.removeEventListener("mouseout", this.#dragEnd);
     window.removeEventListener("wheel", this.#handleMouseWheel);
     this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
