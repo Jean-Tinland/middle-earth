@@ -391,6 +391,7 @@ export default class MapCanvas extends HTMLElement {
         (-1 + Math.sqrt(1 + 8 * (this.scale - MIN_SCALE))) / 2,
       );
       this.#updateFontSizeRef();
+      this.#updateControls();
       this.mapPois.render(this.zoom);
       this.#updateCanvas();
       return;
