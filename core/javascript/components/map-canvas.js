@@ -14,6 +14,22 @@ const MAX_SCALE = 29;
 const MIN_SCALE = 1;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
+
+/**
+ * Detects iOS and iPadOS devices.
+ * iPadOS can report itself as macOS, so touch capability is part of the check.
+ * @returns {boolean}
+ */
+const isAppleMobileDevice = () => {
+  const userAgent = window.navigator.userAgent;
+  const platform = window.navigator.platform;
+  const hasTouchPoints = window.navigator.maxTouchPoints > 1;
+
+  return (
+    /iPad|iPhone|iPod/.test(userAgent) ||
+    (platform === "MacIntel" && hasTouchPoints)
+  );
+};
 /**
  * Default values for the map canvas.
  * @type {Object}
@@ -168,8 +184,19 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #updateControls = () => {
+    if (!this.controls?.zoomInButton || !this.controls?.zoomOutButton) return;
+
     this.controls.zoomOutButton.disabled = this.scale === MIN_SCALE;
     this.controls.zoomInButton.disabled = this.scale === MAX_SCALE;
+  };
+
+  /**
+   * Hides controls on iOS and iPadOS devices.
+   * @private
+   */
+  #hideControlsOnAppleMobile = () => {
+    if (!this.controls || !isAppleMobileDevice()) return;
+    this.controls.style.setProperty("display", "none");
   };
 
   /**
@@ -611,6 +638,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas = this.root.querySelector(".canvas");
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
+    this.#hideControlsOnAppleMobile();
 
     await Promise.all([this.#loadMap(), this.#loadPois()]);
     this.#drawPois();
