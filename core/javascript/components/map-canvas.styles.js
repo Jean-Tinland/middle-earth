@@ -57,7 +57,7 @@ const styles = /* css */ `
 .canvas::before {
   background-image: url("./assets/images/paper-background.jpg");
   background-size: cover;
-  opacity: 50%;
+  opacity: 30%;
   mix-blend-mode: multiply;
 }
 
