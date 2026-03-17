@@ -181,8 +181,8 @@
       "kind": "mountain",
       "name": "Mountains of Shadow",
       "position": [67.85, 77.83],
-      "size": 2,
-      "zoom": 2
+      "size": 1,
+      "zoom": 3
     },
     {
       "kind": "mountain",
