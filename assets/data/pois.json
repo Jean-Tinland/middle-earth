@@ -125,7 +125,8 @@
       "name": "Mordor",
       "position": [73.45, 68.18],
       "zoom": 0,
-      "size": 3
+      "size": 3,
+      "shadow": true
     },
     {
       "kind": "region",
@@ -180,8 +181,8 @@
       "kind": "mountain",
       "name": "Mountains of Shadow",
       "position": [67.85, 77.83],
-      "size": 1,
-      "zoom": 3
+      "size": 2,
+      "zoom": 2
     },
     {
       "kind": "mountain",
@@ -313,6 +314,13 @@
       "kind": "region",
       "name": "Dagorlad",
       "position": [61.72, 54.53],
+      "zoom": 2,
+      "size": 1
+    },
+    {
+      "kind": "region",
+      "name": "Udûn",
+      "position": [60.53, 58.08],
       "zoom": 2,
       "size": 1
     },
@@ -1028,7 +1036,8 @@
       "name": "Nurn",
       "position": [66.41, 72.68],
       "size": 3,
-      "zoom": 3
+      "zoom": 3,
+      "shadow": true
     },
     {
       "kind": "common-place",
@@ -1312,8 +1321,15 @@
     },
     {
       "kind": "common-place",
-      "name": "The Garrock",
+      "name": "Orodruin",
       "position": [63.32, 61.26],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Cirith Ungol",
+      "position": [59.98, 63.91],
       "size": 1,
       "zoom": 4
     },
@@ -1412,6 +1428,27 @@
       "kind": "common-place",
       "name": "Mount Gram",
       "position": [38.84, 12.9],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Erebor",
+      "position": [59.42, 15.55],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Barad-dûr",
+      "position": [65.87, 62.04],
+      "size": 1,
+      "zoom": 4
+    },
+    {
+      "kind": "common-place",
+      "name": "Isenmouthe",
+      "position": [61.68, 59.57],
       "size": 1,
       "zoom": 4
     }
