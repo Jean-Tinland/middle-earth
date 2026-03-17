@@ -22,7 +22,9 @@ Feel free to open an issue or contribute if you'd like anything fixed or added.
 
 ## Development
 
-This project includes [serve](https://www.npmjs.com/package/serve) and [live-server](https://www.npmjs.com/package/live-server) as dev dependencies to serve the map locally.
+This project includes [live-server](https://www.npmjs.com/package/live-server) as dev dependencies to serve the map locally and [sharp](https://sharp.pixelplumbing.com/) for image processing.
+
+**Otherwise, it is a standalone app without any dependency at runtime.**
 
 ### Setup
 
@@ -34,12 +36,11 @@ bun install
 
 # or with npm
 npm install
-
 ```
 
 ### Running the Server Locally
 
-You can run the development server using either `serve` or `live-server`:
+You can run the development server using `live-server`:
 
 ```shell
 # with bun
