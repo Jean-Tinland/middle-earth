@@ -50,6 +50,10 @@
             "minimum": 1,
             "maximum": 3,
             "description": "The size of the point of interest"
+          },
+          "shadow": {
+            "type": "boolean",
+            "description": "Whether the point of interest should have a shadow (only for text labels)"
           }
         }
       }
