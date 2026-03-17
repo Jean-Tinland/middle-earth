@@ -3,9 +3,9 @@ import styles from "./map-pois.styles.js";
 const DEFAULT_BASE_FONT_SIZE = 16;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
-  region: Object.freeze({ 1: 0.45, 2: 0.7, 3: 0.85 }),
-  forest: Object.freeze({ 1: 0.3, 2: 0.45, 3: 0.55 }),
-  mountain: Object.freeze({ 1: 0.3, 2: 0.45, 3: 0.55 }),
+  region: Object.freeze({ 1: 0.55, 2: 0.7, 3: 0.85 }),
+  forest: Object.freeze({ 1: 0.35, 2: 0.45, 3: 0.55 }),
+  mountain: Object.freeze({ 1: 0.45, 2: 0.45, 3: 0.55 }),
   "common-place": Object.freeze({ 1: 0.55, 2: 0.65, 3: 0.75 }),
   sea: Object.freeze({ 1: 0.55, 2: 0.5, 3: 0.6 }),
   city: Object.freeze({ 1: 0.45, 2: 0.55, 3: 0.65 }),
