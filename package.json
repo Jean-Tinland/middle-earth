@@ -1,0 +1,10 @@
+{
+  "name": "middle-earth",
+  "private": true,
+  "scripts": {
+    "generate-tiles": "bun scripts/generate-tiles.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}
