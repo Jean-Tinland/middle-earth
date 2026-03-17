@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -46,13 +46,25 @@
 
     <link rel="canonical" href="https://github.com/Jean-Tinland/middle-earth" />
     <link rel="icon" type="image/svg+xml" href="./assets/images/favicon.svg" />
-    <link rel="stylesheet" href="./core/styles/global.css" />
+    <link rel="stylesheet" href="./core/styles/variables.css" />
+    <link rel="stylesheet" href="./core/styles/reset.css" />
+    <link rel="stylesheet" href="./core/styles/fonts.css" />
+    <link rel="stylesheet" href="./core/styles/base.css" />
   </head>
   <body>
     <script
       type="module"
       src="./core/javascript/components/map-canvas.js"
     ></script>
-    <map-canvas></map-canvas>
+    <script>
+      window.addEventListener(
+        "load",
+        async () => {
+          await customElements.whenDefined("map-canvas");
+          document.body.appendChild(document.createElement("map-canvas"));
+        },
+        { once: true },
+      );
+    </script>
   </body>
 </html>
