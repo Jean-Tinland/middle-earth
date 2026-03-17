@@ -26,8 +26,12 @@ const BASE_MAP_HEIGHT = 1300;
 const TILE_PRELOAD_MARGIN = 256;
 /** Minimum font scale applied on narrow portrait viewports. */
 const PORTRAIT_MIN_FONT_SCALE = 0.65;
+/** Effective font scale cap so size stays constant once scale reaches 9+. */
+const FONT_SCALE_LOCK_THRESHOLD = 8;
 /** Duration of animated zoom transitions in milliseconds. */
 const ZOOM_TRANSITION_MS = 320;
+/** Delay before swapping tile layers after wheel zoom input settles. */
+const WHEEL_TILE_SWAP_DELAY_MS = 120;
 
 /**
  * Detects iOS and iPadOS devices.
@@ -85,6 +89,7 @@ export default class MapCanvas extends HTMLElement {
     this.dragRafId = null;
     this.resizeRafId = null;
     this.transitionTimeoutId = null;
+    this.tileSwapTimeoutId = null;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.isDragging = false;
@@ -95,6 +100,8 @@ export default class MapCanvas extends HTMLElement {
     this.canvasNaturalHeight = 0;
     this.tileLayers = new Map();
     this.activeTileZoom = DEFAULTS.ZOOM;
+    this.previousTileZoom = null;
+    this.pendingTileZoom = DEFAULTS.ZOOM;
     this.tileVisibilityRafId = null;
 
     this.root = this.attachShadow({ mode: "closed" });
@@ -112,12 +119,15 @@ export default class MapCanvas extends HTMLElement {
   #reset = () => {
     clearTimeout(this.transitionTimeoutId);
     this.transitionTimeoutId = null;
+    clearTimeout(this.tileSwapTimeoutId);
+    this.tileSwapTimeoutId = null;
     this.canvas.style.removeProperty("transition");
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+    this.previousTileZoom = null;
     this.#updateFontSizeRef();
     this.#renderTiles(this.zoom);
     this.#renderPois();
@@ -186,6 +196,30 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Schedules a tile layer swap once zoom interaction settles.
+   * @param {number} zoom
+   * @param {number} delayMs
+   * @private
+   */
+  #scheduleTileLayerSwap = (zoom, delayMs = 0) => {
+    const boundedZoom = Math.max(DEFAULTS.ZOOM, Math.min(MAX_TILE_ZOOM, zoom));
+    this.pendingTileZoom = boundedZoom;
+
+    clearTimeout(this.tileSwapTimeoutId);
+    this.tileSwapTimeoutId = null;
+
+    if (delayMs <= 0) {
+      this.#renderTiles(this.pendingTileZoom);
+      return;
+    }
+
+    this.tileSwapTimeoutId = setTimeout(() => {
+      this.#renderTiles(this.pendingTileZoom);
+      this.tileSwapTimeoutId = null;
+    }, delayMs);
+  };
+
+  /**
    * Zooms in the canvas.
    */
   zoomIn = (e) => {
@@ -205,11 +239,14 @@ export default class MapCanvas extends HTMLElement {
     this.translateY -= (focalPoint.y - window.innerHeight / 2) / this.scale;
 
     this.#updateFontSizeRef();
-    this.#renderTiles(this.zoom);
     this.#renderPois();
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
+
+    const tileSwapDelay =
+      e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
+    this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
 
     if (e.type !== "wheel") {
       this.#scheduleTransitionCleanup();
@@ -234,7 +271,6 @@ export default class MapCanvas extends HTMLElement {
     this.translateX += (focalPoint.x - window.innerWidth / 2) / this.scale;
     this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
     this.#updateFontSizeRef();
-    this.#renderTiles(this.zoom);
     this.#renderPois();
     if (this.scale === MIN_SCALE) {
       return this.#reset();
@@ -242,6 +278,10 @@ export default class MapCanvas extends HTMLElement {
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
+
+    const tileSwapDelay =
+      e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
+    this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
 
     if (e.type !== "wheel") {
       this.#scheduleTransitionCleanup();
@@ -300,9 +340,11 @@ export default class MapCanvas extends HTMLElement {
   #updateFontSizeRef = () => {
     // The font size reference is inversely proportional to the scale.
     const divider = this.zoom === 0 ? 1.5 : 2;
+    const effectiveScale = Math.min(this.scale, FONT_SCALE_LOCK_THRESHOLD);
     const portraitFontScalar = this.#computePortraitFontScalar();
     this.fontSizeRef =
-      (DEFAULTS.FONT_SIZE_REF / (this.scale / divider)) * portraitFontScalar;
+      (DEFAULTS.FONT_SIZE_REF / (effectiveScale / divider)) *
+      portraitFontScalar;
     this.canvas.style.setProperty(
       "--font-size-ref",
       `${this.fontSizeRef.toFixed(2)}px`,
@@ -469,6 +511,8 @@ export default class MapCanvas extends HTMLElement {
 
     this.previousTouch = undefined;
 
+    let didCompletePinch = false;
+
     if (this.isPinching) {
       this.isPinching = false;
       this.pinchStartDistance = 0;
@@ -476,6 +520,7 @@ export default class MapCanvas extends HTMLElement {
       this.zoom = Math.min(Math.round(this.scale - SCALE_STEP), MAX_TILE_ZOOM);
       this.#updateFontSizeRef();
       this.#updateControls();
+      didCompletePinch = true;
     }
 
     if (this.scale === MIN_SCALE) {
@@ -484,6 +529,11 @@ export default class MapCanvas extends HTMLElement {
 
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
+
+    if (didCompletePinch) {
+      this.#scheduleTileLayerSwap(this.zoom, 0);
+      this.#renderPois();
+    }
   };
 
   #checkAndFixBoundaries = () => {
@@ -524,7 +574,6 @@ export default class MapCanvas extends HTMLElement {
       );
       this.#updateFontSizeRef();
       this.#updateControls();
-      this.#renderTiles(this.zoom);
       this.#renderPois();
       this.#updateCanvas();
       return;
@@ -566,7 +615,7 @@ export default class MapCanvas extends HTMLElement {
   /**
    * Builds a tile layer for one zoom level.
    * @param {number} zoom
-   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, loaded: boolean}> }}
+   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }}
    * @private
    */
   #buildTileLayer = (zoom) => {
@@ -619,9 +668,34 @@ export default class MapCanvas extends HTMLElement {
         image.decoding = "async";
         image.style.cssText =
           "display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;";
+
+        const tile = { slot, image, src, requested: false, ready: false };
+
+        const markTileReady = () => {
+          if (tile.ready) return;
+          tile.ready = true;
+          this.#scheduleTileVisibilityUpdate();
+        };
+
+        image.addEventListener("load", () => {
+          if (typeof image.decode !== "function") {
+            markTileReady();
+            return;
+          }
+
+          image
+            .decode()
+            .catch(() => {})
+            .finally(markTileReady);
+        });
+        image.addEventListener("error", () => {
+          // Keep layer handoff moving if a tile fails to load.
+          markTileReady();
+        });
+
         slot.appendChild(image);
         layer.appendChild(slot);
-        tiles.push({ slot, image, src, loaded: false });
+        tiles.push(tile);
       }
     }
 
@@ -637,12 +711,13 @@ export default class MapCanvas extends HTMLElement {
       element.remove();
     }
     this.tileLayers.clear();
+    this.previousTileZoom = null;
   };
 
   /**
    * Gets one tile layer from cache or creates it on first use.
    * @param {number} zoom
-   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, loaded: boolean}> }}
+   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }}
    * @private
    */
   #getTileLayer = (zoom) => {
@@ -662,15 +737,85 @@ export default class MapCanvas extends HTMLElement {
    */
   #renderTiles = (zoom) => {
     const boundedZoom = Math.max(DEFAULTS.ZOOM, Math.min(MAX_TILE_ZOOM, zoom));
+    const previousZoom = this.activeTileZoom;
     const activeLayer = this.#getTileLayer(boundedZoom);
 
-    for (const [layerZoom, layer] of this.tileLayers.entries()) {
-      layer.element.hidden = layerZoom !== boundedZoom;
+    this.activeTileZoom = boundedZoom;
+    this.previousTileZoom = previousZoom === boundedZoom ? null : previousZoom;
+
+    const visibleZooms = new Set([this.activeTileZoom]);
+    if (this.previousTileZoom !== null) {
+      visibleZooms.add(this.previousTileZoom);
+      const previousLayer = this.#getTileLayer(this.previousTileZoom);
+      previousLayer.element.hidden = false;
     }
 
-    this.activeTileZoom = boundedZoom;
+    for (const [layerZoom, layer] of this.tileLayers.entries()) {
+      layer.element.hidden = !visibleZooms.has(layerZoom);
+      layer.element.style.setProperty("z-index", "-2");
+    }
+
     activeLayer.element.hidden = false;
+
+    if (this.previousTileZoom !== null) {
+      const previousLayer = this.#getTileLayer(this.previousTileZoom);
+      previousLayer.element.style.setProperty("z-index", "-1");
+      activeLayer.element.style.setProperty("z-index", "0");
+    } else {
+      activeLayer.element.style.setProperty("z-index", "0");
+    }
+
     this.#scheduleTileVisibilityUpdate();
+  };
+
+  /**
+   * Updates one layer's viewport visibility and starts nearby tile loading.
+   * @param {{ tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }} layer
+   * @param {boolean} revealOnlyReadyTiles
+   * @returns {boolean}
+   * @private
+   */
+  #updateLayerVisibility = (layer, revealOnlyReadyTiles = false) => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const preloadLeft = -TILE_PRELOAD_MARGIN;
+    const preloadTop = -TILE_PRELOAD_MARGIN;
+    const preloadRight = viewportWidth + TILE_PRELOAD_MARGIN;
+    const preloadBottom = viewportHeight + TILE_PRELOAD_MARGIN;
+    let allVisibleTilesReady = true;
+
+    for (const tile of layer.tiles) {
+      const rect = tile.slot.getBoundingClientRect();
+      const isVisible =
+        rect.right > 0 &&
+        rect.bottom > 0 &&
+        rect.left < viewportWidth &&
+        rect.top < viewportHeight;
+      const isNearViewport =
+        rect.right > preloadLeft &&
+        rect.bottom > preloadTop &&
+        rect.left < preloadRight &&
+        rect.top < preloadBottom;
+
+      if (isNearViewport && !tile.requested) {
+        tile.image.src = tile.src;
+        tile.requested = true;
+      }
+
+      if (isVisible && !tile.ready) {
+        allVisibleTilesReady = false;
+      }
+
+      const shouldShowTile = revealOnlyReadyTiles
+        ? isVisible && tile.ready
+        : isVisible;
+      tile.slot.style.setProperty(
+        "visibility",
+        shouldShowTile ? "visible" : "hidden",
+      );
+    }
+
+    return allVisibleTilesReady;
   };
 
   /**
@@ -695,36 +840,28 @@ export default class MapCanvas extends HTMLElement {
     const activeLayer = this.tileLayers.get(this.activeTileZoom);
     if (!activeLayer) return;
 
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const preloadLeft = -TILE_PRELOAD_MARGIN;
-    const preloadTop = -TILE_PRELOAD_MARGIN;
-    const preloadRight = viewportWidth + TILE_PRELOAD_MARGIN;
-    const preloadBottom = viewportHeight + TILE_PRELOAD_MARGIN;
+    const allVisibleTilesReady = this.#updateLayerVisibility(activeLayer, true);
 
-    for (const tile of activeLayer.tiles) {
-      const rect = tile.slot.getBoundingClientRect();
-      const isVisible =
-        rect.right > 0 &&
-        rect.bottom > 0 &&
-        rect.left < viewportWidth &&
-        rect.top < viewportHeight;
-      const isNearViewport =
-        rect.right > preloadLeft &&
-        rect.bottom > preloadTop &&
-        rect.left < preloadRight &&
-        rect.top < preloadBottom;
+    if (this.previousTileZoom === null) return;
 
-      if (isNearViewport && !tile.loaded) {
-        tile.image.src = tile.src;
-        tile.loaded = true;
-      }
-
-      tile.slot.style.setProperty(
-        "visibility",
-        isVisible ? "visible" : "hidden",
-      );
+    const previousLayer = this.tileLayers.get(this.previousTileZoom);
+    if (!previousLayer) {
+      this.previousTileZoom = null;
+      activeLayer.element.style.setProperty("z-index", "0");
+      return;
     }
+
+    previousLayer.element.hidden = false;
+    previousLayer.element.style.setProperty("z-index", "-1");
+    activeLayer.element.style.setProperty("z-index", "0");
+    this.#updateLayerVisibility(previousLayer, false);
+
+    if (!allVisibleTilesReady) return;
+
+    previousLayer.element.hidden = true;
+    previousLayer.element.style.setProperty("z-index", "-2");
+    activeLayer.element.style.setProperty("z-index", "0");
+    this.previousTileZoom = null;
   };
 
   /**
@@ -879,6 +1016,7 @@ export default class MapCanvas extends HTMLElement {
       cancelAnimationFrame(this.dragRafId);
     }
     clearTimeout(this.transitionTimeoutId);
+    clearTimeout(this.tileSwapTimeoutId);
     if (this.resizeRafId !== null) {
       cancelAnimationFrame(this.resizeRafId);
     }
