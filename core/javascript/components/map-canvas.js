@@ -32,6 +32,8 @@ const FONT_SCALE_LOCK_THRESHOLD = 8;
 const ZOOM_TRANSITION_MS = 320;
 /** Delay before swapping tile layers after wheel zoom input settles. */
 const WHEEL_TILE_SWAP_DELAY_MS = 120;
+/** Small threshold used when comparing floating-point translate values. */
+const TRANSLATE_EPSILON = 0.01;
 
 /**
  * Detects iOS and iPadOS devices.
@@ -272,9 +274,25 @@ export default class MapCanvas extends HTMLElement {
     this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
     this.#updateFontSizeRef();
     this.#renderPois();
+
     if (this.scale === MIN_SCALE) {
-      return this.#reset();
+      this.translateX = DEFAULTS.TRANSLATE_X;
+      this.translateY = DEFAULTS.TRANSLATE_Y;
+      this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+      this.#updateControls();
+      this.#updateCanvas();
+
+      const tileSwapDelay =
+        e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
+      this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
+
+      if (e.type !== "wheel") {
+        this.#scheduleTransitionCleanup();
+      }
+
+      return;
     }
+
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
@@ -524,11 +542,45 @@ export default class MapCanvas extends HTMLElement {
     }
 
     if (this.scale === MIN_SCALE) {
-      return this.#reset();
+      const didSnapToDefault =
+        Math.abs(this.translateX - DEFAULTS.TRANSLATE_X) > TRANSLATE_EPSILON ||
+        Math.abs(this.translateY - DEFAULTS.TRANSLATE_Y) > TRANSLATE_EPSILON;
+
+      this.translateX = DEFAULTS.TRANSLATE_X;
+      this.translateY = DEFAULTS.TRANSLATE_Y;
+      this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+      this.#updateControls();
+
+      if (didCompletePinch) {
+        this.#scheduleTileLayerSwap(this.zoom, 0);
+        this.#renderPois();
+      }
+
+      if (didSnapToDefault) {
+        this.#prepareAnimatedZoom();
+        this.#updateCanvas();
+        this.#scheduleTransitionCleanup();
+        return;
+      }
+
+      this.#updateCanvas();
+      return;
     }
 
+    const previousTranslateX = this.translateX;
+    const previousTranslateY = this.translateY;
     this.#checkAndFixBoundaries();
-    this.#updateCanvas();
+    const didSnapToBoundary =
+      Math.abs(this.translateX - previousTranslateX) > TRANSLATE_EPSILON ||
+      Math.abs(this.translateY - previousTranslateY) > TRANSLATE_EPSILON;
+
+    if (didSnapToBoundary) {
+      this.#prepareAnimatedZoom();
+      this.#updateCanvas();
+      this.#scheduleTransitionCleanup();
+    } else {
+      this.#updateCanvas();
+    }
 
     if (didCompletePinch) {
       this.#scheduleTileLayerSwap(this.zoom, 0);
