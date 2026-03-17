@@ -22,28 +22,36 @@ Feel free to open an issue or contribute if you'd like anything fixed or added.
 
 ## Development
 
-In order to work with this project, you will need to serve the `index.html` with a http server like [serve](https://www.npmjs.com/package/serve) or [live-server](https://www.npmjs.com/package/live-server).
+This project includes [serve](https://www.npmjs.com/package/serve) and [live-server](https://www.npmjs.com/package/live-server) as dev dependencies to serve the map locally.
 
-You can globally install these packages.
+### Setup
 
-### Installation
+First, install the project dependencies:
 
 ```shell
-# serve
-npm install -g serve
-
-# or live-server
-npm install -g live-server
+npm install
 ```
 
-### Usage
+### Running the Server Locally
 
-In the cloned repository, run the following commands:
+You can run the development server using either `serve` or `live-server`:
 
 ```shell
 # with serve
-serve .
+npx serve .
 
 # or with live-server
-live-server .
+npx live-server .
 ```
+
+The server will start and you can access the map by opening the URL shown in your terminal : `http://localhost:3000`.
+
+### Generating Map Tiles
+
+To generate map tiles from the source images, run:
+
+```shell
+npm run generate-tiles
+```
+
+This script uses [sharp](https://sharp.pixelplumbing.com/) to process map images at different zoom levels, split them into tiles of 512x512 pixels, and apply a paper texture overlay.
