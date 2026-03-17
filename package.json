@@ -3,12 +3,10 @@
   "private": true,
   "scripts": {
     "dev": "live-server --port=3000 --open=./index.html",
-    "start": "serve . --port 3000",
     "generate-tiles": "bun scripts/generate-tiles.js"
   },
   "devDependencies": {
     "live-server": "^1.2.2",
-    "serve": "^14.2.3",
     "sharp": "^0.34.5"
   }
 }
