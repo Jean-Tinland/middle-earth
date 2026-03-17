@@ -27,10 +27,8 @@ const styles = /* css */ `
   height: auto;
   max-height: 100vh;
   display: flex;
-  background-color: var(--water);
   cursor: grab;
   touch-action: none;
-  contain: layout style;
   transform-origin: center center;
 }
 

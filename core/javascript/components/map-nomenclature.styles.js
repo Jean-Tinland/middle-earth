@@ -136,7 +136,6 @@ const styles = /* css */ `
     content: "";
     display: block;
     background-color: var(--primary);
-    box-shadow: 0 0 0 1.5px var(--paper) inset;
   }
 
   .city-dot--sm::before {
@@ -173,11 +172,6 @@ const styles = /* css */ `
     font-family: var(--title-font);
     text-transform: uppercase;
     color: var(--primary);
-    text-shadow:
-      0.5px 0.5px 0 var(--paper),
-      0.5px -0.5px 0 var(--paper),
-      -0.5px 0.5px 0 var(--paper),
-      -0.5px -0.5px 0 var(--paper);
   }
 
   .text-sample--forest {
@@ -187,22 +181,12 @@ const styles = /* css */ `
     background-color: #5d6328;
     border-radius: 2px;
     padding: 1px 3px;
-    text-shadow:
-      0.5px 0.5px 0 #1a1a00,
-      0.5px -0.5px 0 #1a1a00,
-      -0.5px 0.5px 0 #1a1a00,
-      -0.5px -0.5px 0 #1a1a00;
   }
 
   .text-sample--mountain {
     font-family: var(--title-font);
     text-transform: uppercase;
     color: var(--black);
-    text-shadow:
-      0.5px 0.5px 0 var(--paper),
-      0.5px -0.5px 0 var(--paper),
-      -0.5px 0.5px 0 var(--paper),
-      -0.5px -0.5px 0 var(--paper);
   }
 
   .text-sample--sea {

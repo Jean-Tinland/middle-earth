@@ -9,11 +9,25 @@ import styles from "./map-canvas.styles.js";
 /** The step for scaling the map. */
 const SCALE_STEP = 1;
 /** The maximum scale of the map. */
-const MAX_SCALE = 29;
+const MAX_SCALE = 11;
 /** The minimum scale of the map. */
 const MIN_SCALE = 1;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
+/** Tile size in source map pixels. */
+const TILE_SIZE = 512;
+/** Highest available tile zoom folder. */
+const MAX_TILE_ZOOM = 7;
+/** Base map width used for layout coordinates. */
+const BASE_MAP_WIDTH = 1800;
+/** Base map height used for layout coordinates. */
+const BASE_MAP_HEIGHT = 1300;
+/** Off-screen margin used to preload nearby tiles. */
+const TILE_PRELOAD_MARGIN = 256;
+/** Minimum font scale applied on narrow portrait viewports. */
+const PORTRAIT_MIN_FONT_SCALE = 0.65;
+/** Duration of animated zoom transitions in milliseconds. */
+const ZOOM_TRANSITION_MS = 320;
 
 /**
  * Detects iOS and iPadOS devices.
@@ -42,7 +56,7 @@ const isAppleMobileDevice = () => {
  * @readonly
  */
 const DEFAULTS = Object.freeze({
-  FONT_SIZE_REF: 16,
+  FONT_SIZE_REF: 12,
   SCALE: 1,
   ZOOM: 0,
   TRANSLATE_X: 0,
@@ -70,16 +84,18 @@ export default class MapCanvas extends HTMLElement {
     this.wheelDeltaAccumulator = 0;
     this.dragRafId = null;
     this.resizeRafId = null;
+    this.transitionTimeoutId = null;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
-    this.willChangeTimeoutId = null;
     this.isDragging = false;
     this.isPinching = false;
-    this.isInteractionState = false;
     this.pinchStartDistance = 0;
     this.pinchStartScale = 1;
     this.canvasNaturalWidth = 0;
     this.canvasNaturalHeight = 0;
+    this.tileLayers = new Map();
+    this.activeTileZoom = DEFAULTS.ZOOM;
+    this.tileVisibilityRafId = null;
 
     this.root = this.attachShadow({ mode: "closed" });
 
@@ -94,13 +110,28 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #reset = () => {
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
     this.zoom = DEFAULTS.ZOOM;
+    this.scale = DEFAULTS.SCALE;
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
     this.#updateFontSizeRef();
+    this.#renderTiles(this.zoom);
+    this.#renderPois();
     this.#updateControls();
-    this.#enterSettledState();
+    this.#updateCanvas();
+  };
+
+  /**
+   * Renders POIs for the current zoom and font reference.
+   * @private
+   */
+  #renderPois = () => {
+    if (!this.mapPois) return;
+    this.mapPois.render(this.zoom, this.fontSizeRef);
   };
 
   /**
@@ -131,14 +162,27 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #prepareAnimatedZoom = () => {
-    clearTimeout(this.willChangeTimeoutId);
+    clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
-    this.#enterInteractionState();
     this.canvas.getBoundingClientRect();
     this.canvas.style.setProperty(
       "transition",
-      "transform 320ms var(--transition-easing)",
+      `transform ${ZOOM_TRANSITION_MS}ms var(--transition-easing)`,
     );
+  };
+
+  /**
+   * Clears transform transition after animated zoom completes.
+   * @private
+   */
+  #scheduleTransitionCleanup = () => {
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = setTimeout(() => {
+      this.canvas.style.removeProperty("transition");
+      // Recompute tile visibility after the animated transform settles.
+      this.#scheduleTileVisibilityUpdate();
+      this.transitionTimeoutId = null;
+    }, ZOOM_TRANSITION_MS);
   };
 
   /**
@@ -154,21 +198,21 @@ export default class MapCanvas extends HTMLElement {
 
     const focalPoint = this.#getZoomFocalPoint(e);
 
-    this.zoom += 1;
-    const scaleStep = SCALE_STEP * this.zoom;
-    this.scale = Math.min(this.scale + scaleStep, MAX_SCALE);
+    this.scale = Math.min(this.scale + 1, MAX_SCALE);
+    this.zoom = Math.min(Math.round(this.scale - SCALE_STEP), MAX_TILE_ZOOM);
 
     this.translateX -= (focalPoint.x - window.innerWidth / 2) / this.scale;
     this.translateY -= (focalPoint.y - window.innerHeight / 2) / this.scale;
 
-    this.mapPois.render(this.zoom);
+    this.#updateFontSizeRef();
+    this.#renderTiles(this.zoom);
+    this.#renderPois();
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
-    this.#updateFontSizeRef();
     this.#updateControls();
 
     if (e.type !== "wheel") {
-      this.#scheduleWillChangeRemoval();
+      this.#scheduleTransitionCleanup();
     }
   };
 
@@ -185,13 +229,13 @@ export default class MapCanvas extends HTMLElement {
 
     const focalPoint = this.#getZoomFocalPoint(e);
 
-    this.zoom -= 1;
-    const scaleStep = SCALE_STEP * (this.zoom + 1);
-    this.scale = Math.max(this.scale - scaleStep, MIN_SCALE);
+    this.scale = Math.max(this.scale - 1, MIN_SCALE);
+    this.zoom = Math.max(Math.round(this.scale - SCALE_STEP), DEFAULTS.ZOOM);
     this.translateX += (focalPoint.x - window.innerWidth / 2) / this.scale;
     this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
     this.#updateFontSizeRef();
-    this.mapPois.render(this.zoom);
+    this.#renderTiles(this.zoom);
+    this.#renderPois();
     if (this.scale === MIN_SCALE) {
       return this.#reset();
     }
@@ -200,7 +244,7 @@ export default class MapCanvas extends HTMLElement {
     this.#updateControls();
 
     if (e.type !== "wheel") {
-      this.#scheduleWillChangeRemoval();
+      this.#scheduleTransitionCleanup();
     }
   };
 
@@ -229,18 +273,24 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #updateCanvas = () => {
-    if (this.isInteractionState) {
-      this.canvas.style.setProperty(
-        "transform",
-        `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
-      );
-      return;
-    }
-
     this.canvas.style.setProperty(
       "transform",
-      `translate(${this.translateX * this.scale}px, ${this.translateY * this.scale}px)`,
+      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
     );
+    this.#scheduleTileVisibilityUpdate();
+  };
+
+  /**
+   * Returns a scale factor that reduces font sizes on portrait viewports.
+   * Landscape viewports (width ≥ height) return 1 — no change to desktop.
+   * Portrait viewports return a value proportional to their aspect ratio,
+   * clamped to PORTRAIT_MIN_FONT_SCALE so labels stay legible.
+   * @returns {number}
+   * @private
+   */
+  #computePortraitFontScalar = () => {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    return Math.max(PORTRAIT_MIN_FONT_SCALE, Math.min(1, aspectRatio));
   };
 
   /**
@@ -250,21 +300,13 @@ export default class MapCanvas extends HTMLElement {
   #updateFontSizeRef = () => {
     // The font size reference is inversely proportional to the scale.
     const divider = this.zoom === 0 ? 1.5 : 2;
-    this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / divider);
+    const portraitFontScalar = this.#computePortraitFontScalar();
+    this.fontSizeRef =
+      (DEFAULTS.FONT_SIZE_REF / (this.scale / divider)) * portraitFontScalar;
     this.canvas.style.setProperty(
       "--font-size-ref",
       `${this.fontSizeRef.toFixed(2)}px`,
     );
-  };
-
-  /**
-   * Defers the removal of will-change until after the CSS transition completes.
-   * Prevents Chrome from tearing down the compositing layer mid-transition.
-   * @private
-   */
-  #scheduleWillChangeRemoval = () => {
-    clearTimeout(this.willChangeTimeoutId);
-    this.willChangeTimeoutId = setTimeout(() => this.#enterSettledState(), 320);
   };
 
   /**
@@ -273,9 +315,21 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #measureNaturalDimensions = () => {
-    const { width, height } = this.canvas.getBoundingClientRect();
-    this.canvasNaturalWidth = width;
-    this.canvasNaturalHeight = height;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const fitScale = Math.min(
+      viewportWidth / BASE_MAP_WIDTH,
+      viewportHeight / BASE_MAP_HEIGHT,
+    );
+
+    this.canvasNaturalWidth = Math.max(
+      1,
+      Math.floor(BASE_MAP_WIDTH * fitScale),
+    );
+    this.canvasNaturalHeight = Math.max(
+      1,
+      Math.floor(BASE_MAP_HEIGHT * fitScale),
+    );
   };
 
   /**
@@ -288,77 +342,37 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.style.setProperty("max-height", "none");
     this.canvas.style.setProperty("width", `${this.canvasNaturalWidth}px`);
     this.canvas.style.setProperty("height", `${this.canvasNaturalHeight}px`);
-  };
-
-  /**
-   * Prepares the canvas for a GPU-composited interaction (drag, pinch, wheel).
-   * Strips the physical-size overrides set by #enterSettledState, adds will-change,
-   * and restores the scale transform so GPU compositing works at natural dimensions.
-   * @private
-   */
-  #enterInteractionState = () => {
-    if (this.isInteractionState) return;
-
-    this.#setNaturalCanvasSize();
-    this.canvas.style.setProperty("will-change", "transform");
-    this.canvas.style.setProperty(
-      "--font-size-ref",
-      `${this.fontSizeRef.toFixed(2)}px`,
-    );
-    this.isInteractionState = true;
-    this.#updateCanvas();
-  };
-
-  /**
-   * Sets the canvas to its physically-zoomed size so iOS Safari rasterizes the
-   * inline SVG at full resolution instead of upscaling a composited texture.
-   * The CSS scale transform is replaced by an equivalent translate-only transform.
-   * @private
-   */
-  #enterSettledState = () => {
-    this.canvas.style.removeProperty("transition");
-    this.canvas.style.setProperty("max-width", "none");
-    this.canvas.style.setProperty("max-height", "none");
-    this.canvas.style.setProperty(
-      "width",
-      `${this.canvasNaturalWidth * this.scale}px`,
-    );
-    this.canvas.style.setProperty(
-      "height",
-      `${this.canvasNaturalHeight * this.scale}px`,
-    );
-    this.isInteractionState = false;
-    this.#updateCanvas();
-    // Without CSS scale(), --font-size-ref must be multiplied by scale so POIs
-    // render at the same physical size as they would in the interaction state.
-    this.canvas.style.setProperty(
-      "--font-size-ref",
-      `${(this.fontSizeRef * this.scale).toFixed(2)}px`,
-    );
-    this.canvas.style.removeProperty("will-change");
+    this.map.style.setProperty("width", `${this.canvasNaturalWidth}px`);
+    this.map.style.setProperty("height", `${this.canvasNaturalHeight}px`);
   };
 
   /**
    * Handles window resize events by re-measuring the canvas natural dimensions,
-   * fixing any boundary violations, and re-entering the settled state.
+   * fixing any boundary violations, and redrawing active layers.
    * @private
    */
   #handleResize = () => {
     if (this.resizeRafId !== null) return;
     this.resizeRafId = requestAnimationFrame(() => {
       this.resizeRafId = null;
-      this.canvas.style.removeProperty("width");
-      this.canvas.style.removeProperty("height");
-      this.canvas.style.removeProperty("max-width");
-      this.canvas.style.removeProperty("max-height");
-      this.canvas.style.removeProperty("transform");
+      const previousWidth = this.canvasNaturalWidth;
+      const previousHeight = this.canvasNaturalHeight;
       this.#measureNaturalDimensions();
+      const didNaturalSizeChange =
+        previousWidth !== this.canvasNaturalWidth ||
+        previousHeight !== this.canvasNaturalHeight;
+
+      if (didNaturalSizeChange) {
+        this.#resetTileLayers();
+      }
+
+      this.#setNaturalCanvasSize();
+      this.#renderTiles(this.zoom);
       if (this.scale === MIN_SCALE) {
         return this.#reset();
       }
-      this.#updateCanvas();
       this.#checkAndFixBoundaries();
-      this.#enterSettledState();
+      this.#updateCanvas();
     });
   };
 
@@ -376,15 +390,15 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the start of a touch event.
-   * Starts dragging immediately for single-touch gestures and switches to
-   * interaction state only when a pinch gesture is detected.
+   * Starts dragging immediately for single-touch gestures and prepares
+   * pinch tracking when two touches are detected.
    * @param {TouchEvent} e
    * @private
    */
   #touchStart = (e) => {
     e.preventDefault();
     this.isDragging = true;
-    clearTimeout(this.willChangeTimeoutId);
+    clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
 
     if (e.touches.length === 1) {
@@ -397,7 +411,6 @@ export default class MapCanvas extends HTMLElement {
 
     if (e.touches.length !== 2) return;
 
-    this.#enterInteractionState();
     this.isPinching = true;
     this.pinchStartDistance = this.#getPinchDistance(e.touches);
     this.pinchStartScale = this.scale;
@@ -427,11 +440,10 @@ export default class MapCanvas extends HTMLElement {
     e.preventDefault();
     e.stopPropagation();
     this.isDragging = true;
-    clearTimeout(this.willChangeTimeoutId);
+    clearTimeout(this.transitionTimeoutId);
     this.canvas.addEventListener("pointermove", this.#dragging);
     this.canvas.style.setProperty("cursor", "grabbing");
     this.canvas.style.setProperty("transition", "none");
-    this.#enterInteractionState();
   };
 
   /**
@@ -447,9 +459,6 @@ export default class MapCanvas extends HTMLElement {
     this.canvas.removeEventListener("pointermove", this.#dragging);
     this.canvas.style.removeProperty("cursor");
     this.canvas.style.removeProperty("transition");
-    if (this.isInteractionState) {
-      this.#scheduleWillChangeRemoval();
-    }
 
     if (this.dragRafId !== null) {
       cancelAnimationFrame(this.dragRafId);
@@ -463,7 +472,8 @@ export default class MapCanvas extends HTMLElement {
     if (this.isPinching) {
       this.isPinching = false;
       this.pinchStartDistance = 0;
-      this.scale = MIN_SCALE + (this.zoom * (this.zoom + 1)) / 2;
+      this.scale = Math.round(this.scale);
+      this.zoom = Math.min(Math.round(this.scale - SCALE_STEP), MAX_TILE_ZOOM);
       this.#updateFontSizeRef();
       this.#updateControls();
     }
@@ -508,12 +518,14 @@ export default class MapCanvas extends HTMLElement {
       const rawScale =
         (distance / this.pinchStartDistance) * this.pinchStartScale;
       this.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, rawScale));
-      this.zoom = Math.round(
-        (-1 + Math.sqrt(1 + 8 * (this.scale - MIN_SCALE))) / 2,
+      this.zoom = Math.max(
+        DEFAULTS.ZOOM,
+        Math.min(MAX_TILE_ZOOM, Math.round(this.scale - SCALE_STEP)),
       );
       this.#updateFontSizeRef();
       this.#updateControls();
-      this.mapPois.render(this.zoom);
+      this.#renderTiles(this.zoom);
+      this.#renderPois();
       this.#updateCanvas();
       return;
     }
@@ -552,14 +564,167 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Loads the SVG map and injects it inline so iOS Safari renders it as vector,
-   * producing sharp output at every zoom level.
+   * Builds a tile layer for one zoom level.
+   * @param {number} zoom
+   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, loaded: boolean}> }}
    * @private
    */
-  #loadMap = async () => {
-    const response = await fetch("./assets/images/map.svg");
-    const svgText = await response.text();
-    this.map.innerHTML = svgText;
+  #buildTileLayer = (zoom) => {
+    const sourceScale = zoom + 1;
+    const layoutScale = this.canvasNaturalWidth / BASE_MAP_WIDTH;
+    const snapStep = 1 / sourceScale;
+    const snapToZoomGrid = (value) => Math.round(value / snapStep) * snapStep;
+    const sourceWidth = BASE_MAP_WIDTH * sourceScale;
+    const sourceHeight = BASE_MAP_HEIGHT * sourceScale;
+    const cols = Math.ceil(sourceWidth / TILE_SIZE);
+    const rows = Math.ceil(sourceHeight / TILE_SIZE);
+
+    const layer = document.createElement("div");
+    layer.style.cssText =
+      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;";
+    layer.hidden = true;
+
+    const tiles = [];
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const sourceLeft = col * TILE_SIZE;
+        const sourceTop = row * TILE_SIZE;
+        const sourceRight = Math.min(sourceLeft + TILE_SIZE, sourceWidth);
+        const sourceBottom = Math.min(sourceTop + TILE_SIZE, sourceHeight);
+
+        const left = snapToZoomGrid((sourceLeft * layoutScale) / sourceScale);
+        const top = snapToZoomGrid((sourceTop * layoutScale) / sourceScale);
+        const right = snapToZoomGrid((sourceRight * layoutScale) / sourceScale);
+        const bottom = snapToZoomGrid(
+          (sourceBottom * layoutScale) / sourceScale,
+        );
+        const width = Math.max(0, right - left).toFixed(2);
+        const height = Math.max(0, bottom - top).toFixed(2);
+
+        const slot = document.createElement("div");
+        slot.style.cssText = [
+          "position:absolute",
+          `left:${left}px`,
+          `top:${top}px`,
+          `width:${width}px`,
+          `height:${height}px`,
+          "visibility:hidden",
+        ].join(";");
+
+        const image = document.createElement("img");
+        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg`;
+        image.alt = "";
+        image.loading = "lazy";
+        image.decoding = "async";
+        image.style.cssText =
+          "display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;";
+        slot.appendChild(image);
+        layer.appendChild(slot);
+        tiles.push({ slot, image, src, loaded: false });
+      }
+    }
+
+    return { element: layer, tiles };
+  };
+
+  /**
+   * Clears all cached tile layers so they can be rebuilt for a new base size.
+   * @private
+   */
+  #resetTileLayers = () => {
+    for (const { element } of this.tileLayers.values()) {
+      element.remove();
+    }
+    this.tileLayers.clear();
+  };
+
+  /**
+   * Gets one tile layer from cache or creates it on first use.
+   * @param {number} zoom
+   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, loaded: boolean}> }}
+   * @private
+   */
+  #getTileLayer = (zoom) => {
+    const existingLayer = this.tileLayers.get(zoom);
+    if (existingLayer) return existingLayer;
+
+    const newLayer = this.#buildTileLayer(zoom);
+    this.tileLayers.set(zoom, newLayer);
+    this.map.prepend(newLayer.element);
+    return newLayer;
+  };
+
+  /**
+   * Activates the tile layer for the current zoom level.
+   * @param {number} zoom
+   * @private
+   */
+  #renderTiles = (zoom) => {
+    const boundedZoom = Math.max(DEFAULTS.ZOOM, Math.min(MAX_TILE_ZOOM, zoom));
+    const activeLayer = this.#getTileLayer(boundedZoom);
+
+    for (const [layerZoom, layer] of this.tileLayers.entries()) {
+      layer.element.hidden = layerZoom !== boundedZoom;
+    }
+
+    this.activeTileZoom = boundedZoom;
+    activeLayer.element.hidden = false;
+    this.#scheduleTileVisibilityUpdate();
+  };
+
+  /**
+   * Schedules a single tile visibility update pass.
+   * @private
+   */
+  #scheduleTileVisibilityUpdate = () => {
+    if (this.tileVisibilityRafId !== null) return;
+
+    this.tileVisibilityRafId = requestAnimationFrame(() => {
+      this.tileVisibilityRafId = null;
+      this.#updateTileVisibility();
+    });
+  };
+
+  /**
+   * Loads near-viewport tiles lazily and hides out-of-viewport tiles.
+   * Hidden tiles keep their position and dimensions in the layer grid.
+   * @private
+   */
+  #updateTileVisibility = () => {
+    const activeLayer = this.tileLayers.get(this.activeTileZoom);
+    if (!activeLayer) return;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const preloadLeft = -TILE_PRELOAD_MARGIN;
+    const preloadTop = -TILE_PRELOAD_MARGIN;
+    const preloadRight = viewportWidth + TILE_PRELOAD_MARGIN;
+    const preloadBottom = viewportHeight + TILE_PRELOAD_MARGIN;
+
+    for (const tile of activeLayer.tiles) {
+      const rect = tile.slot.getBoundingClientRect();
+      const isVisible =
+        rect.right > 0 &&
+        rect.bottom > 0 &&
+        rect.left < viewportWidth &&
+        rect.top < viewportHeight;
+      const isNearViewport =
+        rect.right > preloadLeft &&
+        rect.bottom > preloadTop &&
+        rect.left < preloadRight &&
+        rect.top < preloadBottom;
+
+      if (isNearViewport && !tile.loaded) {
+        tile.image.src = tile.src;
+        tile.loaded = true;
+      }
+
+      tile.slot.style.setProperty(
+        "visibility",
+        isVisible ? "visible" : "hidden",
+      );
+    }
   };
 
   /**
@@ -620,8 +785,8 @@ export default class MapCanvas extends HTMLElement {
 
     if (this.wheelRafId !== null) return;
 
+    clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
-    this.#enterInteractionState();
 
     this.wheelRafId = requestAnimationFrame(() => {
       this.wheelRafId = null;
@@ -634,7 +799,6 @@ export default class MapCanvas extends HTMLElement {
         this.zoomIn(event);
       }
       this.canvas.style.removeProperty("transition");
-      this.#scheduleWillChangeRemoval();
     });
   };
 
@@ -657,20 +821,36 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Resolves once the document and blocking resources are fully loaded.
+   * @returns {Promise<void>}
+   * @private
+   */
+  #waitForPageLoad = async () => {
+    if (document.readyState === "complete") return;
+    await new Promise((resolve) => {
+      window.addEventListener("load", resolve, { once: true });
+    });
+  };
+
+  /**
    * Called when the element is connected to the document's DOM.
    */
   async connectedCallback() {
     this.canvas = this.root.querySelector(".canvas");
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
+    await this.#waitForPageLoad();
     this.#hideControlsOnAppleMobile();
 
-    await Promise.all([this.#loadMap(), this.#loadPois()]);
+    await this.#loadPois();
+    this.#measureNaturalDimensions();
+    this.#setNaturalCanvasSize();
+    this.#renderTiles(this.zoom);
     this.#drawPois();
     this.#onMapLoad();
     this.#updateFontSizeRef();
-    this.#measureNaturalDimensions();
-    this.#enterSettledState();
+    this.#renderPois();
+    this.#updateCanvas();
 
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
     this.canvas.addEventListener("mousedown", this.#dragStart);
@@ -698,9 +878,12 @@ export default class MapCanvas extends HTMLElement {
     if (this.dragRafId !== null) {
       cancelAnimationFrame(this.dragRafId);
     }
-    clearTimeout(this.willChangeTimeoutId);
+    clearTimeout(this.transitionTimeoutId);
     if (this.resizeRafId !== null) {
       cancelAnimationFrame(this.resizeRafId);
+    }
+    if (this.tileVisibilityRafId !== null) {
+      cancelAnimationFrame(this.tileVisibilityRafId);
     }
     window.removeEventListener("resize", this.#handleResize);
     window.removeEventListener("mouseout", this.#dragEnd);
