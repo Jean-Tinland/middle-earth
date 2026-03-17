@@ -26,10 +26,15 @@ This project includes [serve](https://www.npmjs.com/package/serve) and [live-ser
 
 ### Setup
 
-First, install the project dependencies:
+First, install the project dependencies with `bun` or `npm`:
 
 ```shell
+# with bun
+bun install
+
+# or with npm
 npm install
+
 ```
 
 ### Running the Server Locally
@@ -37,11 +42,11 @@ npm install
 You can run the development server using either `serve` or `live-server`:
 
 ```shell
-# with serve
-npx serve .
+# with bun
+bun dev
 
-# or with live-server
-npx live-server .
+# or with npm
+npm dev
 ```
 
 The server will start and you can access the map by opening the URL shown in your terminal : `http://localhost:3000`.
@@ -51,6 +56,10 @@ The server will start and you can access the map by opening the URL shown in you
 To generate map tiles from the source images, run:
 
 ```shell
+# with bun
+bun generate-tiles
+
+# or with npm
 npm run generate-tiles
 ```
 
