@@ -48,13 +48,13 @@ export const content = /* html */ `
           Favicon: <a href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" ref="nofollow noopener" href="https://icons8.com">Icons8</a>
         </li>
         <li>
-          Map texture overlay: <a href="https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture" target="_blank" rel="nofollow noopener">Image by rawpixel.com on Freepik</a>
+          Map texture overlay: <a href="https://www.figma.com/community/file/1480489265216655984" target="_blank" rel="nofollow noopener">Image by Joou Designs and Samuel Adekunle on Figma</a>
         </li>
         <li>
           Compass rose (modified): <a href="https://www.freepik.com/free-vector/hand-drawn-map-compass-background_1582142.htm#fromView=search&page=1&position=23&uuid=90506e90-3cbb-4891-bf73-4316a0f28b13&query=compass+rose" target="_blank" rel="nofollow noopener">Image by freepik</a>
         </li>
         <li>
-          Fonts: <a href="https://www.dafont.com/aniron.font" target="_blank" rel="nofollow noopener">Aniron</a> and <a href="https://fonts.google.com/specimen/EB+Garamond" rel="nofollow noopener">EB Garamond</a>
+          Fonts: <a href="https://www.onlinewebfonts.com/download/a44a5c9cb024637b366c79865a745c95" target="_blank" rel="nofollow noopener">Tolkien Regular</a> and <a href="https://fonts.google.com/specimen/IM+Fell+DW+Pica" target="_blank" rel="nofollow noopener">IM Fell DW Pica</a>
         </li>
       </ul>
     </div>

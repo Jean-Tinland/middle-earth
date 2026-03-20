@@ -3,7 +3,7 @@ import styles from "./map-pois.styles.js";
 const DEFAULT_BASE_FONT_SIZE = 16;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
-  region: Object.freeze({ 1: 0.55, 2: 0.7, 3: 0.85 }),
+  region: Object.freeze({ 1: 0.85, 2: 1.2, 3: 1.5 }),
   forest: Object.freeze({ 1: 0.35, 2: 0.45, 3: 0.55 }),
   mountain: Object.freeze({ 1: 0.45, 2: 0.45, 3: 0.55 }),
   "common-place": Object.freeze({ 1: 0.55, 2: 0.65, 3: 0.75 }),
@@ -84,9 +84,6 @@ export default class MapPois extends HTMLElement {
     const el = document.createElement("div");
     el.className = "poi";
     el.style.cssText = `top: ${y}%; left: ${x}%;`;
-    if (shadow) {
-      el.dataset.shadow = "";
-    }
     el.dataset.kind = kind;
     el.dataset.size = size;
     el.hidden = true;
@@ -145,31 +142,6 @@ export default class MapPois extends HTMLElement {
    */
   #roundToPixel = (value) => {
     return Math.max(1, Math.round(value));
-  };
-
-  /**
-   * Rounds a value to the closest quarter pixel.
-   * @param {number} value
-   * @returns {number}
-   * @private
-   */
-  #roundToQuarterPixel = (value) => {
-    const rounded = Math.round(value * 4) / 4;
-    return Math.max(0.25, rounded);
-  };
-
-  /**
-   * Returns a text-shadow offset that can fade to 0 for tiny labels.
-   * @param {number} baseFontSize
-   * @returns {number}
-   * @private
-   */
-  #getTextShadowOffset = (baseFontSize) => {
-    const rawOffset = baseFontSize * 0.012;
-
-    if (rawOffset < 0.2) return 0;
-
-    return Math.round(rawOffset * 10) / 10;
   };
 
   /**

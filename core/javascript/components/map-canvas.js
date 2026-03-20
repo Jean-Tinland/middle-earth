@@ -6,12 +6,10 @@ import MapPois from "./map-pois.js";
 import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
-/** The step for scaling the map. */
-const SCALE_STEP = 1;
-/** The maximum scale of the map. */
-const MAX_SCALE = 11;
-/** The minimum scale of the map. */
-const MIN_SCALE = 1;
+/** The number of discrete zoom steps available. */
+const NUM_ZOOM_STEPS = 10;
+/** The maximum CSS transform scale value at the final zoom step. */
+const MAX_CSS_SCALE = 14;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
@@ -24,6 +22,11 @@ const BASE_MAP_WIDTH = 1800;
 const BASE_MAP_HEIGHT = 1300;
 /** Off-screen margin used to preload nearby tiles. */
 const TILE_PRELOAD_MARGIN = 256;
+/**
+ * Source scale multiplier per tile zoom level.
+ * Zoom levels 0-5 are linear (zoom+1), but 6 and 7 use larger source images.
+ */
+const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
 /** Minimum font scale applied on narrow portrait viewports. */
 const PORTRAIT_MIN_FONT_SCALE = 0.65;
 /** Effective font scale cap so size stays constant once scale reaches 9+. */
@@ -34,6 +37,41 @@ const ZOOM_TRANSITION_MS = 320;
 const WHEEL_TILE_SWAP_DELAY_MS = 120;
 /** Small threshold used when comparing floating-point translate values. */
 const TRANSLATE_EPSILON = 0.01;
+
+/**
+ * Maps a discrete zoom level to a CSS transform scale value.
+ * Uses an exponential curve so each step increases scale more than the last.
+ * @param {number} zoomLevel - Integer from 0 to NUM_ZOOM_STEPS.
+ * @returns {number}
+ */
+const computeScaleForZoomLevel = (zoomLevel) => {
+  if (zoomLevel <= 0) return 1;
+  if (zoomLevel >= NUM_ZOOM_STEPS) return MAX_CSS_SCALE;
+  return Math.pow(MAX_CSS_SCALE, zoomLevel / NUM_ZOOM_STEPS);
+};
+
+/**
+ * Finds the nearest discrete zoom level for a given continuous scale.
+ * @param {number} scale
+ * @returns {number}
+ */
+const computeZoomLevelForScale = (scale) => {
+  if (scale <= 1) return 0;
+  if (scale >= MAX_CSS_SCALE) return NUM_ZOOM_STEPS;
+  const level = (NUM_ZOOM_STEPS * Math.log(scale)) / Math.log(MAX_CSS_SCALE);
+  return Math.max(0, Math.min(NUM_ZOOM_STEPS, Math.round(level)));
+};
+
+/**
+ * Derives the tile zoom layer from a continuous CSS scale value.
+ * @param {number} scale
+ * @returns {number}
+ */
+const computeTileZoom = (scale) => {
+  const level =
+    (NUM_ZOOM_STEPS * Math.log(Math.max(1, scale))) / Math.log(MAX_CSS_SCALE);
+  return Math.max(0, Math.min(MAX_TILE_ZOOM, Math.round(level)));
+};
 
 /**
  * Detects iOS and iPadOS devices.
@@ -65,6 +103,7 @@ const DEFAULTS = Object.freeze({
   FONT_SIZE_REF: 12,
   SCALE: 1,
   ZOOM: 0,
+  ZOOM_LEVEL: 0,
   TRANSLATE_X: 0,
   TRANSLATE_Y: 0,
   PREVIOUS_TOUCH: undefined,
@@ -78,6 +117,7 @@ export default class MapCanvas extends HTMLElement {
   constructor() {
     super();
 
+    this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / 1.7);
@@ -124,6 +164,7 @@ export default class MapCanvas extends HTMLElement {
     clearTimeout(this.tileSwapTimeoutId);
     this.tileSwapTimeoutId = null;
     this.canvas.style.removeProperty("transition");
+    this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
     this.translateX = DEFAULTS.TRANSLATE_X;
@@ -225,7 +266,7 @@ export default class MapCanvas extends HTMLElement {
    * Zooms in the canvas.
    */
   zoomIn = (e) => {
-    if (this.scale === MAX_SCALE) return;
+    if (this.zoomLevel >= NUM_ZOOM_STEPS) return;
     e.preventDefault();
 
     if (e.type !== "wheel") {
@@ -234,8 +275,9 @@ export default class MapCanvas extends HTMLElement {
 
     const focalPoint = this.#getZoomFocalPoint(e);
 
-    this.scale = Math.min(this.scale + 1, MAX_SCALE);
-    this.zoom = Math.min(Math.round(this.scale - SCALE_STEP), MAX_TILE_ZOOM);
+    this.zoomLevel = Math.min(this.zoomLevel + 1, NUM_ZOOM_STEPS);
+    this.scale = computeScaleForZoomLevel(this.zoomLevel);
+    this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
 
     this.translateX -= (focalPoint.x - window.innerWidth / 2) / this.scale;
     this.translateY -= (focalPoint.y - window.innerHeight / 2) / this.scale;
@@ -259,7 +301,7 @@ export default class MapCanvas extends HTMLElement {
    * Zooms out the canvas.
    */
   zoomOut = (e) => {
-    if (this.scale === MIN_SCALE) return;
+    if (this.zoomLevel <= 0) return;
     e.preventDefault();
 
     if (e.type !== "wheel") {
@@ -268,14 +310,15 @@ export default class MapCanvas extends HTMLElement {
 
     const focalPoint = this.#getZoomFocalPoint(e);
 
-    this.scale = Math.max(this.scale - 1, MIN_SCALE);
-    this.zoom = Math.max(Math.round(this.scale - SCALE_STEP), DEFAULTS.ZOOM);
+    this.zoomLevel = Math.max(this.zoomLevel - 1, 0);
+    this.scale = computeScaleForZoomLevel(this.zoomLevel);
+    this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
     this.translateX += (focalPoint.x - window.innerWidth / 2) / this.scale;
     this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
     this.#updateFontSizeRef();
     this.#renderPois();
 
-    if (this.scale === MIN_SCALE) {
+    if (this.zoomLevel === 0) {
       this.translateX = DEFAULTS.TRANSLATE_X;
       this.translateY = DEFAULTS.TRANSLATE_Y;
       this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
@@ -313,8 +356,8 @@ export default class MapCanvas extends HTMLElement {
   #updateControls = () => {
     if (!this.controls?.zoomInButton || !this.controls?.zoomOutButton) return;
 
-    this.controls.zoomOutButton.disabled = this.scale === MIN_SCALE;
-    this.controls.zoomInButton.disabled = this.scale === MAX_SCALE;
+    this.controls.zoomOutButton.disabled = this.zoomLevel === 0;
+    this.controls.zoomInButton.disabled = this.zoomLevel === NUM_ZOOM_STEPS;
   };
 
   /**
@@ -428,7 +471,7 @@ export default class MapCanvas extends HTMLElement {
 
       this.#setNaturalCanvasSize();
       this.#renderTiles(this.zoom);
-      if (this.scale === MIN_SCALE) {
+      if (this.zoomLevel === 0) {
         return this.#reset();
       }
       this.#checkAndFixBoundaries();
@@ -534,14 +577,15 @@ export default class MapCanvas extends HTMLElement {
     if (this.isPinching) {
       this.isPinching = false;
       this.pinchStartDistance = 0;
-      this.scale = Math.round(this.scale);
-      this.zoom = Math.min(Math.round(this.scale - SCALE_STEP), MAX_TILE_ZOOM);
+      this.zoomLevel = computeZoomLevelForScale(this.scale);
+      this.scale = computeScaleForZoomLevel(this.zoomLevel);
+      this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
       this.#updateFontSizeRef();
       this.#updateControls();
       didCompletePinch = true;
     }
 
-    if (this.scale === MIN_SCALE) {
+    if (this.zoomLevel === 0) {
       const didSnapToDefault =
         Math.abs(this.translateX - DEFAULTS.TRANSLATE_X) > TRANSLATE_EPSILON ||
         Math.abs(this.translateY - DEFAULTS.TRANSLATE_Y) > TRANSLATE_EPSILON;
@@ -619,11 +663,8 @@ export default class MapCanvas extends HTMLElement {
       const distance = this.#getPinchDistance(e.touches);
       const rawScale =
         (distance / this.pinchStartDistance) * this.pinchStartScale;
-      this.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, rawScale));
-      this.zoom = Math.max(
-        DEFAULTS.ZOOM,
-        Math.min(MAX_TILE_ZOOM, Math.round(this.scale - SCALE_STEP)),
-      );
+      this.scale = Math.min(MAX_CSS_SCALE, Math.max(1, rawScale));
+      this.zoom = computeTileZoom(this.scale);
       this.#updateFontSizeRef();
       this.#updateControls();
       this.#renderPois();
@@ -671,7 +712,7 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #buildTileLayer = (zoom) => {
-    const sourceScale = zoom + 1;
+    const sourceScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
     const layoutScale = this.canvasNaturalWidth / BASE_MAP_WIDTH;
     const snapStep = 1 / sourceScale;
     const snapToZoomGrid = (value) => Math.round(value / snapStep) * snapStep;

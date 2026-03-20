@@ -42,7 +42,7 @@
           "zoom": {
             "type": "number",
             "minimum": 0,
-            "maximum": 7,
+            "maximum": 11,
             "description": "The zoom level at which the point of interest should be displayed"
           },
           "size": {
@@ -50,10 +50,6 @@
             "minimum": 1,
             "maximum": 3,
             "description": "The size of the point of interest"
-          },
-          "shadow": {
-            "type": "boolean",
-            "description": "Whether the point of interest should have a shadow (only for text labels)"
           }
         }
       }

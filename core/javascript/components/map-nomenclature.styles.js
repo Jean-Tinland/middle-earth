@@ -77,9 +77,8 @@ const styles = /* css */ `
 
   .panel__title {
     margin: 0;
-    font-family: var(--title-font);
-    font-size: 10px;
-    font-weight: 400;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -95,7 +94,7 @@ const styles = /* css */ `
   .group__title {
     margin: 6px 0 2px;
     padding: 0 14px;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -121,8 +120,6 @@ const styles = /* css */ `
     white-space: nowrap;
     opacity: 0.8;
   }
-
-  /* City dot markers */
 
   .city-dot {
     flex-shrink: 0;
@@ -156,12 +153,10 @@ const styles = /* css */ `
     border-radius: 0;
   }
 
-  /* Text samples */
-
   .text-sample {
     flex-shrink: 0;
     width: 80px;
-    font-size: 9px;
+    font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -197,14 +192,14 @@ const styles = /* css */ `
 
   .text-sample--river {
     font-family: var(--content-font);
-    font-size: 11px;
+    font-size: 12px;
     font-style: italic;
     color: var(--water-label);
   }
 
   .text-sample--common-place {
     font-family: var(--content-font);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--primary);
   }

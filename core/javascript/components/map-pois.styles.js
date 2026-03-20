@@ -48,11 +48,12 @@ const styles = /* css */ `
   .name {
     color: var(--primary);
     white-space: nowrap;
+    text-shadow: 0 0 0.01rem var(--shadow), 
+      0 0 0.01rem var(--shadow),
+      0 0 0.01rem var(--shadow),
+      0 0 0.01rem var(--shadow);
   }
 
-  .poi[data-shadow] .name {
-    text-shadow: 0 0 6px var(--shadow), 0 0 3px var(--shadow);
-  }
 
   .poi[data-kind="forest"] .name {
     --shadow: var(--black);
