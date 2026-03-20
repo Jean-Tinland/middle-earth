@@ -51,44 +51,6 @@ const computeScaleForZoomLevel = (zoomLevel) => {
 };
 
 /**
- * Finds the nearest discrete zoom level for a given continuous scale.
- * @param {number} scale
- * @returns {number}
- */
-const computeZoomLevelForScale = (scale) => {
-  if (scale <= 1) return 0;
-  if (scale >= MAX_CSS_SCALE) return NUM_ZOOM_STEPS;
-  const level = (NUM_ZOOM_STEPS * Math.log(scale)) / Math.log(MAX_CSS_SCALE);
-  return Math.max(0, Math.min(NUM_ZOOM_STEPS, Math.round(level)));
-};
-
-/**
- * Derives the tile zoom layer from a continuous CSS scale value.
- * @param {number} scale
- * @returns {number}
- */
-const computeTileZoom = (scale) => {
-  const level =
-    (NUM_ZOOM_STEPS * Math.log(Math.max(1, scale))) / Math.log(MAX_CSS_SCALE);
-  return Math.max(0, Math.min(MAX_TILE_ZOOM, Math.round(level)));
-};
-
-/**
- * Detects iOS and iPadOS devices.
- * iPadOS can report itself as macOS, so touch capability is part of the check.
- * @returns {boolean}
- */
-const isAppleMobileDevice = () => {
-  const userAgent = window.navigator.userAgent;
-  const platform = window.navigator.platform;
-  const hasTouchPoints = window.navigator.maxTouchPoints > 1;
-
-  return (
-    /iPad|iPhone|iPod/.test(userAgent) ||
-    (platform === "MacIntel" && hasTouchPoints)
-  );
-};
-/**
  * Default values for the map canvas.
  * @type {Object}
  * @property {number} FONT_SIZE_REF - The default font size reference.
@@ -135,9 +97,6 @@ export default class MapCanvas extends HTMLElement {
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.isDragging = false;
-    this.isPinching = false;
-    this.pinchStartDistance = 0;
-    this.pinchStartScale = 1;
     this.canvasNaturalWidth = 0;
     this.canvasNaturalHeight = 0;
     this.tileLayers = new Map();
@@ -361,15 +320,6 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Hides controls on iOS and iPadOS devices.
-   * @private
-   */
-  #hideControlsOnAppleMobile = () => {
-    if (!this.controls || !isAppleMobileDevice()) return;
-    this.controls.style.setProperty("display", "none");
-  };
-
-  /**
    * Updates the canvas transformation.
    * @private
    */
@@ -480,21 +430,8 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Calculates the distance between two touch points.
-   * @param {TouchList} touches
-   * @returns {number}
-   * @private
-   */
-  #getPinchDistance = (touches) => {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.hypot(dx, dy);
-  };
-
-  /**
    * Handles the start of a touch event.
-   * Starts dragging immediately for single-touch gestures and prepares
-   * pinch tracking when two touches are detected.
+   * Starts single-finger drag tracking.
    * @param {TouchEvent} e
    * @private
    */
@@ -504,20 +441,13 @@ export default class MapCanvas extends HTMLElement {
     clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
 
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      this.previousTouch = {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-      };
-    }
+    if (e.touches.length !== 1) return;
 
-    if (e.touches.length !== 2) return;
-
-    this.isPinching = true;
-    this.pinchStartDistance = this.#getPinchDistance(e.touches);
-    this.pinchStartScale = this.scale;
-    this.previousTouch = undefined;
+    const touch = e.touches[0];
+    this.previousTouch = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    };
   };
 
   /**
@@ -572,19 +502,6 @@ export default class MapCanvas extends HTMLElement {
 
     this.previousTouch = undefined;
 
-    let didCompletePinch = false;
-
-    if (this.isPinching) {
-      this.isPinching = false;
-      this.pinchStartDistance = 0;
-      this.zoomLevel = computeZoomLevelForScale(this.scale);
-      this.scale = computeScaleForZoomLevel(this.zoomLevel);
-      this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
-      this.#updateFontSizeRef();
-      this.#updateControls();
-      didCompletePinch = true;
-    }
-
     if (this.zoomLevel === 0) {
       const didSnapToDefault =
         Math.abs(this.translateX - DEFAULTS.TRANSLATE_X) > TRANSLATE_EPSILON ||
@@ -594,11 +511,6 @@ export default class MapCanvas extends HTMLElement {
       this.translateY = DEFAULTS.TRANSLATE_Y;
       this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
       this.#updateControls();
-
-      if (didCompletePinch) {
-        this.#scheduleTileLayerSwap(this.zoom, 0);
-        this.#renderPois();
-      }
 
       if (didSnapToDefault) {
         this.#prepareAnimatedZoom();
@@ -624,11 +536,6 @@ export default class MapCanvas extends HTMLElement {
       this.#scheduleTransitionCleanup();
     } else {
       this.#updateCanvas();
-    }
-
-    if (didCompletePinch) {
-      this.#scheduleTileLayerSwap(this.zoom, 0);
-      this.#renderPois();
     }
   };
 
@@ -658,19 +565,6 @@ export default class MapCanvas extends HTMLElement {
   #dragging = (e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (e.touches?.length === 2 && this.isPinching) {
-      const distance = this.#getPinchDistance(e.touches);
-      const rawScale =
-        (distance / this.pinchStartDistance) * this.pinchStartScale;
-      this.scale = Math.min(MAX_CSS_SCALE, Math.max(1, rawScale));
-      this.zoom = computeTileZoom(this.scale);
-      this.#updateFontSizeRef();
-      this.#updateControls();
-      this.#renderPois();
-      this.#updateCanvas();
-      return;
-    }
 
     // Touch events do not have movementX and movementY properties.
     // We calculate them using the previous touch event.
@@ -1070,8 +964,6 @@ export default class MapCanvas extends HTMLElement {
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
     await this.#waitForPageLoad();
-    this.#hideControlsOnAppleMobile();
-
     await this.#loadPois();
     this.#measureNaturalDimensions();
     this.#setNaturalCanvasSize();
