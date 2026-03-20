@@ -17,7 +17,7 @@ async function generateTilesForZoom(zoom) {
 
   const paperOverlay = await sharp(PAPER_BG)
     .resize(width, height, { fit: "cover" })
-    .ensureAlpha(0.3)
+    .ensureAlpha(0.2)
     .png()
     .toBuffer();
 
