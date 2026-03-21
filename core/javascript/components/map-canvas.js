@@ -7,7 +7,7 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
 /** The number of discrete zoom steps available. */
-const NUM_ZOOM_STEPS = 10;
+const NUM_ZOOM_STEPS = 13;
 /** The maximum scale multiplier at the final zoom step. */
 const MAX_SCALE = 14;
 /** The accumulated deltaY required to trigger one zoom step. */
