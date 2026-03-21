@@ -512,8 +512,7 @@
       "name": "Osgiliath",
       "position": [57.66, 65.06],
       "size": 2,
-      "zoom": 5,
-      "illustration": "/assets/images/places/osgiliath.png"
+      "zoom": 5
     },
     {
       "kind": "city",
