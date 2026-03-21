@@ -1300,13 +1300,6 @@
     },
     {
       "kind": "common-place",
-      "name": "Horin Tower",
-      "position": [27.75, 72.52],
-      "size": 1,
-      "zoom": 6
-    },
-    {
-      "kind": "common-place",
       "name": "Angbor Citadel",
       "position": [50.23, 67.89],
       "size": 1,
