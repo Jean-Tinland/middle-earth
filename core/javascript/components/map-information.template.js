@@ -54,7 +54,7 @@ export const content = /* html */ `
           Compass rose (modified): <a href="https://www.freepik.com/free-vector/hand-drawn-map-compass-background_1582142.htm#fromView=search&page=1&position=23&uuid=90506e90-3cbb-4891-bf73-4316a0f28b13&query=compass+rose" target="_blank" rel="nofollow noopener">Image by freepik</a>
         </li>
         <li>
-          Fonts: <a href="https://www.onlinewebfonts.com/download/a44a5c9cb024637b366c79865a745c95" target="_blank" rel="nofollow noopener">Tolkien Regular</a> and <a href="https://fonts.google.com/specimen/IM+Fell+DW+Pica" target="_blank" rel="nofollow noopener">IM Fell DW Pica</a>
+          Font: <a href="https://fonts.google.com/specimen/IM+Fell+DW+Pica" target="_blank" rel="nofollow noopener">IM Fell DW Pica</a>
         </li>
       </ul>
     </div>

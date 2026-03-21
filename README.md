@@ -14,7 +14,7 @@ All points of interest were collected on various representations of existing Mid
 - Favicon: [One Ring](https://icons8.com/icon/20169/one-ring) icon by [Icons8](https://icons8.com).
 - Map texture overlay: [Image by Joou Designs and Samuel Adekunle on Figma](https://www.figma.com/community/file/1480489265216655984).
 - Compass rose (modified): [Image by freepik](https://www.freepik.com/free-vector/hand-drawn-map-compass-background_1582142.htm#fromView=search&page=1&position=23&uuid=90506e90-3cbb-4891-bf73-4316a0f28b13&query=compass+rose).
-- Fonts: [Tolkien Regular](https://www.onlinewebfonts.com/download/a44a5c9cb024637b366c79865a745c95) and [IM Fell DW Pica](https://fonts.google.com/specimen/IM+Fell+DW+Pica)
+- Font: [IM Fell DW Pica](https://fonts.google.com/specimen/IM+Fell+DW+Pica)
 
 ## Contribute
 
