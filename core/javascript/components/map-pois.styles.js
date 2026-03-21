@@ -88,8 +88,8 @@ const styles = /* css */ `
     background-color: var(--primary);
     aspect-ratio: 1;
     border: 2px solid var(--white);
-    box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
     border-radius: 50%;
+    box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
   }
 
   .poi[data-kind="city"][data-size="3"] .dot,
