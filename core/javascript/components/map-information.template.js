@@ -42,13 +42,16 @@ export const content = /* html */ `
           Map drawn by myself from existing Middle-Earth maps in Figma with custom terrain & landmark elements
         </li>
         <li>
+          Notable places drawing created by myself in Figma. Representations are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks
+        </li>
+        <li>
           Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>
         </li>
         <li>
           Favicon: <a href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" ref="nofollow noopener" href="https://icons8.com">Icons8</a>
         </li>
         <li>
-          Map texture overlay: <a href="https://www.figma.com/community/file/1480489265216655984" target="_blank" rel="nofollow noopener">Image by Joou Designs and Samuel Adekunle on Figma</a>
+          Map texture overlay: <a href="https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture" target="_blank" rel="nofollow noopener">Image by rawpixel.com on Freepik</a>
         </li>
         <li>
           Compass rose (modified): <a href="https://www.freepik.com/free-vector/hand-drawn-map-compass-background_1582142.htm#fromView=search&page=1&position=23&uuid=90506e90-3cbb-4891-bf73-4316a0f28b13&query=compass+rose" target="_blank" rel="nofollow noopener">Image by freepik</a>
