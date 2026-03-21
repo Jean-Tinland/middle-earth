@@ -9,7 +9,7 @@
   --paper: #f0e8d7;
   --water-label: #616a6c;
 
-  --title-font: "Tolkien Regular", serif;
+  --title-font: var(--content-font);
   --content-font: "IM Fell DW Pica", serif;
 
   --focus-ring-color: var(--primary);

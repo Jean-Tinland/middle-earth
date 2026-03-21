@@ -47,6 +47,7 @@ const styles = /* css */ `
 
   .name {
     color: var(--primary);
+    text-align: center;
     white-space: nowrap;
     text-shadow: 0 0 0.01rem var(--shadow), 
       0 0 0.01rem var(--shadow),
@@ -92,6 +93,22 @@ const styles = /* css */ `
   .poi[data-kind="city"][data-size="3"] .dot,
   .poi[data-kind="city"][data-size="4"] .dot {
     border-radius: 0;
+  }
+
+  .illustration {
+    display: block;
+    width: 10px;
+    height: auto;
+  }
+
+  @media (orientation: portrait) {
+    .illustration {
+      width: 3px;
+    }
+  }
+
+  .illustration[hidden] {
+    display: none;
   }
 `;
 
