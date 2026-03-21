@@ -7,60 +7,100 @@ const ZOOM_LEVELS = 8;
 const INPUT_DIR = "./assets/images/map";
 const OUTPUT_DIR = "./assets/images/map/tiles";
 const JPEG_QUALITY = 85;
+const WORKER_COUNT = navigator.hardwareConcurrency || 8;
 
-async function generateTilesForZoom(zoom) {
-  const inputPath = join(INPUT_DIR, `map-${zoom}.jpg`);
-  const { width, height } = await sharp(inputPath).metadata();
+// Each tile is small (512px); one libvips thread per tile avoids contention.
+sharp.concurrency(1);
 
-  console.log(`Zoom ${zoom}: ${width}×${height}`);
+async function loadSource(zoom) {
+  const path = join(INPUT_DIR, `map-${zoom}.jpg`);
+  const buffer = Buffer.from(await Bun.file(path).arrayBuffer());
+  const { width, height } = await sharp(buffer).metadata();
+  return { zoom, buffer, width, height };
+}
 
-  const cols = Math.ceil(width / TILE_SIZE);
-  const rows = Math.ceil(height / TILE_SIZE);
-  const zoomDir = join(OUTPUT_DIR, `${zoom}`);
-  await mkdir(zoomDir, { recursive: true });
+function collectTileJobs(sources) {
+  const jobs = [];
 
-  const CHUNK_SIZE = 16;
+  for (const { zoom, buffer, width, height } of sources) {
+    const cols = Math.ceil(width / TILE_SIZE);
+    const rows = Math.ceil(height / TILE_SIZE);
 
-  for (let row = 0; row < rows; row++) {
-    const rowTasks = [];
+    console.log(
+      `Zoom ${zoom}: ${width}x${height} → ${cols}x${rows} = ${cols * rows} tiles`,
+    );
 
-    for (let col = 0; col < cols; col++) {
-      const left = col * TILE_SIZE;
-      const top = row * TILE_SIZE;
-      const tileW = Math.min(TILE_SIZE, width - left);
-      const tileH = Math.min(TILE_SIZE, height - top);
-      const outPath = join(zoomDir, `${row}-${col}.jpg`);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const left = col * TILE_SIZE;
+        const top = row * TILE_SIZE;
+        const tileWidth = Math.min(TILE_SIZE, width - left);
+        const tileHeight = Math.min(TILE_SIZE, height - top);
+        const outPath = join(OUTPUT_DIR, `${zoom}`, `${row}-${col}.jpg`);
 
-      rowTasks.push({ left, top, tileW, tileH, outPath });
-    }
-
-    for (let i = 0; i < rowTasks.length; i += CHUNK_SIZE) {
-      const chunk = rowTasks.slice(i, i + CHUNK_SIZE);
-      console.log(
-        `  Processing row ${row + 1}/${rows}, tiles ${i + 1}-${Math.min(i + CHUNK_SIZE, rowTasks.length)}/${rowTasks.length}…`,
-      );
-      await Promise.all(
-        chunk.map(({ left, top, tileW, tileH, outPath }) =>
-          sharp(inputPath)
-            .extract({ left, top, width: tileW, height: tileH })
+        jobs.push(() =>
+          sharp(buffer, { sequentialRead: false })
+            .extract({ left, top, width: tileWidth, height: tileHeight })
             .jpeg({ quality: JPEG_QUALITY })
             .toFile(outPath),
-        ),
-      );
+        );
+      }
     }
   }
 
-  console.log(`  → ${cols}×${rows} = ${cols * rows} tiles`);
+  return jobs;
+}
+
+function renderProgress(done, total) {
+  const BAR_WIDTH = 32;
+  const filled = Math.round((done / total) * BAR_WIDTH);
+  const bar = "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
+  const percent = String(Math.floor((done / total) * 100)).padStart(3);
+  process.stdout.write(`\r${bar} ${done}/${total}  ${percent}%`);
+}
+
+async function runWithWorkers(jobs, workerCount) {
+  let cursor = 0;
+  let done = 0;
+
+  renderProgress(0, jobs.length);
+
+  async function worker() {
+    while (cursor < jobs.length) {
+      const job = jobs[cursor++];
+      await job();
+      renderProgress(++done, jobs.length);
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  process.stdout.write("\n");
 }
 
 async function main() {
-  console.log("Generating tiles…\n");
+  const start = performance.now();
+  console.log("Generating tiles...\n");
 
-  for (let zoom = 0; zoom < ZOOM_LEVELS; zoom++) {
-    await generateTilesForZoom(zoom);
-  }
+  const [sources] = await Promise.all([
+    Promise.all(
+      Array.from({ length: ZOOM_LEVELS }, (_, zoom) => loadSource(zoom)),
+    ),
+    Promise.all(
+      Array.from({ length: ZOOM_LEVELS }, (_, zoom) =>
+        mkdir(join(OUTPUT_DIR, `${zoom}`), { recursive: true }),
+      ),
+    ),
+  ]);
 
-  console.log("\nDone!");
+  const jobs = collectTileJobs(sources);
+  console.log(
+    `\nProcessing ${jobs.length} tiles (${WORKER_COUNT} workers)...\n`,
+  );
+
+  await runWithWorkers(jobs, WORKER_COUNT);
+
+  const elapsed = ((performance.now() - start) / 1000).toFixed(1);
+  console.log(`Done in ${elapsed}s`);
 }
 
 main();
