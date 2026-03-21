@@ -97,7 +97,7 @@ export default class MapCanvas extends HTMLElement {
     this.backdropElement = null;
     this.tileVisibilityRafId = null;
 
-    this.root = this.attachShadow({ mode: "closed" });
+    this.root = this.attachShadow({ mode: "open" });
 
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);

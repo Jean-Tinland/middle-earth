@@ -21,7 +21,7 @@ export default class MapModal extends HTMLElement {
 
     this.options = Object.assign({}, this.defaults, options);
 
-    this.root = this.attachShadow({ mode: "closed" });
+    this.root = this.attachShadow({ mode: "open" });
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];

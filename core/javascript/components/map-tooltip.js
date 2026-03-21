@@ -19,7 +19,7 @@ export default class MapTooltip extends HTMLElement {
     this.tooltip = tooltip;
     this.direction = direction;
 
-    this.root = this.attachShadow({ mode: "closed" });
+    this.root = this.attachShadow({ mode: "open" });
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];

@@ -40,7 +40,7 @@ export default class MapPois extends HTMLElement {
     this.poiElements = [];
     this.lastBaseFontSize = null;
 
-    this.root = this.attachShadow({ mode: "closed" });
+    this.root = this.attachShadow({ mode: "open" });
 
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);

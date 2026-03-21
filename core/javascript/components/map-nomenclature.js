@@ -5,7 +5,7 @@ export default class MapNomenclature extends HTMLElement {
   constructor() {
     super();
 
-    this.root = this.attachShadow({ mode: "closed" });
+    this.root = this.attachShadow({ mode: "open" });
 
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
