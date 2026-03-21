@@ -143,7 +143,7 @@ export default class MapCanvas extends HTMLElement {
    */
   #renderPois = () => {
     if (!this.mapPois) return;
-    this.mapPois.render(this.zoom, this.fontSizeRef);
+    this.mapPois.render(this.zoomLevel, this.fontSizeRef);
   };
 
   /**
