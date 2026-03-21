@@ -38,7 +38,6 @@ const styles = /* css */ `
   }
 }
 
-.canvas::before,
 .canvas::after {
   content: "";
   position: absolute;
@@ -47,10 +46,6 @@ const styles = /* css */ `
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 0;
-}
-
-.canvas::before {
   background-image: url("./assets/images/paper-background.jpg");
   background-size: cover;
   opacity: 30%;
@@ -59,7 +54,7 @@ const styles = /* css */ `
 }
 
 @supports (-webkit-touch-callout: none) {
-  .canvas::before {
+  .canvas::after {
     mix-blend-mode: normal;
   }
 }
