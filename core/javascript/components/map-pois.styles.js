@@ -49,10 +49,10 @@ const styles = /* css */ `
     color: var(--primary);
     text-align: center;
     white-space: nowrap;
-    text-shadow: 0 0 0.01rem var(--shadow), 
-      0 0 0.01rem var(--shadow),
-      0 0 0.01rem var(--shadow),
-      0 0 0.01rem var(--shadow);
+    text-shadow: 0 0 2px var(--shadow), 
+      0 0 2px var(--shadow),
+      0 0 2px var(--shadow),
+      0 0 2px var(--shadow);
   }
 
 
@@ -97,14 +97,7 @@ const styles = /* css */ `
 
   .illustration {
     display: block;
-    width: 10px;
     height: auto;
-  }
-
-  @media (orientation: portrait) {
-    .illustration {
-      width: 3px;
-    }
   }
 
   .illustration[hidden] {

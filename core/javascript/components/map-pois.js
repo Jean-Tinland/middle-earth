@@ -2,6 +2,7 @@ import styles from "./map-pois.styles.js";
 
 const DEFAULT_BASE_FONT_SIZE = 16;
 const ILLUSTRATION_ZOOM_THRESHOLD = 9;
+const ILLUSTRATION_SIZE_MULTIPLIER = 2.5;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
   region: Object.freeze({ 1: 0.8, 2: 1.15, 3: 1.45 }),
@@ -198,6 +199,16 @@ export default class MapPois extends HTMLElement {
       baseFontSize * poiElement.textSizeMultiplier,
     );
     poiElement.nameElement.style.setProperty("font-size", `${textSize}px`);
+
+    if (poiElement.illustrationElement) {
+      const illustrationSize = this.#roundToPixel(
+        baseFontSize * ILLUSTRATION_SIZE_MULTIPLIER,
+      );
+      poiElement.illustrationElement.style.setProperty(
+        "width",
+        `${illustrationSize}px`,
+      );
+    }
 
     if (!poiElement.dotElement || poiElement.dotSizeMultiplier === null) return;
 

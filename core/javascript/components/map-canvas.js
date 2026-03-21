@@ -8,8 +8,8 @@ import styles from "./map-canvas.styles.js";
 
 /** The number of discrete zoom steps available. */
 const NUM_ZOOM_STEPS = 10;
-/** The maximum CSS transform scale value at the final zoom step. */
-const MAX_CSS_SCALE = 14;
+/** The maximum scale multiplier at the final zoom step. */
+const MAX_SCALE = 14;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
@@ -33,34 +33,21 @@ const PORTRAIT_MIN_FONT_SCALE = 0.65;
 const FONT_SCALE_LOCK_THRESHOLD = 8;
 /** Duration of animated zoom transitions in milliseconds. */
 const ZOOM_TRANSITION_MS = 320;
-/** Delay before swapping tile layers after wheel zoom input settles. */
-const WHEEL_TILE_SWAP_DELAY_MS = 120;
 /** Small threshold used when comparing floating-point translate values. */
 const TRANSLATE_EPSILON = 0.01;
 
 /**
- * Maps a discrete zoom level to a CSS transform scale value.
+ * Maps a discrete zoom level to a scale multiplier.
  * Uses an exponential curve so each step increases scale more than the last.
  * @param {number} zoomLevel - Integer from 0 to NUM_ZOOM_STEPS.
  * @returns {number}
  */
 const computeScaleForZoomLevel = (zoomLevel) => {
   if (zoomLevel <= 0) return 1;
-  if (zoomLevel >= NUM_ZOOM_STEPS) return MAX_CSS_SCALE;
-  return Math.pow(MAX_CSS_SCALE, zoomLevel / NUM_ZOOM_STEPS);
+  if (zoomLevel >= NUM_ZOOM_STEPS) return MAX_SCALE;
+  return Math.pow(MAX_SCALE, zoomLevel / NUM_ZOOM_STEPS);
 };
 
-/**
- * Default values for the map canvas.
- * @type {Object}
- * @property {number} FONT_SIZE_REF - The default font size reference.
- * @property {number} SCALE - The default scale.
- * @property {number} ZOOM - The default zoom.
- * @property {number} TRANSLATE_X - The default X translation.
- * @property {number} TRANSLATE_Y - The default Y translation.
- * @property {Object} PREVIOUS_TOUCH - The previous touch event.
- * @readonly
- */
 const DEFAULTS = Object.freeze({
   FONT_SIZE_REF: 12,
   SCALE: 1,
@@ -72,7 +59,13 @@ const DEFAULTS = Object.freeze({
 });
 
 /**
- * Represents a custom HTML element for a map canvas with zoom and drag functionalities.
+ * Map canvas using real-size rendering to avoid sub-pixel tile gaps.
+ *
+ * Instead of applying CSS scale() to a fixed-size container (which causes
+ * compositor rounding gaps between tiles on WebKit/Blink), the canvas is
+ * resized to its actual zoomed pixel dimensions. Tiles are placed at integer
+ * coordinates inside this real-size container. Panning uses translate() only.
+ *
  * @extends HTMLElement
  */
 export default class MapCanvas extends HTMLElement {
@@ -93,7 +86,6 @@ export default class MapCanvas extends HTMLElement {
     this.dragRafId = null;
     this.resizeRafId = null;
     this.transitionTimeoutId = null;
-    this.tileSwapTimeoutId = null;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.isDragging = false;
@@ -102,7 +94,7 @@ export default class MapCanvas extends HTMLElement {
     this.tileLayers = new Map();
     this.activeTileZoom = DEFAULTS.ZOOM;
     this.previousTileZoom = null;
-    this.pendingTileZoom = DEFAULTS.ZOOM;
+    this.backdropElement = null;
     this.tileVisibilityRafId = null;
 
     this.root = this.attachShadow({ mode: "closed" });
@@ -114,15 +106,74 @@ export default class MapCanvas extends HTMLElement {
   }
 
   /**
+   * Returns the current canvas pixel width (naturalWidth * scale).
+   * @returns {number}
+   * @private
+   */
+  #canvasWidth = () => Math.round(this.canvasNaturalWidth * this.scale);
+
+  /**
+   * Returns the current canvas pixel height (naturalHeight * scale).
+   * @returns {number}
+   * @private
+   */
+  #canvasHeight = () => Math.round(this.canvasNaturalHeight * this.scale);
+
+  /**
+   * Removes the zoom-in backdrop element from the DOM.
+   * @private
+   */
+  #removeBackdrop = () => {
+    if (!this.backdropElement) return;
+    this.backdropElement.remove();
+    this.backdropElement = null;
+  };
+
+  /**
+   * Extracts the current active tile layer from the cache, scales it to fill
+   * the new (just-applied) canvas size, and parks it as a visible backdrop.
+   * The layer is removed from tileLayers so #resetTileLayers won't destroy it.
+   * @param {number} oldW - Canvas pixel width before resize.
+   * @param {number} oldH - Canvas pixel height before resize.
+   * @private
+   */
+  #installBackdrop = (oldW, oldH) => {
+    this.#removeBackdrop();
+
+    const activeLayer = this.tileLayers.get(this.activeTileZoom);
+    if (!activeLayer) return;
+
+    this.tileLayers.delete(this.activeTileZoom);
+
+    const newW = this.#canvasWidth();
+    const scaleRatio = newW / oldW;
+
+    activeLayer.element.style.cssText = [
+      "position:absolute",
+      "top:0",
+      "left:0",
+      `width:${oldW}px`,
+      `height:${oldH}px`,
+      "overflow:hidden",
+      "pointer-events:none",
+      `transform:scale(${scaleRatio})`,
+      "transform-origin:top left",
+      "z-index:0",
+    ].join(";");
+    activeLayer.element.hidden = false;
+
+    this.backdropElement = activeLayer.element;
+  };
+
+  /**
    * Resets the canvas to its initial state.
    * @private
    */
   #reset = () => {
     clearTimeout(this.transitionTimeoutId);
     this.transitionTimeoutId = null;
-    clearTimeout(this.tileSwapTimeoutId);
-    this.tileSwapTimeoutId = null;
     this.canvas.style.removeProperty("transition");
+    this.#removeBackdrop();
     this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
@@ -130,6 +181,8 @@ export default class MapCanvas extends HTMLElement {
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
     this.previousTileZoom = null;
+    this.#applyCanvasSize();
+    this.#resetTileLayers();
     this.#updateFontSizeRef();
     this.#renderTiles(this.zoom);
     this.#renderPois();
@@ -191,34 +244,39 @@ export default class MapCanvas extends HTMLElement {
     clearTimeout(this.transitionTimeoutId);
     this.transitionTimeoutId = setTimeout(() => {
       this.canvas.style.removeProperty("transition");
-      // Recompute tile visibility after the animated transform settles.
       this.#scheduleTileVisibilityUpdate();
       this.transitionTimeoutId = null;
     }, ZOOM_TRANSITION_MS);
   };
 
   /**
-   * Schedules a tile layer swap once zoom interaction settles.
-   * @param {number} zoom
-   * @param {number} delayMs
+   * Applies the zoom change, adjusting translate to preserve the focal point.
+   * The canvas is resized to actual pixel dimensions; translate is in screen
+   * pixels so focal-point math works directly.
+   * @param {number} oldScale
+   * @param {{x: number, y: number}} focalPoint
    * @private
    */
-  #scheduleTileLayerSwap = (zoom, delayMs = 0) => {
-    const boundedZoom = Math.max(DEFAULTS.ZOOM, Math.min(MAX_TILE_ZOOM, zoom));
-    this.pendingTileZoom = boundedZoom;
+  #adjustTranslateForZoom = (oldScale, focalPoint) => {
+    const vpCenterX = window.innerWidth / 2;
+    const vpCenterY = window.innerHeight / 2;
+    const oldW = Math.round(this.canvasNaturalWidth * oldScale);
+    const oldH = Math.round(this.canvasNaturalHeight * oldScale);
+    const newW = this.#canvasWidth();
+    const newH = this.#canvasHeight();
 
-    clearTimeout(this.tileSwapTimeoutId);
-    this.tileSwapTimeoutId = null;
+    // Focal point position within the old canvas (pixels from left/top edge):
+    const mapX = focalPoint.x - (vpCenterX + this.translateX - oldW / 2);
+    const mapY = focalPoint.y - (vpCenterY + this.translateY - oldH / 2);
 
-    if (delayMs <= 0) {
-      this.#renderTiles(this.pendingTileZoom);
-      return;
-    }
+    // Same proportional point in the new canvas:
+    const newMapX = (mapX / oldW) * newW;
+    const newMapY = (mapY / oldH) * newH;
 
-    this.tileSwapTimeoutId = setTimeout(() => {
-      this.#renderTiles(this.pendingTileZoom);
-      this.tileSwapTimeoutId = null;
-    }, delayMs);
+    // Compensate for both the focal-point scaling and the flex centering
+    // shift (the canvas origin moves by -(newW - oldW) / 2 when it grows).
+    this.translateX += mapX - newMapX + (newW - oldW) / 2;
+    this.translateY += mapY - newMapY + (newH - oldH) / 2;
   };
 
   /**
@@ -228,32 +286,29 @@ export default class MapCanvas extends HTMLElement {
     if (this.zoomLevel >= NUM_ZOOM_STEPS) return;
     e.preventDefault();
 
-    if (e.type !== "wheel") {
-      this.#prepareAnimatedZoom();
-    }
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
 
     const focalPoint = this.#getZoomFocalPoint(e);
+    const oldScale = this.scale;
+    const oldW = this.#canvasWidth();
+    const oldH = this.#canvasHeight();
 
     this.zoomLevel = Math.min(this.zoomLevel + 1, NUM_ZOOM_STEPS);
     this.scale = computeScaleForZoomLevel(this.zoomLevel);
     this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
 
-    this.translateX -= (focalPoint.x - window.innerWidth / 2) / this.scale;
-    this.translateY -= (focalPoint.y - window.innerHeight / 2) / this.scale;
-
+    this.#applyCanvasSize();
+    this.#installBackdrop(oldW, oldH);
+    this.#resetTileLayers();
+    this.#adjustTranslateForZoom(oldScale, focalPoint);
     this.#updateFontSizeRef();
     this.#renderPois();
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
-
-    const tileSwapDelay =
-      e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
-    this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
-
-    if (e.type !== "wheel") {
-      this.#scheduleTransitionCleanup();
-    }
+    this.#renderTiles(this.zoom);
   };
 
   /**
@@ -263,17 +318,23 @@ export default class MapCanvas extends HTMLElement {
     if (this.zoomLevel <= 0) return;
     e.preventDefault();
 
-    if (e.type !== "wheel") {
-      this.#prepareAnimatedZoom();
-    }
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
 
     const focalPoint = this.#getZoomFocalPoint(e);
+    const oldScale = this.scale;
+    const oldW = this.#canvasWidth();
+    const oldH = this.#canvasHeight();
 
     this.zoomLevel = Math.max(this.zoomLevel - 1, 0);
     this.scale = computeScaleForZoomLevel(this.zoomLevel);
     this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
-    this.translateX += (focalPoint.x - window.innerWidth / 2) / this.scale;
-    this.translateY += (focalPoint.y - window.innerHeight / 2) / this.scale;
+
+    this.#applyCanvasSize();
+    this.#installBackdrop(oldW, oldH);
+    this.#resetTileLayers();
+    this.#adjustTranslateForZoom(oldScale, focalPoint);
     this.#updateFontSizeRef();
     this.#renderPois();
 
@@ -283,29 +344,14 @@ export default class MapCanvas extends HTMLElement {
       this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
       this.#updateControls();
       this.#updateCanvas();
-
-      const tileSwapDelay =
-        e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
-      this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
-
-      if (e.type !== "wheel") {
-        this.#scheduleTransitionCleanup();
-      }
-
+      this.#renderTiles(this.zoom);
       return;
     }
 
     this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
-
-    const tileSwapDelay =
-      e.type === "wheel" ? WHEEL_TILE_SWAP_DELAY_MS : ZOOM_TRANSITION_MS;
-    this.#scheduleTileLayerSwap(this.zoom, tileSwapDelay);
-
-    if (e.type !== "wheel") {
-      this.#scheduleTransitionCleanup();
-    }
+    this.#renderTiles(this.zoom);
   };
 
   /**
@@ -320,22 +366,19 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Updates the canvas transformation.
+   * Updates the canvas position via translate-only transform (no scale).
    * @private
    */
   #updateCanvas = () => {
     this.canvas.style.setProperty(
       "transform",
-      `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`,
+      `translate(${this.translateX}px, ${this.translateY}px)`,
     );
     this.#scheduleTileVisibilityUpdate();
   };
 
   /**
    * Returns a scale factor that reduces font sizes on portrait viewports.
-   * Landscape viewports (width ≥ height) return 1 — no change to desktop.
-   * Portrait viewports return a value proportional to their aspect ratio,
-   * clamped to PORTRAIT_MIN_FONT_SCALE so labels stay legible.
    * @returns {number}
    * @private
    */
@@ -346,15 +389,16 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Updates the font size reference.
+   * Font sizes grow with scale since there is no CSS scale() enlarging them.
    * @private
    */
   #updateFontSizeRef = () => {
-    // The font size reference is inversely proportional to the scale.
     const divider = this.zoom === 0 ? 1.5 : 2;
     const effectiveScale = Math.min(this.scale, FONT_SCALE_LOCK_THRESHOLD);
     const portraitFontScalar = this.#computePortraitFontScalar();
     this.fontSizeRef =
       (DEFAULTS.FONT_SIZE_REF / (effectiveScale / divider)) *
+      this.scale *
       portraitFontScalar;
     this.canvas.style.setProperty(
       "--font-size-ref",
@@ -364,7 +408,6 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Stores the canvas's natural (un-zoomed) dimensions.
-   * Must be called after the map has been laid out.
    * @private
    */
   #measureNaturalDimensions = () => {
@@ -386,17 +429,19 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Applies the measured natural canvas size in pixels.
-   * Keeps dimensions stable while transform-based interactions are active.
+   * Applies the current zoomed canvas size in pixels.
+   * Canvas and map are set to naturalSize * scale so tiles render at 1:1.
    * @private
    */
-  #setNaturalCanvasSize = () => {
+  #applyCanvasSize = () => {
+    const w = this.#canvasWidth();
+    const h = this.#canvasHeight();
     this.canvas.style.setProperty("max-width", "none");
     this.canvas.style.setProperty("max-height", "none");
-    this.canvas.style.setProperty("width", `${this.canvasNaturalWidth}px`);
-    this.canvas.style.setProperty("height", `${this.canvasNaturalHeight}px`);
-    this.map.style.setProperty("width", `${this.canvasNaturalWidth}px`);
-    this.map.style.setProperty("height", `${this.canvasNaturalHeight}px`);
+    this.canvas.style.setProperty("width", `${w}px`);
+    this.canvas.style.setProperty("height", `${h}px`);
+    this.map.style.setProperty("width", `${w}px`);
+    this.map.style.setProperty("height", `${h}px`);
   };
 
   /**
@@ -416,10 +461,11 @@ export default class MapCanvas extends HTMLElement {
         previousHeight !== this.canvasNaturalHeight;
 
       if (didNaturalSizeChange) {
+        this.#removeBackdrop();
         this.#resetTileLayers();
       }
 
-      this.#setNaturalCanvasSize();
+      this.#applyCanvasSize();
       this.#renderTiles(this.zoom);
       if (this.zoomLevel === 0) {
         return this.#reset();
@@ -431,7 +477,6 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the start of a touch event.
-   * Starts single-finger drag tracking.
    * @param {TouchEvent} e
    * @private
    */
@@ -457,8 +502,8 @@ export default class MapCanvas extends HTMLElement {
   #applyPendingDrag = () => {
     if (this.pendingMovementX === 0 && this.pendingMovementY === 0) return;
 
-    this.translateX += this.pendingMovementX / this.scale;
-    this.translateY += this.pendingMovementY / this.scale;
+    this.translateX += this.pendingMovementX;
+    this.translateY += this.pendingMovementY;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.#updateCanvas();
@@ -466,7 +511,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the start of a drag event.
-   * @param {PointerEvent} e - The pointer event.
+   * @param {PointerEvent} e
    * @private
    */
   #dragStart = (e) => {
@@ -481,7 +526,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the end of a drag event.
-   * @param {PointerEvent} e - The pointer event.
+   * @param {PointerEvent} e
    * @private
    */
   #dragEnd = (e) => {
@@ -539,35 +584,38 @@ export default class MapCanvas extends HTMLElement {
     }
   };
 
+  /**
+   * Ensures the canvas covers the entire viewport.
+   * Translate is in screen pixels; canvas size is already zoomed.
+   * @private
+   */
   #checkAndFixBoundaries = () => {
-    const canvasBounds = this.canvas.getBoundingClientRect();
-    const bodyBounds = document.body.getBoundingClientRect();
+    const w = this.#canvasWidth();
+    const h = this.#canvasHeight();
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
 
-    if (canvasBounds.left > bodyBounds.left) {
-      this.translateX -= (canvasBounds.left - bodyBounds.left) / this.scale;
-    }
-    if (canvasBounds.top > bodyBounds.top) {
-      this.translateY -= (canvasBounds.top - bodyBounds.top) / this.scale;
-    }
-    if (canvasBounds.right < bodyBounds.right) {
-      this.translateX += (bodyBounds.right - canvasBounds.right) / this.scale;
-    }
-    if (canvasBounds.bottom < bodyBounds.bottom) {
-      this.translateY += (bodyBounds.bottom - canvasBounds.bottom) / this.scale;
-    }
+    // Canvas top-left in screen space:
+    const left = (vpW - w) / 2 + this.translateX;
+    const top = (vpH - h) / 2 + this.translateY;
+    const right = left + w;
+    const bottom = top + h;
+
+    if (left > 0) this.translateX -= left;
+    if (top > 0) this.translateY -= top;
+    if (right < vpW) this.translateX += vpW - right;
+    if (bottom < vpH) this.translateY += vpH - bottom;
   };
 
   /**
    * Handles the dragging event.
-   * @param {PointerEvent} e - The pointer event.
+   * @param {PointerEvent} e
    * @private
    */
   #dragging = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Touch events do not have movementX and movementY properties.
-    // We calculate them using the previous touch event.
     if (e.type === "touchmove") {
       this.canvas.style.setProperty("transition", "none");
 
@@ -601,15 +649,15 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Builds a tile layer for one zoom level.
+   * Tiles fill the real-size canvas (naturalWidth * scale) at integer pixels.
    * @param {number} zoom
-   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }}
+   * @returns {{ element: HTMLDivElement, tiles: Array }}
    * @private
    */
   #buildTileLayer = (zoom) => {
     const sourceScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
-    const layoutScale = this.canvasNaturalWidth / BASE_MAP_WIDTH;
-    const snapStep = 1 / sourceScale;
-    const snapToZoomGrid = (value) => Math.round(value / snapStep) * snapStep;
+    const canvasW = this.#canvasWidth();
+    const canvasH = this.#canvasHeight();
     const sourceWidth = BASE_MAP_WIDTH * sourceScale;
     const sourceHeight = BASE_MAP_HEIGHT * sourceScale;
     const cols = Math.ceil(sourceWidth / TILE_SIZE);
@@ -622,21 +670,24 @@ export default class MapCanvas extends HTMLElement {
 
     const tiles = [];
 
+    // Compute shared integer edges for rows and columns to avoid gaps.
+    const colEdges = new Array(cols + 1);
+    for (let c = 0; c <= cols; c++) {
+      const srcX = Math.min(c * TILE_SIZE, sourceWidth);
+      colEdges[c] = Math.round((srcX / sourceWidth) * canvasW);
+    }
+    const rowEdges = new Array(rows + 1);
+    for (let r = 0; r <= rows; r++) {
+      const srcY = Math.min(r * TILE_SIZE, sourceHeight);
+      rowEdges[r] = Math.round((srcY / sourceHeight) * canvasH);
+    }
+
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
-        const sourceLeft = col * TILE_SIZE;
-        const sourceTop = row * TILE_SIZE;
-        const sourceRight = Math.min(sourceLeft + TILE_SIZE, sourceWidth);
-        const sourceBottom = Math.min(sourceTop + TILE_SIZE, sourceHeight);
-
-        const left = snapToZoomGrid((sourceLeft * layoutScale) / sourceScale);
-        const top = snapToZoomGrid((sourceTop * layoutScale) / sourceScale);
-        const right = snapToZoomGrid((sourceRight * layoutScale) / sourceScale);
-        const bottom = snapToZoomGrid(
-          (sourceBottom * layoutScale) / sourceScale,
-        );
-        const width = Math.max(0, right - left).toFixed(2);
-        const height = Math.max(0, bottom - top).toFixed(2);
+        const left = colEdges[col];
+        const top = rowEdges[row];
+        const width = colEdges[col + 1] - left;
+        const height = rowEdges[row + 1] - top;
 
         const slot = document.createElement("div");
         slot.style.cssText = [
@@ -654,7 +705,7 @@ export default class MapCanvas extends HTMLElement {
         image.loading = "lazy";
         image.decoding = "async";
         image.style.cssText =
-          "display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;";
+          "display:block;width:100%;height:100%;pointer-events:none;";
 
         const tile = { slot, image, src, requested: false, ready: false };
 
@@ -675,10 +726,7 @@ export default class MapCanvas extends HTMLElement {
             .catch(() => {})
             .finally(markTileReady);
         });
-        image.addEventListener("error", () => {
-          // Keep layer handoff moving if a tile fails to load.
-          markTileReady();
-        });
+        image.addEventListener("error", markTileReady);
 
         slot.appendChild(image);
         layer.appendChild(slot);
@@ -690,7 +738,7 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Clears all cached tile layers so they can be rebuilt for a new base size.
+   * Clears all cached tile layers so they can be rebuilt for a new size.
    * @private
    */
   #resetTileLayers = () => {
@@ -704,7 +752,7 @@ export default class MapCanvas extends HTMLElement {
   /**
    * Gets one tile layer from cache or creates it on first use.
    * @param {number} zoom
-   * @returns {{ element: HTMLDivElement, tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }}
+   * @returns {{ element: HTMLDivElement, tiles: Array }}
    * @private
    */
   #getTileLayer = (zoom) => {
@@ -728,12 +776,16 @@ export default class MapCanvas extends HTMLElement {
     const activeLayer = this.#getTileLayer(boundedZoom);
 
     this.activeTileZoom = boundedZoom;
-    this.previousTileZoom = previousZoom === boundedZoom ? null : previousZoom;
+
+    // Only keep a previous layer for handoff if it already exists in cache.
+    const hasPreviousLayer =
+      previousZoom !== boundedZoom && this.tileLayers.has(previousZoom);
+    this.previousTileZoom = hasPreviousLayer ? previousZoom : null;
 
     const visibleZooms = new Set([this.activeTileZoom]);
     if (this.previousTileZoom !== null) {
       visibleZooms.add(this.previousTileZoom);
-      const previousLayer = this.#getTileLayer(this.previousTileZoom);
+      const previousLayer = this.tileLayers.get(this.previousTileZoom);
       previousLayer.element.hidden = false;
     }
 
@@ -744,12 +796,14 @@ export default class MapCanvas extends HTMLElement {
 
     activeLayer.element.hidden = false;
 
+    const activeZIndex = this.backdropElement ? "1" : "0";
+
     if (this.previousTileZoom !== null) {
-      const previousLayer = this.#getTileLayer(this.previousTileZoom);
+      const previousLayer = this.tileLayers.get(this.previousTileZoom);
       previousLayer.element.style.setProperty("z-index", "-1");
-      activeLayer.element.style.setProperty("z-index", "0");
+      activeLayer.element.style.setProperty("z-index", activeZIndex);
     } else {
-      activeLayer.element.style.setProperty("z-index", "0");
+      activeLayer.element.style.setProperty("z-index", activeZIndex);
     }
 
     this.#scheduleTileVisibilityUpdate();
@@ -757,7 +811,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Updates one layer's viewport visibility and starts nearby tile loading.
-   * @param {{ tiles: Array<{slot: HTMLDivElement, image: HTMLImageElement, src: string, requested: boolean, ready: boolean}> }} layer
+   * @param {{ tiles: Array }} layer
    * @param {boolean} revealOnlyReadyTiles
    * @returns {boolean}
    * @private
@@ -820,7 +874,6 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Loads near-viewport tiles lazily and hides out-of-viewport tiles.
-   * Hidden tiles keep their position and dimensions in the layer grid.
    * @private
    */
   #updateTileVisibility = () => {
@@ -828,6 +881,11 @@ export default class MapCanvas extends HTMLElement {
     if (!activeLayer) return;
 
     const allVisibleTilesReady = this.#updateLayerVisibility(activeLayer, true);
+
+    if (this.backdropElement && allVisibleTilesReady) {
+      this.#removeBackdrop();
+      activeLayer.element.style.setProperty("z-index", "0");
+    }
 
     if (this.previousTileZoom === null) return;
 
@@ -880,8 +938,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the double click event on the canvas.
-   * Zooms in or out depending on the shift key.
-   * @param {MouseEvent} e - The mouse event.
+   * @param {MouseEvent} e
    * @private
    */
   #handleCanvasDoubleClick = (e) => {
@@ -894,8 +951,7 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the mouse wheel event.
-   * Zooms in or out depending on the wheel direction.
-   * @param {WheelEvent} e - The wheel event.
+   * @param {WheelEvent} e
    * @private
    */
   #handleMouseWheel = (e) => {
@@ -927,9 +983,8 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Gets the percentage coordinates of the clicked point.
-   * Only active when the debugMap is enabled on window.
-   * @param {MouseEvent} e - The mouse event.
+   * Gets the percentage coordinates of the clicked point (debug mode).
+   * @param {MouseEvent} e
    * @private
    */
   #getPercentageCoordinates = async (e) => {
@@ -937,10 +992,8 @@ export default class MapCanvas extends HTMLElement {
     const debugEnabled = params.has("debug");
     if (!debugEnabled) return;
     const { left, top, width, height } = this.canvas.getBoundingClientRect();
-    const scaledX = (e.clientX - left) / this.scale;
-    const scaledY = (e.clientY - top) / this.scale;
-    const x = (scaledX / (width / this.scale)) * 100;
-    const y = (scaledY / (height / this.scale)) * 100;
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
     await navigator.clipboard.writeText(`[${x.toFixed(2)}, ${y.toFixed(2)}]`);
   };
 
@@ -966,7 +1019,7 @@ export default class MapCanvas extends HTMLElement {
     await this.#waitForPageLoad();
     await this.#loadPois();
     this.#measureNaturalDimensions();
-    this.#setNaturalCanvasSize();
+    this.#applyCanvasSize();
     this.#renderTiles(this.zoom);
     this.#drawPois();
     this.#onMapLoad();
@@ -1001,13 +1054,13 @@ export default class MapCanvas extends HTMLElement {
       cancelAnimationFrame(this.dragRafId);
     }
     clearTimeout(this.transitionTimeoutId);
-    clearTimeout(this.tileSwapTimeoutId);
     if (this.resizeRafId !== null) {
       cancelAnimationFrame(this.resizeRafId);
     }
     if (this.tileVisibilityRafId !== null) {
       cancelAnimationFrame(this.tileVisibilityRafId);
     }
+    this.#removeBackdrop();
     window.removeEventListener("resize", this.#handleResize);
     window.removeEventListener("mouseout", this.#dragEnd);
     window.removeEventListener("wheel", this.#handleMouseWheel);
