@@ -68,11 +68,7 @@ export const content = /* html */ `
     </div>
     <div class="known-issues">
       <h2>Known issues</h2>
-      <ul>
-        <li>
-          <b>On Chrome and Safari</b>: A small gap can be visible between map tiles on some zoom levels.
-        </li>
-      </ul>
+      <p>As of now, there are no known issues. Please open an issue if you encounter any.</p>
     </div>
   </div>
 `;
