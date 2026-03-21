@@ -747,7 +747,7 @@
     },
     {
       "kind": "river",
-      "name": "R. Lhûm",
+      "name": "Lhûm",
       "position": [17.2, 17.24],
       "size": 1,
       "zoom": 6
@@ -775,21 +775,21 @@
     },
     {
       "kind": "river",
-      "name": "R. Carnen",
+      "name": "Carnen",
       "position": [68.53, 18.9],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Barandduin",
+      "name": "Baranduin",
       "position": [23.77, 33.39],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Gwathló",
+      "name": "Gwathló",
       "position": [30.01, 38.86],
       "size": 1,
       "zoom": 6
@@ -803,35 +803,35 @@
     },
     {
       "kind": "river",
-      "name": "R. Glanduin",
+      "name": "Glanduin",
       "position": [39.26, 38.0],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Mitheithel",
+      "name": "Mitheithel",
       "position": [37.52, 27.72],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Bruinen",
+      "name": "Bruinen",
       "position": [40.19, 27.87],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Langwell",
+      "name": "Langwell",
       "position": [45.9, 13.67],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Greylin",
+      "name": "Greylin",
       "position": [48.1, 12.54],
       "size": 1,
       "zoom": 6
@@ -852,56 +852,56 @@
     },
     {
       "kind": "river",
-      "name": "R. Rhimdath",
+      "name": "Rhimdath",
       "position": [47.06, 17.76],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Anduin",
+      "name": "Anduin",
       "position": [50.0, 25.71],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Ninglor",
+      "name": "Ninglor",
       "position": [46.06, 29.51],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Silverlode",
+      "name": "Silverlode",
       "position": [43.88, 36.38],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Nimrodel",
+      "name": "Nimrodel",
       "position": [43.74, 38.33],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Limlight",
+      "name": "Limlight",
       "position": [47.17, 43.88],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Ondló",
+      "name": "Ondló",
       "position": [46.11, 50.3],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Snowbourne",
+      "name": "Snowbourne",
       "position": [45.04, 57.3],
       "size": 1,
       "zoom": 6
@@ -915,91 +915,91 @@
     },
     {
       "kind": "river",
-      "name": "R. Adorn",
+      "name": "Adorn",
       "position": [34.53, 55.66],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Angren",
+      "name": "Angren",
       "position": [28.29, 54.8],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Lefnui",
+      "name": "Lefnui",
       "position": [30.62, 64.08],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Morthond",
+      "name": "Morthond",
       "position": [42.58, 66.4],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Ciril",
+      "name": "Ciril",
       "position": [46.4, 64.57],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Ringló",
+      "name": "Ringló",
       "position": [48.2, 65.2],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Gilrain",
+      "name": "Gilrain",
       "position": [50.94, 68.34],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Serni",
+      "name": "Serni",
       "position": [51.13, 71.44],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Celos",
+      "name": "Celos",
       "position": [53.62, 67.69],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Sirith",
+      "name": "Sirith",
       "position": [54.53, 70.24],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Erui",
+      "name": "Erui",
       "position": [56.31, 67.4],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Poros",
+      "name": "Poros",
       "position": [54.48, 77.08],
       "size": 1,
       "zoom": 6
     },
     {
       "kind": "river",
-      "name": "R. Harnen",
+      "name": "Harnen",
       "position": [55.57, 88.9],
       "size": 1,
       "zoom": 6
@@ -1329,7 +1329,7 @@
     {
       "kind": "common-place",
       "name": "Cirith Ungol",
-      "position": [59.98, 63.91],
+      "position": [59.61, 63.66],
       "size": 1,
       "zoom": 6,
       "illustration": "/assets/images/places/cirith_ungol.png"
@@ -1372,9 +1372,10 @@
     {
       "kind": "common-place",
       "name": "Tower Hills",
-      "position": [16.92, 27.38],
+      "position": [16.24, 26.71],
       "size": 1,
-      "zoom": 6
+      "zoom": 6,
+      "illustration": "/assets/images/places/tower_hills.png"
     },
     {
       "kind": "common-place",
@@ -1442,7 +1443,7 @@
     {
       "kind": "common-place",
       "name": "Barad-dûr",
-      "position": [65.87, 62.04],
+      "position": [65.58, 61.66],
       "size": 1,
       "zoom": 6,
       "illustration": "/assets/images/places/barad_dur.png"
