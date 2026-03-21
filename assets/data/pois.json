@@ -459,9 +459,10 @@
     {
       "kind": "city",
       "name": "Minas Tirith",
-      "position": [56.2, 65.91],
+      "position": [56.06, 65.73],
       "size": 3,
-      "zoom": 3
+      "zoom": 3,
+      "illustration": "/assets/images/places/minas_tirith.png"
     },
     {
       "kind": "city",
@@ -475,7 +476,8 @@
       "name": "Minas Morgul",
       "position": [59.4, 64.54],
       "size": 2,
-      "zoom": 5
+      "zoom": 5,
+      "illustration": "/assets/images/places/minas_morgul.png"
     },
     {
       "kind": "city",
@@ -1329,7 +1331,8 @@
       "name": "Cirith Ungol",
       "position": [59.98, 63.91],
       "size": 1,
-      "zoom": 6
+      "zoom": 6,
+      "illustration": "/assets/images/places/cirith_ungol.png"
     },
     {
       "kind": "common-place",
@@ -1441,7 +1444,8 @@
       "name": "Barad-dûr",
       "position": [65.87, 62.04],
       "size": 1,
-      "zoom": 6
+      "zoom": 6,
+      "illustration": "/assets/images/places/barad_dur.png"
     },
     {
       "kind": "common-place",
