@@ -1,12 +1,13 @@
 import styles from "./map-pois.styles.js";
 
 const DEFAULT_BASE_FONT_SIZE = 16;
+const ILLUSTRATION_ZOOM_THRESHOLD = 9;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
-  region: Object.freeze({ 1: 0.85, 2: 1.2, 3: 1.5 }),
-  forest: Object.freeze({ 1: 0.35, 2: 0.45, 3: 0.55 }),
-  mountain: Object.freeze({ 1: 0.45, 2: 0.45, 3: 0.55 }),
-  "common-place": Object.freeze({ 1: 0.55, 2: 0.65, 3: 0.75 }),
+  region: Object.freeze({ 1: 0.8, 2: 1.15, 3: 1.45 }),
+  forest: Object.freeze({ 1: 0.65, 2: 0.8, 3: 0.95 }),
+  mountain: Object.freeze({ 1: 0.45, 2: 0.5, 3: 0.6 }),
+  "common-place": Object.freeze({ 1: 0.6, 2: 0.7, 3: 0.8 }),
   sea: Object.freeze({ 1: 0.55, 2: 0.5, 3: 0.6 }),
   city: Object.freeze({ 1: 0.45, 2: 0.55, 3: 0.65 }),
   river: Object.freeze({ 1: 0.55, 2: 0.65, 3: 0.75 }),
@@ -78,33 +79,49 @@ export default class MapPois extends HTMLElement {
    * @private
    */
   #createPoiElement = (poi) => {
-    const { name, kind, position, size, zoom, shadow } = poi;
+    const { name, kind, position, size, zoom, illustration } = poi;
     const [x, y] = position;
 
-    const el = document.createElement("div");
-    el.className = "poi";
-    el.style.cssText = `top: ${y}%; left: ${x}%;`;
+    const el = Object.assign(document.createElement("div"), {
+      className: "poi",
+      hidden: true,
+      style: `top: ${y}%; left: ${x}%;`,
+    });
     el.dataset.kind = kind;
     el.dataset.size = size;
-    el.hidden = true;
 
     let dotElement = null;
 
     if (kind === "city") {
-      dotElement = document.createElement("div");
-      dotElement.className = "dot";
+      dotElement = Object.assign(document.createElement("div"), {
+        className: "dot",
+      });
       el.appendChild(dotElement);
     }
 
-    const nameEl = document.createElement("div");
-    nameEl.className = "name";
-    nameEl.textContent = name;
+    let illustrationElement = null;
+
+    if (illustration) {
+      illustrationElement = Object.assign(document.createElement("img"), {
+        className: "illustration",
+        src: illustration,
+        alt: name,
+        hidden: true,
+      });
+      el.appendChild(illustrationElement);
+    }
+
+    const nameEl = Object.assign(document.createElement("div"), {
+      className: "name",
+      textContent: name,
+    });
     el.appendChild(nameEl);
 
     return {
       element: el,
       nameElement: nameEl,
       dotElement,
+      illustrationElement,
       zoom,
       textSizeMultiplier: this.#getTextSizeMultiplier(kind, size),
       dotSizeMultiplier:
@@ -207,9 +224,30 @@ export default class MapPois extends HTMLElement {
       }
 
       poiElement.element.hidden = poiElement.zoom > zoom;
+
+      this.#applyIllustrationMode(poiElement, zoom);
     }
 
     this.lastBaseFontSize = resolvedBaseFontSize;
+  };
+
+  /**
+   * Toggles between the illustration image and the traditional dot marker
+   * based on the current zoom level.
+   * @param {{dotElement: HTMLElement | null, illustrationElement: HTMLElement | null}} poiElement
+   * @param {number} zoom
+   * @private
+   */
+  #applyIllustrationMode = (poiElement, zoom) => {
+    if (!poiElement.illustrationElement) return;
+
+    const showIllustration = zoom >= ILLUSTRATION_ZOOM_THRESHOLD;
+
+    if (poiElement.dotElement) {
+      poiElement.dotElement.hidden = showIllustration;
+    }
+
+    poiElement.illustrationElement.hidden = !showIllustration;
   };
 
   connectedCallback() {}
