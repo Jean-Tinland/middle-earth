@@ -7,9 +7,9 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
 /** The number of discrete zoom steps available. */
-const NUM_ZOOM_STEPS = 15;
+const NUM_ZOOM_STEPS = 16;
 /** The maximum scale multiplier at the final zoom step. */
-const MAX_SCALE = 14;
+const MAX_SCALE = 16;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
@@ -21,7 +21,7 @@ const BASE_MAP_WIDTH = 1800;
 /** Base map height used for layout coordinates. */
 const BASE_MAP_HEIGHT = 1300;
 /** Off-screen margin used to preload nearby tiles. */
-const TILE_PRELOAD_MARGIN = 256;
+const TILE_PRELOAD_MARGIN = 128;
 /**
  * Source scale multiplier per tile zoom level.
  * Zoom levels 0-5 are linear (zoom+1), but 6 and 7 use larger source images.
@@ -229,7 +229,11 @@ export default class MapCanvas extends HTMLElement {
       0,
       this.zoomLevel - this.#computePoiZoomOffset(),
     );
-    this.mapPois.render(effectivePoiZoomLevel, this.fontSizeRef, this.zoomLevel);
+    this.mapPois.render(
+      effectivePoiZoomLevel,
+      this.fontSizeRef,
+      this.zoomLevel,
+    );
   };
 
   /**
