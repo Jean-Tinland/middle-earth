@@ -7,7 +7,7 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
 /** The number of discrete zoom steps available. */
-const NUM_ZOOM_STEPS = 13;
+const NUM_ZOOM_STEPS = 15;
 /** The maximum scale multiplier at the final zoom step. */
 const MAX_SCALE = 14;
 /** The accumulated deltaY required to trigger one zoom step. */
@@ -31,6 +31,12 @@ const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
 const PORTRAIT_MIN_FONT_SCALE = 0.65;
 /** Effective font scale cap so size stays constant once scale reaches 9+. */
 const FONT_SCALE_LOCK_THRESHOLD = 8;
+/**
+ * Viewport height (px) representing the intended design target for POI zoom thresholds.
+ * A 900 px-tall viewport produces canvasNaturalWidth ≈ 1246 px, the reference below which
+ * POI appearance is shifted forward to avoid overcrowded labels on smaller canvases.
+ */
+const POI_ZOOM_REFERENCE_HEIGHT = 900;
 /** Duration of animated zoom transitions in milliseconds. */
 const ZOOM_TRANSITION_MS = 320;
 /** Small threshold used when comparing floating-point translate values. */
@@ -191,12 +197,39 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Returns how many discrete zoom steps must be subtracted so that POIs
+   * appear at the same visual canvas size as on the reference desktop.
+   * On desktop-sized viewports the offset is zero, leaving behaviour unchanged.
+   * @returns {number}
+   * @private
+   */
+  #computePoiZoomOffset = () => {
+    const referenceNaturalWidth = Math.floor(
+      BASE_MAP_WIDTH * (POI_ZOOM_REFERENCE_HEIGHT / BASE_MAP_HEIGHT),
+    );
+    if (this.canvasNaturalWidth >= referenceNaturalWidth) return 0;
+    return Math.floor(
+      (NUM_ZOOM_STEPS *
+        Math.log(referenceNaturalWidth / this.canvasNaturalWidth)) /
+        Math.log(MAX_SCALE),
+    );
+  };
+
+  /**
    * Renders POIs for the current zoom and font reference.
+   * Uses a canvas-size-adjusted zoom level to gate visibility so POIs appear
+   * at an equivalent canvas size across different viewport sizes. The raw
+   * zoomLevel is forwarded separately for illustration-mode switching, which
+   * must always reflect the true zoom step regardless of viewport size.
    * @private
    */
   #renderPois = () => {
     if (!this.mapPois) return;
-    this.mapPois.render(this.zoomLevel, this.fontSizeRef);
+    const effectivePoiZoomLevel = Math.max(
+      0,
+      this.zoomLevel - this.#computePoiZoomOffset(),
+    );
+    this.mapPois.render(effectivePoiZoomLevel, this.fontSizeRef, this.zoomLevel);
   };
 
   /**

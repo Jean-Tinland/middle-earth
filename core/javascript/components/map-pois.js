@@ -221,10 +221,12 @@ export default class MapPois extends HTMLElement {
 
   /**
    * Shows/hides POIs based on the current zoom level.
-   * @param {number} zoom - The zoom level of the map.
+   * @param {number} zoom - The effective zoom level used to gate POI visibility.
    * @param {number} [baseFontSize] - Base font size used to compute POI sizes.
+   * @param {number} [illustrationZoom] - The raw zoom level used only for illustration
+   *   mode switching. Defaults to `zoom` when omitted.
    */
-  render = (zoom, baseFontSize) => {
+  render = (zoom, baseFontSize, illustrationZoom = zoom) => {
     const resolvedBaseFontSize = this.#resolveBaseFontSize(baseFontSize);
     const shouldRecalculateSizes =
       this.lastBaseFontSize !== resolvedBaseFontSize;
@@ -236,7 +238,7 @@ export default class MapPois extends HTMLElement {
 
       poiElement.element.hidden = poiElement.zoom > zoom;
 
-      this.#applyIllustrationMode(poiElement, zoom);
+      this.#applyIllustrationMode(poiElement, illustrationZoom);
     }
 
     this.lastBaseFontSize = resolvedBaseFontSize;
