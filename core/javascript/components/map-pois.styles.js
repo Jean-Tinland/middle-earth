@@ -100,6 +100,7 @@ const styles = /* css */ `
   .illustration {
     display: block;
     height: auto;
+    margin: 0 auto;
   }
 
   .illustration[hidden] {
