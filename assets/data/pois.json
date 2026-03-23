@@ -1359,11 +1359,11 @@
       "zoom": 6
     },
     {
-      "kind": "common-place",
+      "kind": "city",
       "name": "Caras Galadon",
-      "position": [47.32, 38.82],
-      "size": 1,
-      "zoom": 6
+      "position": [47.0, 38.63],
+      "size": 2,
+      "zoom": 5
     },
     {
       "kind": "common-place",
