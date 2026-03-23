@@ -41,6 +41,8 @@ const POI_ZOOM_REFERENCE_HEIGHT = 900;
 const ZOOM_TRANSITION_MS = 320;
 /** Small threshold used when comparing floating-point translate values. */
 const TRANSLATE_EPSILON = 0.01;
+/** Milliseconds of zoom inactivity before tile loading begins. */
+const TILE_LOAD_DEBOUNCE_MS = 600;
 
 /**
  * Maps a discrete zoom level to a scale multiplier.
@@ -101,7 +103,13 @@ export default class MapCanvas extends HTMLElement {
     this.activeTileZoom = DEFAULTS.ZOOM;
     this.previousTileZoom = null;
     this.backdropElement = null;
+    this.backdropOriginalWidth = 0;
     this.tileVisibilityRafId = null;
+    this.tileLoadTimeoutId = null;
+    this.isPinching = false;
+    this.pinchStartDistance = 0;
+    this.pinchStartZoomLevel = 0;
+    this.pinchFocalPoint = null;
 
     this.root = this.attachShadow({ mode: "open" });
 
@@ -144,7 +152,14 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #installBackdrop = (oldW, oldH) => {
-    this.#removeBackdrop();
+    if (this.backdropElement) {
+      // A backdrop from a previous rapid zoom already exists — just rescale it
+      // to match the new canvas dimensions without replacing it.
+      const newW = this.#canvasWidth();
+      const scaleRatio = newW / this.backdropOriginalWidth;
+      this.backdropElement.style.transform = `scale(${scaleRatio})`;
+      return;
+    }
 
     const activeLayer = this.tileLayers.get(this.activeTileZoom);
     if (!activeLayer) return;
@@ -168,6 +183,7 @@ export default class MapCanvas extends HTMLElement {
     ].join(";");
     activeLayer.element.hidden = false;
 
+    this.backdropOriginalWidth = oldW;
     this.backdropElement = activeLayer.element;
   };
 
@@ -178,6 +194,7 @@ export default class MapCanvas extends HTMLElement {
   #reset = () => {
     clearTimeout(this.transitionTimeoutId);
     this.transitionTimeoutId = null;
+    this.#cancelPendingTileLoad();
     this.canvas.style.removeProperty("transition");
     this.#removeBackdrop();
     this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
@@ -287,6 +304,30 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Cancels any pending deferred tile load.
+   * @private
+   */
+  #cancelPendingTileLoad = () => {
+    if (this.tileLoadTimeoutId === null) return;
+    clearTimeout(this.tileLoadTimeoutId);
+    this.tileLoadTimeoutId = null;
+  };
+
+  /**
+   * Schedules tile loading after a debounce delay, allowing rapid zoom
+   * without triggering intermediate tile loads.
+   * @param {number} zoom
+   * @private
+   */
+  #scheduleTileLoad = (zoom) => {
+    this.#cancelPendingTileLoad();
+    this.tileLoadTimeoutId = setTimeout(() => {
+      this.tileLoadTimeoutId = null;
+      this.#renderTiles(zoom);
+    }, TILE_LOAD_DEBOUNCE_MS);
+  };
+
+  /**
    * Applies the zoom change, adjusting translate to preserve the focal point.
    * The canvas is resized to actual pixel dimensions; translate is in screen
    * pixels so focal-point math works directly.
@@ -317,54 +358,17 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Zooms in the canvas.
+   * Applies a zoom level change and schedules tile loading after a debounce.
+   * @param {number} targetLevel - Desired zoom level, clamped to valid range.
+   * @param {{x: number, y: number}} focalPoint - Viewport point to zoom around.
+   * @private
    */
-  zoomIn = (e) => {
-    if (this.zoomLevel >= NUM_ZOOM_STEPS) return;
-    e.preventDefault();
-
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.canvas.style.removeProperty("transition");
-
-    const focalPoint = this.#getZoomFocalPoint(e);
+  #applyZoomStep = (targetLevel, focalPoint) => {
     const oldScale = this.scale;
     const oldW = this.#canvasWidth();
     const oldH = this.#canvasHeight();
 
-    this.zoomLevel = Math.min(this.zoomLevel + 1, NUM_ZOOM_STEPS);
-    this.scale = computeScaleForZoomLevel(this.zoomLevel);
-    this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
-
-    this.#applyCanvasSize();
-    this.#installBackdrop(oldW, oldH);
-    this.#resetTileLayers();
-    this.#adjustTranslateForZoom(oldScale, focalPoint);
-    this.#updateFontSizeRef();
-    this.#renderPois();
-    this.#checkAndFixBoundaries();
-    this.#updateCanvas();
-    this.#updateControls();
-    this.#renderTiles(this.zoom);
-  };
-
-  /**
-   * Zooms out the canvas.
-   */
-  zoomOut = (e) => {
-    if (this.zoomLevel <= 0) return;
-    e.preventDefault();
-
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.canvas.style.removeProperty("transition");
-
-    const focalPoint = this.#getZoomFocalPoint(e);
-    const oldScale = this.scale;
-    const oldW = this.#canvasWidth();
-    const oldH = this.#canvasHeight();
-
-    this.zoomLevel = Math.max(this.zoomLevel - 1, 0);
+    this.zoomLevel = Math.max(0, Math.min(targetLevel, NUM_ZOOM_STEPS));
     this.scale = computeScaleForZoomLevel(this.zoomLevel);
     this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
 
@@ -379,16 +383,41 @@ export default class MapCanvas extends HTMLElement {
       this.translateX = DEFAULTS.TRANSLATE_X;
       this.translateY = DEFAULTS.TRANSLATE_Y;
       this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-      this.#updateControls();
-      this.#updateCanvas();
-      this.#renderTiles(this.zoom);
-      return;
+    } else {
+      this.#checkAndFixBoundaries();
     }
 
-    this.#checkAndFixBoundaries();
     this.#updateCanvas();
     this.#updateControls();
-    this.#renderTiles(this.zoom);
+    this.#scheduleTileLoad(this.zoom);
+  };
+
+  /**
+   * Zooms in the canvas.
+   */
+  zoomIn = (e) => {
+    if (this.zoomLevel >= NUM_ZOOM_STEPS) return;
+    e.preventDefault();
+
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
+
+    this.#applyZoomStep(this.zoomLevel + 1, this.#getZoomFocalPoint(e));
+  };
+
+  /**
+   * Zooms out the canvas.
+   */
+  zoomOut = (e) => {
+    if (this.zoomLevel <= 0) return;
+    e.preventDefault();
+
+    clearTimeout(this.transitionTimeoutId);
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
+
+    this.#applyZoomStep(this.zoomLevel - 1, this.#getZoomFocalPoint(e));
   };
 
   /**
@@ -490,6 +519,7 @@ export default class MapCanvas extends HTMLElement {
     if (this.resizeRafId !== null) return;
     this.resizeRafId = requestAnimationFrame(() => {
       this.resizeRafId = null;
+      this.#cancelPendingTileLoad();
       const previousWidth = this.canvasNaturalWidth;
       const previousHeight = this.canvasNaturalHeight;
       this.#measureNaturalDimensions();
@@ -519,12 +549,20 @@ export default class MapCanvas extends HTMLElement {
    */
   #touchStart = (e) => {
     e.preventDefault();
-    this.isDragging = true;
     clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
 
+    if (e.touches.length === 2) {
+      this.isDragging = false;
+      this.previousTouch = undefined;
+      this.#initPinch(e);
+      return;
+    }
+
     if (e.touches.length !== 1) return;
 
+    this.isPinching = false;
+    this.isDragging = true;
     const touch = e.touches[0];
     this.previousTouch = {
       clientX: touch.clientX,
@@ -569,6 +607,7 @@ export default class MapCanvas extends HTMLElement {
   #dragEnd = (e) => {
     if (!this.isDragging) return;
     this.isDragging = false;
+    this.isPinching = false;
     e.preventDefault();
     e.stopPropagation();
     this.canvas.removeEventListener("pointermove", this.#dragging);
@@ -656,6 +695,12 @@ export default class MapCanvas extends HTMLElement {
     if (e.type === "touchmove") {
       this.canvas.style.setProperty("transition", "none");
 
+      if (this.isPinching || e.touches.length === 2) {
+        if (!this.isPinching) this.#initPinch(e);
+        this.#handlePinchMove(e);
+        return;
+      }
+
       const touch = e.touches[0];
 
       e.movementX = this.previousTouch
@@ -682,6 +727,57 @@ export default class MapCanvas extends HTMLElement {
       this.dragRafId = null;
       this.#applyPendingDrag();
     });
+  };
+
+  /**
+   * Initializes pinch-to-zoom state from a two-finger touch event.
+   * @param {TouchEvent} e
+   * @private
+   */
+  #initPinch = (e) => {
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    this.isPinching = true;
+    this.isDragging = true;
+    this.pinchStartDistance = Math.hypot(
+      t2.clientX - t1.clientX,
+      t2.clientY - t1.clientY,
+    );
+    this.pinchStartZoomLevel = this.zoomLevel;
+    this.pinchFocalPoint = {
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    };
+  };
+
+  /**
+   * Computes the target zoom level from current pinch distance and applies
+   * a discrete zoom step when the level changes.
+   * @param {TouchEvent} e
+   * @private
+   */
+  #handlePinchMove = (e) => {
+    if (e.touches.length !== 2 || this.pinchStartDistance === 0) return;
+
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    const currentDistance = Math.hypot(
+      t2.clientX - t1.clientX,
+      t2.clientY - t1.clientY,
+    );
+
+    const ratio = currentDistance / this.pinchStartDistance;
+    const zoomDelta = Math.round(
+      (Math.log(ratio) * NUM_ZOOM_STEPS) / Math.log(MAX_SCALE),
+    );
+    const targetLevel = Math.max(
+      0,
+      Math.min(NUM_ZOOM_STEPS, this.pinchStartZoomLevel + zoomDelta),
+    );
+
+    if (targetLevel === this.zoomLevel) return;
+
+    this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
   };
 
   /**
@@ -1097,6 +1193,7 @@ export default class MapCanvas extends HTMLElement {
     if (this.tileVisibilityRafId !== null) {
       cancelAnimationFrame(this.tileVisibilityRafId);
     }
+    this.#cancelPendingTileLoad();
     this.#removeBackdrop();
     window.removeEventListener("resize", this.#handleResize);
     window.removeEventListener("mouseout", this.#dragEnd);
