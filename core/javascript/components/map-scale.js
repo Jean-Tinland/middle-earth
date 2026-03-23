@@ -1,13 +1,13 @@
 import template from "./map-scale.template.js";
 import styles from "./map-scale.styles.js";
 
-/** Total real-world width the base map represents, in leagues. */
-const MAP_WIDTH_LEAGUES = 2000;
+/** Total real-world width the base map represents, in miles. */
+const MAP_WIDTH_MILES = 2000;
 
 /** Number of alternating bar segments in the scale indicator. */
 const SEGMENT_COUNT = 4;
 
-/** Nice round values to use as the total bar distance (in leagues). */
+/** Nice round values to use as the total bar distance (in miles). */
 const NICE_DISTANCES = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
 
 /** Target pixel width for the scale bar on screen. */
@@ -51,10 +51,10 @@ export default class MapScale extends HTMLElement {
    * @private
    */
   #computeScaleBar = (canvasNaturalWidth, scale) => {
-    const leaguesPerPx = MAP_WIDTH_LEAGUES / (canvasNaturalWidth * scale);
-    const rawDistance = TARGET_BAR_PX * leaguesPerPx;
+    const milesPerPx = MAP_WIDTH_MILES / (canvasNaturalWidth * scale);
+    const rawDistance = TARGET_BAR_PX * milesPerPx;
     const distance = pickNiceDistance(rawDistance);
-    const barPx = distance / leaguesPerPx;
+    const barPx = distance / milesPerPx;
     return { barPx, distance };
   };
 
