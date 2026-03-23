@@ -6,6 +6,8 @@ import MapPois from "./map-pois.js";
 import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
+/** Build version used for cache-busting tile URLs. Increment when tile assets change. */
+const BUILD_VERSION = "1";
 /** The number of discrete zoom steps available. */
 const NUM_ZOOM_STEPS = 16;
 /** The maximum scale multiplier at the final zoom step. */
@@ -838,7 +840,7 @@ export default class MapCanvas extends HTMLElement {
         ].join(";");
 
         const image = document.createElement("img");
-        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg`;
+        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${BUILD_VERSION}`;
         image.alt = "";
         image.loading = "lazy";
         image.decoding = "async";
