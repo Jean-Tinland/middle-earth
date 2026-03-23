@@ -42,7 +42,7 @@ const FONT_SCALE_LOCK_THRESHOLD = 8;
  */
 const POI_ZOOM_REFERENCE_HEIGHT = 900;
 /** Duration of animated zoom transitions in milliseconds. */
-const ZOOM_TRANSITION_MS = 320;
+const ZOOM_TRANSITION_MS = 120;
 /** Small threshold used when comparing floating-point translate values. */
 const TRANSLATE_EPSILON = 0.01;
 /** Milliseconds of zoom inactivity before tile loading begins. */
@@ -97,9 +97,6 @@ export default class MapCanvas extends HTMLElement {
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-    this.wheelRafId = null;
-    this.lastWheelEvent = null;
-    this.lastWheelDirection = 0;
     this.wheelDeltaAccumulator = 0;
     this.dragRafId = null;
     this.resizeRafId = null;
@@ -322,6 +319,34 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Animates the canvas from its previous scale/position to the current state
+   * using the FLIP technique: briefly applies the inverse transform so the
+   * already-resized canvas appears in its old visual state, then transitions
+   * to the new natural position.
+   * @param {number} oldScale - Scale multiplier before the zoom step.
+   * @param {number} oldTranslateX - TranslateX value before the zoom step.
+   * @param {number} oldTranslateY - TranslateY value before the zoom step.
+   * @private
+   */
+  #animateZoomTransition = (oldScale, oldTranslateX, oldTranslateY) => {
+    const fromScaleFactor = oldScale / this.scale;
+
+    this.canvas.style.setProperty(
+      "transform",
+      `translate(${oldTranslateX}px, ${oldTranslateY}px) rotate(${this.rotation}deg) scale(${fromScaleFactor})`,
+    );
+
+    this.canvas.getBoundingClientRect();
+
+    this.canvas.style.setProperty(
+      "transition",
+      `transform ${ZOOM_TRANSITION_MS}ms var(--transition-easing)`,
+    );
+    this.#updateCanvas();
+    this.#scheduleTransitionCleanup();
+  };
+
+  /**
    * Cancels any pending deferred tile load.
    * @private
    */
@@ -379,10 +404,13 @@ export default class MapCanvas extends HTMLElement {
    * Applies a zoom level change and schedules tile loading after a debounce.
    * @param {number} targetLevel - Desired zoom level, clamped to valid range.
    * @param {{x: number, y: number}} focalPoint - Viewport point to zoom around.
+   * @param {boolean} [animate=false] - Whether to apply a smooth transform transition.
    * @private
    */
-  #applyZoomStep = (targetLevel, focalPoint) => {
+  #applyZoomStep = (targetLevel, focalPoint, animate = false) => {
     const oldScale = this.scale;
+    const oldTranslateX = this.translateX;
+    const oldTranslateY = this.translateY;
     const oldW = this.#canvasWidth();
     const oldH = this.#canvasHeight();
 
@@ -405,7 +433,11 @@ export default class MapCanvas extends HTMLElement {
       this.#checkAndFixBoundaries();
     }
 
-    this.#updateCanvas();
+    if (animate) {
+      this.#animateZoomTransition(oldScale, oldTranslateX, oldTranslateY);
+    } else {
+      this.#updateCanvas();
+    }
     this.#updateControls();
     this.#updateUrlState();
     this.#dispatchZoomChange();
@@ -439,7 +471,7 @@ export default class MapCanvas extends HTMLElement {
     this.transitionTimeoutId = null;
     this.canvas.style.removeProperty("transition");
 
-    this.#applyZoomStep(this.zoomLevel + 1, this.#getZoomFocalPoint(e));
+    this.#applyZoomStep(this.zoomLevel + 1, this.#getZoomFocalPoint(e), true);
   };
 
   /**
@@ -453,7 +485,7 @@ export default class MapCanvas extends HTMLElement {
     this.transitionTimeoutId = null;
     this.canvas.style.removeProperty("transition");
 
-    this.#applyZoomStep(this.zoomLevel - 1, this.#getZoomFocalPoint(e));
+    this.#applyZoomStep(this.zoomLevel - 1, this.#getZoomFocalPoint(e), true);
   };
 
   /**
@@ -1216,6 +1248,9 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Handles the mouse wheel event.
+   * Zoom steps are applied immediately at the cursor position so each scroll
+   * tick anchors to where the pointer is at that instant, matching the
+   * behaviour of Google Maps.
    * @param {WheelEvent} e
    * @private
    */
@@ -1224,27 +1259,18 @@ export default class MapCanvas extends HTMLElement {
 
     if (Math.abs(this.wheelDeltaAccumulator) < WHEEL_THRESHOLD) return;
 
-    this.lastWheelEvent = e;
-    this.lastWheelDirection = this.wheelDeltaAccumulator > 0 ? 1 : -1;
-    this.wheelDeltaAccumulator = 0;
-
-    if (this.wheelRafId !== null) return;
+    const steps = Math.trunc(this.wheelDeltaAccumulator / WHEEL_THRESHOLD);
+    this.wheelDeltaAccumulator -= steps * WHEEL_THRESHOLD;
 
     clearTimeout(this.transitionTimeoutId);
-    this.canvas.style.setProperty("transition", "none");
+    this.transitionTimeoutId = null;
+    this.canvas.style.removeProperty("transition");
 
-    this.wheelRafId = requestAnimationFrame(() => {
-      this.wheelRafId = null;
-      const event = this.lastWheelEvent;
-      const direction = this.lastWheelDirection;
-      this.lastWheelEvent = null;
-      if (direction > 0) {
-        this.zoomOut(event);
-      } else {
-        this.zoomIn(event);
-      }
-      this.canvas.style.removeProperty("transition");
-    });
+    if (steps > 0) {
+      this.zoomOut(e);
+    } else {
+      this.zoomIn(e);
+    }
   };
 
   /**
@@ -1397,9 +1423,6 @@ export default class MapCanvas extends HTMLElement {
    * Called when the element is disconnected from the document's DOM.
    */
   disconnectedCallback() {
-    if (this.wheelRafId !== null) {
-      cancelAnimationFrame(this.wheelRafId);
-    }
     if (this.dragRafId !== null) {
       cancelAnimationFrame(this.dragRafId);
     }
