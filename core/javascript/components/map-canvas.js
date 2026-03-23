@@ -2,12 +2,13 @@ import "./map-button.js";
 import "./map-controls.js";
 import "./map-information.js";
 import "./map-nomenclature.js";
+import "./map-scale.js";
 import MapPois from "./map-pois.js";
 import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
 /** Build version used for cache-busting tile URLs. Increment when tile assets change. */
-const BUILD_VERSION = "1";
+const BUILD_VERSION = "2";
 /** The number of discrete zoom steps available. */
 const NUM_ZOOM_STEPS = 16;
 /** The maximum scale multiplier at the final zoom step. */
@@ -214,6 +215,7 @@ export default class MapCanvas extends HTMLElement {
     this.#updateControls();
     this.#updateCanvas();
     this.#updateUrlState();
+    this.#dispatchZoomChange();
   };
 
   /**
@@ -393,7 +395,24 @@ export default class MapCanvas extends HTMLElement {
     this.#updateCanvas();
     this.#updateControls();
     this.#updateUrlState();
+    this.#dispatchZoomChange();
     this.#scheduleTileLoad(this.zoom);
+  };
+
+  /**
+   * Dispatches a zoom-change event with the current canvas measurement data.
+   * @private
+   */
+  #dispatchZoomChange = () => {
+    this.dispatchEvent(
+      new CustomEvent("zoom-change", {
+        bubbles: false,
+        detail: {
+          canvasNaturalWidth: this.canvasNaturalWidth,
+          scale: this.scale,
+        },
+      }),
+    );
   };
 
   /**
@@ -543,6 +562,7 @@ export default class MapCanvas extends HTMLElement {
       }
       this.#checkAndFixBoundaries();
       this.#updateCanvas();
+      this.#dispatchZoomChange();
     });
   };
 
@@ -1236,6 +1256,7 @@ export default class MapCanvas extends HTMLElement {
     this.#renderPois();
     this.#updateCanvas();
     this.#updateControls();
+    this.#dispatchZoomChange();
 
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
     this.canvas.addEventListener("mousedown", this.#dragStart);

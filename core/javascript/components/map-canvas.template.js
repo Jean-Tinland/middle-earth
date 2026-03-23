@@ -8,6 +8,7 @@ export default function template() {
       <div class="right-cover"></div>
     </div>
     <map-nomenclature></map-nomenclature>
+    <map-scale></map-scale>
     <map-controls></map-controls>
     <map-information></map-information>
   `;
