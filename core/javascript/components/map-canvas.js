@@ -211,6 +211,7 @@ export default class MapCanvas extends HTMLElement {
     this.#renderPois();
     this.#updateControls();
     this.#updateCanvas();
+    this.#updateUrlState();
   };
 
   /**
@@ -389,6 +390,7 @@ export default class MapCanvas extends HTMLElement {
 
     this.#updateCanvas();
     this.#updateControls();
+    this.#updateUrlState();
     this.#scheduleTileLoad(this.zoom);
   };
 
@@ -637,10 +639,12 @@ export default class MapCanvas extends HTMLElement {
         this.#prepareAnimatedZoom();
         this.#updateCanvas();
         this.#scheduleTransitionCleanup();
+        this.#updateUrlState();
         return;
       }
 
       this.#updateCanvas();
+      this.#updateUrlState();
       return;
     }
 
@@ -658,6 +662,7 @@ export default class MapCanvas extends HTMLElement {
     } else {
       this.#updateCanvas();
     }
+    this.#updateUrlState();
   };
 
   /**
@@ -1131,6 +1136,74 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
+   * Computes the viewport center as fractional coordinates (0–1) within the canvas.
+   * These are viewport-size-independent: 0.5 / 0.5 always means the map centre.
+   * @returns {{x: number, y: number} | null}
+   * @private
+   */
+  #computeMapCenterFractions = () => {
+    const w = this.#canvasWidth();
+    const h = this.#canvasHeight();
+    if (w === 0 || h === 0) return null;
+    return {
+      x: 0.5 - this.translateX / w,
+      y: 0.5 - this.translateY / h,
+    };
+  };
+
+  /**
+   * Writes the current zoom level and map center to the URL as query params.
+   * Clears the params when back at the default zoom level.
+   * @private
+   */
+  #updateUrlState = () => {
+    const params = new URLSearchParams(window.location.search);
+    if (this.zoomLevel === 0) {
+      params.delete("z");
+      params.delete("x");
+      params.delete("y");
+    } else {
+      const center = this.#computeMapCenterFractions();
+      if (!center) return;
+      params.set("z", String(this.zoomLevel));
+      params.set("x", center.x.toFixed(4));
+      params.set("y", center.y.toFixed(4));
+    }
+
+    const search = params.toString();
+    const url = search
+      ? `${window.location.pathname}?${search}`
+      : window.location.pathname;
+    history.replaceState(null, "", url);
+  };
+
+  /**
+   * Reads zoom and center coordinates from URL params and applies them as the
+   * initial map state. Must be called after natural dimensions are measured.
+   * @private
+   */
+  #restoreStateFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const z = parseInt(params.get("z"), 10);
+    const x = parseFloat(params.get("x"));
+    const y = parseFloat(params.get("y"));
+
+    if (!Number.isFinite(z) || z < 1 || z > NUM_ZOOM_STEPS) return;
+    if (!Number.isFinite(x) || x < 0 || x > 1) return;
+    if (!Number.isFinite(y) || y < 0 || y > 1) return;
+
+    this.zoomLevel = z;
+    this.scale = computeScaleForZoomLevel(z);
+    this.zoom = Math.min(z, MAX_TILE_ZOOM);
+
+    const w = this.#canvasWidth();
+    const h = this.#canvasHeight();
+    this.translateX = (0.5 - x) * w;
+    this.translateY = (0.5 - y) * h;
+    this.#checkAndFixBoundaries();
+  };
+
+  /**
    * Resolves once the document and blocking resources are fully loaded.
    * @returns {Promise<void>}
    * @private
@@ -1152,6 +1225,7 @@ export default class MapCanvas extends HTMLElement {
     await this.#waitForPageLoad();
     await this.#loadPois();
     this.#measureNaturalDimensions();
+    this.#restoreStateFromUrl();
     this.#applyCanvasSize();
     this.#renderTiles(this.zoom);
     this.#drawPois();
@@ -1159,6 +1233,7 @@ export default class MapCanvas extends HTMLElement {
     this.#updateFontSizeRef();
     this.#renderPois();
     this.#updateCanvas();
+    this.#updateControls();
 
     this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
     this.canvas.addEventListener("mousedown", this.#dragStart);
