@@ -14,17 +14,11 @@ const styles = /* css */ `
 
 @media (pointer: coarse) {
   .controls {
+    position: fixed;
     top: unset;
-    bottom: 16px;
-    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
     flex-direction: row-reverse;
-  }
-}
-
-@supports (-webkit-touch-callout: none) {
-  .controls {
-    top: calc(100vh - 150px);
-    bottom: unset;
   }
 }
 

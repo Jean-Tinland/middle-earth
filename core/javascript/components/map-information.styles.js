@@ -17,10 +17,13 @@ const styles = /* css */ `
   }
 }
 
-@supports (-webkit-touch-callout: none) {
+@media (pointer: coarse) {
   :host {
-    top: calc(100vh - 150px);
-    bottom: unset;
+
+    position: fixed;
+    top: unset;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: 16px;
   }
 }
 
