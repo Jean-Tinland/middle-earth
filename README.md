@@ -7,6 +7,9 @@ All points of interest were collected on various representations of existing Mid
 
 ![Middle-Earth interactive map](./assets/images/preview.png)
 
+> [!NOTE]
+> Zoom level, map center and rotation are preserved in the URL, so you can share a specific view of the map by sharing the URL.
+
 ## Credits
 
 - Map drawn in Figma with custom terrain & landmark elements.
