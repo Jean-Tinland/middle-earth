@@ -49,6 +49,8 @@ const TRANSLATE_EPSILON = 0.01;
 const TILE_LOAD_DEBOUNCE_MS = 600;
 /** Degrees of map rotation applied per horizontal pixel during shift-drag. */
 const ROTATION_SPEED = 0.3;
+/** Number of tiles to load concurrently before waiting for completions. */
+const TILE_LOAD_BATCH_SIZE = 10;
 
 /**
  * Maps a discrete zoom level to a scale multiplier.
@@ -112,8 +114,10 @@ export default class MapCanvas extends HTMLElement {
     this.previousTileZoom = null;
     this.backdropElement = null;
     this.backdropOriginalWidth = 0;
-    this.tileVisibilityRafId = null;
     this.tileLoadTimeoutId = null;
+    this.tileSlotToTile = new WeakMap();
+    this.tileLoadQueue = [];
+    this.tileLoadInFlight = 0;
     this.mapCompass = null;
     this.isPinching = false;
     this.pinchStartDistance = 0;
@@ -312,7 +316,7 @@ export default class MapCanvas extends HTMLElement {
     clearTimeout(this.transitionTimeoutId);
     this.transitionTimeoutId = setTimeout(() => {
       this.canvas.style.removeProperty("transition");
-      this.#scheduleTileVisibilityUpdate();
+      this.#checkLayerHandoff();
       this.transitionTimeoutId = null;
     }, ZOOM_TRANSITION_MS);
   };
@@ -472,7 +476,6 @@ export default class MapCanvas extends HTMLElement {
       "transform",
       `translate(${this.translateX}px, ${this.translateY}px) rotate(${this.rotation}deg)`,
     );
-    this.#scheduleTileVisibilityUpdate();
   };
 
   /**
@@ -494,13 +497,13 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Applies rotation from both horizontal and vertical drag movement (shift-drag).
-   * Rightward or upward movement rotates clockwise; leftward or downward is counter-clockwise.
+   * Leftward or downward movement rotates clockwise; rightward or upward is counter-clockwise.
    * @param {number} movementX - Horizontal pixel movement.
    * @param {number} movementY - Vertical pixel movement.
    * @private
    */
   #applyRotationDelta = (movementX, movementY) => {
-    this.#rotateAroundViewportCenter((movementX - movementY) * ROTATION_SPEED);
+    this.#rotateAroundViewportCenter((movementY - movementX) * ROTATION_SPEED);
     this.#updateCanvas();
     this.#notifyRotationChange();
   };
@@ -928,7 +931,7 @@ export default class MapCanvas extends HTMLElement {
 
     const layer = document.createElement("div");
     layer.style.cssText =
-      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;";
+      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;content-visibility:auto;contain-intrinsic-size:auto auto;";
     layer.hidden = true;
 
     const tiles = [];
@@ -959,23 +962,32 @@ export default class MapCanvas extends HTMLElement {
           `top:${top}px`,
           `width:${width}px`,
           `height:${height}px`,
-          "visibility:hidden",
         ].join(";");
 
         const image = document.createElement("img");
         const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${BUILD_VERSION}`;
         image.alt = "";
-        image.loading = "lazy";
         image.decoding = "async";
+        image.dataset.src = src;
         image.style.cssText =
           "display:block;width:100%;height:100%;pointer-events:none;";
 
-        const tile = { slot, image, src, requested: false, ready: false };
+        const tile = {
+          slot,
+          image,
+          src,
+          requested: false,
+          ready: false,
+          intersecting: false,
+        };
+        this.tileSlotToTile.set(slot, tile);
 
         const markTileReady = () => {
           if (tile.ready) return;
           tile.ready = true;
-          this.#scheduleTileVisibilityUpdate();
+          this.tileLoadInFlight = Math.max(0, this.tileLoadInFlight - 1);
+          this.#drainTileLoadQueue();
+          this.#checkLayerHandoff();
         };
 
         image.addEventListener("load", () => {
@@ -1005,11 +1017,14 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #resetTileLayers = () => {
-    for (const { element } of this.tileLayers.values()) {
-      element.remove();
+    for (const layer of this.tileLayers.values()) {
+      layer.observer?.disconnect();
+      layer.element.remove();
     }
     this.tileLayers.clear();
     this.previousTileZoom = null;
+    this.tileLoadQueue = [];
+    this.tileLoadInFlight = 0;
   };
 
   /**
@@ -1025,6 +1040,7 @@ export default class MapCanvas extends HTMLElement {
     const newLayer = this.#buildTileLayer(zoom);
     this.tileLayers.set(zoom, newLayer);
     this.map.prepend(newLayer.element);
+    this.#observeTileLayer(newLayer);
     return newLayer;
   };
 
@@ -1059,7 +1075,7 @@ export default class MapCanvas extends HTMLElement {
 
     activeLayer.element.hidden = false;
 
-    const activeZIndex = this.backdropElement ? "1" : "0";
+    const activeZIndex = this.backdropElement ? "-1" : "0";
 
     if (this.previousTileZoom !== null) {
       const previousLayer = this.tileLayers.get(this.previousTileZoom);
@@ -1068,84 +1084,58 @@ export default class MapCanvas extends HTMLElement {
     } else {
       activeLayer.element.style.setProperty("z-index", activeZIndex);
     }
-
-    this.#scheduleTileVisibilityUpdate();
   };
 
   /**
-   * Updates one layer's viewport visibility and starts nearby tile loading.
-   * @param {{ tiles: Array }} layer
-   * @param {boolean} revealOnlyReadyTiles
-   * @returns {boolean}
+   * Starts observing tile slots in a layer with IntersectionObserver.
+   * Tiles entering the expanded viewport are queued for loading.
+   * Layer handoff (backdrop removal, previous-layer swap) is checked on every
+   * intersection change and after each tile finishes loading.
+   * @param {{ element: HTMLDivElement, tiles: Array }} layer
    * @private
    */
-  #updateLayerVisibility = (layer, revealOnlyReadyTiles = false) => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const preloadLeft = -TILE_PRELOAD_MARGIN;
-    const preloadTop = -TILE_PRELOAD_MARGIN;
-    const preloadRight = viewportWidth + TILE_PRELOAD_MARGIN;
-    const preloadBottom = viewportHeight + TILE_PRELOAD_MARGIN;
-    let allVisibleTilesReady = true;
+  #observeTileLayer = (layer) => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const tile = this.tileSlotToTile.get(entry.target);
+          if (!tile) continue;
+          tile.intersecting = entry.isIntersecting;
+          if (entry.isIntersecting && !tile.requested) {
+            tile.requested = true;
+            this.tileLoadQueue.push(tile);
+          }
+        }
+        this.#drainTileLoadQueue();
+        this.#checkLayerHandoff();
+      },
+      { rootMargin: `${TILE_PRELOAD_MARGIN}px` },
+    );
 
     for (const tile of layer.tiles) {
-      const rect = tile.slot.getBoundingClientRect();
-      const isVisible =
-        rect.right > 0 &&
-        rect.bottom > 0 &&
-        rect.left < viewportWidth &&
-        rect.top < viewportHeight;
-      const isNearViewport =
-        rect.right > preloadLeft &&
-        rect.bottom > preloadTop &&
-        rect.left < preloadRight &&
-        rect.top < preloadBottom;
-
-      if (isNearViewport && !tile.requested) {
-        tile.image.src = tile.src;
-        tile.requested = true;
-      }
-
-      if (isVisible && !tile.ready) {
-        allVisibleTilesReady = false;
-      }
-
-      const shouldShowTile = revealOnlyReadyTiles
-        ? isVisible && tile.ready
-        : isVisible;
-      tile.slot.style.setProperty(
-        "visibility",
-        shouldShowTile ? "visible" : "hidden",
-      );
+      observer.observe(tile.slot);
     }
 
-    return allVisibleTilesReady;
+    layer.observer = observer;
   };
 
   /**
-   * Schedules a single tile visibility update pass.
+   * Removes the zoom-transition backdrop and swaps out the previous tile layer
+   * once all intersecting active-layer tiles have finished loading.
    * @private
    */
-  #scheduleTileVisibilityUpdate = () => {
-    if (this.tileVisibilityRafId !== null) return;
-
-    this.tileVisibilityRafId = requestAnimationFrame(() => {
-      this.tileVisibilityRafId = null;
-      this.#updateTileVisibility();
-    });
-  };
-
-  /**
-   * Loads near-viewport tiles lazily and hides out-of-viewport tiles.
-   * @private
-   */
-  #updateTileVisibility = () => {
+  #checkLayerHandoff = () => {
     const activeLayer = this.tileLayers.get(this.activeTileZoom);
     if (!activeLayer) return;
 
-    const allVisibleTilesReady = this.#updateLayerVisibility(activeLayer, true);
+    const hasIntersectingTiles = activeLayer.tiles.some(
+      (tile) => tile.intersecting,
+    );
+    const allIntersectingReady =
+      hasIntersectingTiles &&
+      activeLayer.tiles.every((tile) => !tile.intersecting || tile.ready);
 
-    if (this.backdropElement && allVisibleTilesReady) {
+    if (this.backdropElement && allIntersectingReady) {
       this.#removeBackdrop();
       activeLayer.element.style.setProperty("z-index", "0");
     }
@@ -1159,17 +1149,29 @@ export default class MapCanvas extends HTMLElement {
       return;
     }
 
-    previousLayer.element.hidden = false;
-    previousLayer.element.style.setProperty("z-index", "-1");
-    activeLayer.element.style.setProperty("z-index", "0");
-    this.#updateLayerVisibility(previousLayer, false);
-
-    if (!allVisibleTilesReady) return;
+    if (!allIntersectingReady) return;
 
     previousLayer.element.hidden = true;
     previousLayer.element.style.setProperty("z-index", "-2");
     activeLayer.element.style.setProperty("z-index", "0");
     this.previousTileZoom = null;
+  };
+
+  /**
+   * Starts loading queued tiles up to the concurrent batch limit.
+   * Called after each visibility pass and after each tile completes loading.
+   * @private
+   */
+  #drainTileLoadQueue = () => {
+    while (
+      this.tileLoadInFlight < TILE_LOAD_BATCH_SIZE &&
+      this.tileLoadQueue.length > 0
+    ) {
+      const tile = this.tileLoadQueue.shift();
+      if (tile.ready) continue;
+      this.tileLoadInFlight++;
+      tile.image.src = tile.image.dataset.src;
+    }
   };
 
   /**
@@ -1404,9 +1406,6 @@ export default class MapCanvas extends HTMLElement {
     clearTimeout(this.transitionTimeoutId);
     if (this.resizeRafId !== null) {
       cancelAnimationFrame(this.resizeRafId);
-    }
-    if (this.tileVisibilityRafId !== null) {
-      cancelAnimationFrame(this.tileVisibilityRafId);
     }
     this.#cancelPendingTileLoad();
     this.#removeBackdrop();
