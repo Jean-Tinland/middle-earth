@@ -37,11 +37,20 @@ export default class MapCompass extends HTMLElement {
    */
   setRotation = (degrees) => {
     this.#rotation = degrees;
-    if (!this.#roseElement) return;
-    this.#roseElement.style.setProperty(
-      "transform",
-      `rotate(${-this.#rotation}deg)`,
-    );
+    if (this.#roseElement) {
+      this.#roseElement.style.setProperty(
+        "transform",
+        `rotate(${-this.#rotation}deg)`,
+      );
+    }
+    if (this.#buttonElement) {
+      console.log(this.#rotation);
+      const tooltip =
+        this.#rotation !== 0
+          ? "Reset map to north"
+          : 'Use "Shift" + drag to rotate';
+      this.#buttonElement.setAttribute("tooltip", tooltip);
+    }
   };
 
   #handleClick = () => {
