@@ -1,4 +1,8 @@
 const styles = /* css */ `
+:host {
+  touch-action: manipulation;
+}
+
 .controls {
   position: absolute;
   top: 26px;

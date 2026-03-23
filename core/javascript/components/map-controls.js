@@ -26,11 +26,23 @@ export default class MapControls extends HTMLElement {
    * Called when the element is connected to the document's DOM.
    * Initializes buttons and adds event listeners for zooming in and out.
    */
+  #preventDisabledButtonZoom = (event) => {
+    const button = event.target.closest("button");
+    if (button?.disabled) event.preventDefault();
+  };
+
   connectedCallback() {
     this.zoomInButton = this.root.querySelector("#zoom-in");
     this.zoomOutButton = this.root.querySelector("#zoom-out");
 
     this.canvas = document.querySelector("map-canvas");
+
+    this.controls = this.root.querySelector(".controls");
+    this.controls.addEventListener(
+      "touchstart",
+      this.#preventDisabledButtonZoom,
+      { passive: false },
+    );
 
     this.zoomInButton.addEventListener("click", this.canvas.zoomIn);
     this.zoomOutButton.addEventListener("click", this.canvas.zoomOut);
@@ -41,6 +53,10 @@ export default class MapControls extends HTMLElement {
    * Removes event listeners for zooming in and out.
    */
   disconnectedCallback() {
+    this.controls.removeEventListener(
+      "touchstart",
+      this.#preventDisabledButtonZoom,
+    );
     this.zoomOutButton.removeEventListener("click", this.canvas.zoomOut);
     this.zoomInButton.removeEventListener("click", this.canvas.zoomIn);
   }

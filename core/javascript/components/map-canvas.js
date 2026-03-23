@@ -164,7 +164,7 @@ export default class MapCanvas extends HTMLElement {
    */
   #installBackdrop = (oldW, oldH) => {
     if (this.backdropElement) {
-      // A backdrop from a previous rapid zoom already exists — just rescale it
+      // A backdrop from a previous rapid zoom already exists: just rescale it
       // to match the new canvas dimensions without replacing it.
       const newW = this.#canvasWidth();
       const scaleRatio = newW / this.backdropOriginalWidth;
