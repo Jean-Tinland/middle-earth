@@ -1,4 +1,5 @@
 import "./map-button.js";
+import "./map-compass.js";
 import "./map-controls.js";
 import "./map-information.js";
 import "./map-nomenclature.js";
@@ -36,7 +37,7 @@ const PORTRAIT_MIN_FONT_SCALE = 0.65;
 const FONT_SCALE_LOCK_THRESHOLD = 8;
 /**
  * Viewport height (px) representing the intended design target for POI zoom thresholds.
- * A 900 px-tall viewport produces canvasNaturalWidth ≈ 1246 px, the reference below which
+ * A 900 px-tall viewport produces canvasNaturalWidth ~ 1246 px, the reference below which
  * POI appearance is shifted forward to avoid overcrowded labels on smaller canvases.
  */
 const POI_ZOOM_REFERENCE_HEIGHT = 900;
@@ -46,6 +47,8 @@ const ZOOM_TRANSITION_MS = 320;
 const TRANSLATE_EPSILON = 0.01;
 /** Milliseconds of zoom inactivity before tile loading begins. */
 const TILE_LOAD_DEBOUNCE_MS = 600;
+/** Degrees of map rotation applied per horizontal pixel during shift-drag. */
+const ROTATION_SPEED = 0.3;
 
 /**
  * Maps a discrete zoom level to a scale multiplier.
@@ -67,6 +70,7 @@ const DEFAULTS = Object.freeze({
   TRANSLATE_X: 0,
   TRANSLATE_Y: 0,
   PREVIOUS_TOUCH: undefined,
+  ROTATION: 0,
 });
 
 /**
@@ -86,6 +90,7 @@ export default class MapCanvas extends HTMLElement {
     this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
+    this.rotation = DEFAULTS.ROTATION;
     this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / 1.7);
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
@@ -109,10 +114,12 @@ export default class MapCanvas extends HTMLElement {
     this.backdropOriginalWidth = 0;
     this.tileVisibilityRafId = null;
     this.tileLoadTimeoutId = null;
+    this.mapCompass = null;
     this.isPinching = false;
     this.pinchStartDistance = 0;
     this.pinchStartZoomLevel = 0;
     this.pinchFocalPoint = null;
+    this.pinchCurrentAngle = 0;
 
     this.root = this.attachShadow({ mode: "open" });
 
@@ -203,6 +210,7 @@ export default class MapCanvas extends HTMLElement {
     this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
     this.zoom = DEFAULTS.ZOOM;
     this.scale = DEFAULTS.SCALE;
+    this.rotation = DEFAULTS.ROTATION;
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
@@ -216,6 +224,7 @@ export default class MapCanvas extends HTMLElement {
     this.#updateCanvas();
     this.#updateUrlState();
     this.#dispatchZoomChange();
+    this.#notifyRotationChange();
   };
 
   /**
@@ -455,15 +464,80 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Updates the canvas position via translate-only transform (no scale).
+   * Updates the canvas position and rotation via transform.
    * @private
    */
   #updateCanvas = () => {
     this.canvas.style.setProperty(
       "transform",
-      `translate(${this.translateX}px, ${this.translateY}px)`,
+      `translate(${this.translateX}px, ${this.translateY}px) rotate(${this.rotation}deg)`,
     );
     this.#scheduleTileVisibilityUpdate();
+  };
+
+  /**
+   * Rotates the map by the given degrees, keeping the viewport center fixed.
+   * Adjusts translateX/Y so the point at the viewport center stays stationary.
+   * @param {number} degrees - Rotation delta in degrees (positive = clockwise).
+   * @private
+   */
+  #rotateAroundViewportCenter = (degrees) => {
+    const rad = (degrees * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const prevTx = this.translateX;
+    const prevTy = this.translateY;
+    this.translateX = prevTx * cos - prevTy * sin;
+    this.translateY = prevTx * sin + prevTy * cos;
+    this.rotation += degrees;
+  };
+
+  /**
+   * Applies rotation from both horizontal and vertical drag movement (shift-drag).
+   * Rightward or upward movement rotates clockwise; leftward or downward is counter-clockwise.
+   * @param {number} movementX - Horizontal pixel movement.
+   * @param {number} movementY - Vertical pixel movement.
+   * @private
+   */
+  #applyRotationDelta = (movementX, movementY) => {
+    this.#rotateAroundViewportCenter((movementX - movementY) * ROTATION_SPEED);
+    this.#updateCanvas();
+    this.#notifyRotationChange();
+  };
+
+  /**
+   * Notifies the compass and POIs of the current rotation angle.
+   * @private
+   */
+  #notifyRotationChange = () => {
+    this.mapCompass?.setRotation(this.rotation);
+    this.mapPois?.setRotation(this.rotation);
+  };
+
+  /**
+   * Resets the map back to north with a smooth animation.
+   * Preserves the current zoom level and visible map center.
+   */
+  resetRotation = () => {
+    let normalized = ((this.rotation % 360) + 360) % 360;
+    if (normalized > 180) normalized -= 360;
+    if (Math.abs(normalized) < 0.01) return;
+
+    // Apply the normalized-equivalent rotation without animation.
+    // Visually identical since rotate(x) === rotate(x ± 360).
+    this.rotation = normalized;
+    this.canvas.style.setProperty("transition", "none");
+    this.canvas.getBoundingClientRect();
+    this.#updateCanvas();
+
+    // Animate the short arc back to north.
+    this.#prepareAnimatedZoom();
+    this.#rotateAroundViewportCenter(-normalized);
+    this.rotation = 0;
+    this.#updateCanvas();
+    this.#scheduleTransitionCleanup();
+    this.#updateUrlState();
+    this.#notifyRotationChange();
   };
 
   /**
@@ -743,6 +817,11 @@ export default class MapCanvas extends HTMLElement {
       };
     }
 
+    if (e.shiftKey && !this.isPinching) {
+      this.#applyRotationDelta(e.movementX, e.movementY);
+      return;
+    }
+
     this.pendingMovementX += e.movementX;
     this.pendingMovementY += e.movementY;
 
@@ -757,7 +836,18 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Initializes pinch-to-zoom state from a two-finger touch event.
+   * Returns the angle in degrees of the vector from t1 to t2.
+   * @param {Touch} t1
+   * @param {Touch} t2
+   * @returns {number}
+   * @private
+   */
+  #touchAngle = (t1, t2) =>
+    Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) *
+    (180 / Math.PI);
+
+  /**
+   * Initializes pinch-to-zoom and two-finger rotation state.
    * @param {TouchEvent} e
    * @private
    */
@@ -775,11 +865,13 @@ export default class MapCanvas extends HTMLElement {
       x: (t1.clientX + t2.clientX) / 2,
       y: (t1.clientY + t2.clientY) / 2,
     };
+    this.pinchCurrentAngle = this.#touchAngle(t1, t2);
   };
 
   /**
    * Computes the target zoom level from current pinch distance and applies
-   * a discrete zoom step when the level changes.
+   * a discrete zoom step when the level changes. Also applies continuous
+   * rotation from the two-finger twist gesture.
    * @param {TouchEvent} e
    * @private
    */
@@ -788,11 +880,11 @@ export default class MapCanvas extends HTMLElement {
 
     const t1 = e.touches[0];
     const t2 = e.touches[1];
+
     const currentDistance = Math.hypot(
       t2.clientX - t1.clientX,
       t2.clientY - t1.clientY,
     );
-
     const ratio = currentDistance / this.pinchStartDistance;
     const zoomDelta = Math.round(
       (Math.log(ratio) * NUM_ZOOM_STEPS) / Math.log(MAX_SCALE),
@@ -801,10 +893,21 @@ export default class MapCanvas extends HTMLElement {
       0,
       Math.min(NUM_ZOOM_STEPS, this.pinchStartZoomLevel + zoomDelta),
     );
+    if (targetLevel !== this.zoomLevel) {
+      this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
+    }
 
-    if (targetLevel === this.zoomLevel) return;
-
-    this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
+    const newAngle = this.#touchAngle(t1, t2);
+    let angleDelta = newAngle - this.pinchCurrentAngle;
+    // Normalise to (-180, 180] to avoid wrap-around jumps.
+    if (angleDelta > 180) angleDelta -= 360;
+    if (angleDelta < -180) angleDelta += 360;
+    this.pinchCurrentAngle = newAngle;
+    if (Math.abs(angleDelta) > 0.1) {
+      this.#rotateAroundViewportCenter(angleDelta);
+      this.#updateCanvas();
+      this.#notifyRotationChange();
+    }
   };
 
   /**
@@ -1174,7 +1277,7 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Writes the current zoom level and map center to the URL as query params.
+   * Writes the current zoom level, map center and rotation to the URL as query params.
    * Clears the params when back at the default zoom level.
    * @private
    */
@@ -1184,12 +1287,18 @@ export default class MapCanvas extends HTMLElement {
       params.delete("z");
       params.delete("x");
       params.delete("y");
+      params.delete("r");
     } else {
       const center = this.#computeMapCenterFractions();
       if (!center) return;
       params.set("z", String(this.zoomLevel));
       params.set("x", center.x.toFixed(4));
       params.set("y", center.y.toFixed(4));
+      if (Math.abs(this.rotation) > 0.01) {
+        params.set("r", this.rotation.toFixed(1));
+      } else {
+        params.delete("r");
+      }
     }
 
     const search = params.toString();
@@ -1200,8 +1309,9 @@ export default class MapCanvas extends HTMLElement {
   };
 
   /**
-   * Reads zoom and center coordinates from URL params and applies them as the
-   * initial map state. Must be called after natural dimensions are measured.
+   * Reads zoom, center coordinates and rotation from URL params and applies
+   * them as the initial map state. Must be called after natural dimensions
+   * are measured.
    * @private
    */
   #restoreStateFromUrl = () => {
@@ -1223,6 +1333,11 @@ export default class MapCanvas extends HTMLElement {
     this.translateX = (0.5 - x) * w;
     this.translateY = (0.5 - y) * h;
     this.#checkAndFixBoundaries();
+
+    const r = parseFloat(params.get("r"));
+    if (Number.isFinite(r)) {
+      this.rotation = r;
+    }
   };
 
   /**
@@ -1244,6 +1359,7 @@ export default class MapCanvas extends HTMLElement {
     this.canvas = this.root.querySelector(".canvas");
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
+    this.mapCompass = this.root.querySelector("map-compass");
     await this.#waitForPageLoad();
     await this.#loadPois();
     this.#measureNaturalDimensions();
@@ -1254,6 +1370,7 @@ export default class MapCanvas extends HTMLElement {
     this.#onMapLoad();
     this.#updateFontSizeRef();
     this.#renderPois();
+    this.#notifyRotationChange();
     this.#updateCanvas();
     this.#updateControls();
     this.#dispatchZoomChange();

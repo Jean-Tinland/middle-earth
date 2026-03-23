@@ -263,6 +263,27 @@ export default class MapPois extends HTMLElement {
     poiElement.illustrationElement.hidden = !showIllustration;
   };
 
+  /**
+   * Counter-rotates all POI elements to keep labels horizontal while the map rotates.
+   * Illustrations are re-rotated back so they always face up.
+   * @param {number} degrees - Current map rotation in degrees.
+   */
+  setRotation = (degrees) => {
+    for (const { element, illustrationElement } of this.poiElements) {
+      element.style.setProperty(
+        "transform",
+        `translate(-50%, -50%) rotate(${-degrees}deg)`,
+      );
+
+      if (illustrationElement) {
+        illustrationElement.style.setProperty(
+          "transform",
+          `rotate(${degrees}deg)`,
+        );
+      }
+    }
+  };
+
   connectedCallback() {}
 
   disconnectedCallback() {}

@@ -10,6 +10,7 @@ export default function template() {
     <map-nomenclature></map-nomenclature>
     <map-scale></map-scale>
     <map-controls></map-controls>
+    <map-compass></map-compass>
     <map-information></map-information>
   `;
 }
