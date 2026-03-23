@@ -319,7 +319,7 @@
     {
       "kind": "region",
       "name": "Udûn",
-      "position": [60.53, 58.08],
+      "position": [60.82, 58.24],
       "zoom": 3,
       "size": 1
     },
@@ -1119,21 +1119,23 @@
     {
       "kind": "common-place",
       "name": "Argonath",
-      "position": [52.51, 54.61],
+      "position": [52.46, 54.63],
       "size": 1,
-      "zoom": 6
+      "zoom": 6,
+      "illustration": "/assets/images/places/argonath.png"
     },
     {
       "kind": "common-place",
       "name": "Amon Hen",
       "position": [52.6, 57.17],
       "size": 1,
-      "zoom": 6
+      "zoom": 6,
+      "illustration": "/assets/images/places/amon_hen.png"
     },
     {
       "kind": "common-place",
       "name": "Falls of Rauros",
-      "position": [53.33, 56.51],
+      "position": [53.13, 56.69],
       "size": 1,
       "zoom": 6
     },
@@ -1272,8 +1274,16 @@
     },
     {
       "kind": "common-place",
+      "name": "The Black Gate",
+      "position": [59.71, 57.21],
+      "size": 1,
+      "zoom": 6,
+      "illustration": "/assets/images/places/the_black_gate.png"
+    },
+    {
+      "kind": "common-place",
       "name": "Morannon",
-      "position": [59.65, 56.72],
+      "position": [59.69, 56.44],
       "size": 1,
       "zoom": 6
     },
