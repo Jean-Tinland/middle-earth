@@ -319,7 +319,7 @@
     {
       "kind": "region",
       "name": "Udûn",
-      "position": [60.82, 58.24],
+      "position": [61.33, 57.92],
       "zoom": 3,
       "size": 1
     },
@@ -1103,16 +1103,16 @@
       "zoom": 6
     },
     {
-      "kind": "common-place",
+      "kind": "forest",
       "name": "Firien Wood",
-      "position": [51.38, 61.87],
+      "position": [50.95, 62.03],
       "size": 1,
       "zoom": 6
     },
     {
-      "kind": "common-place",
+      "kind": "forest",
       "name": "Druadan Forest",
-      "position": [55.05, 62.97],
+      "position": [55.09, 64.13],
       "size": 1,
       "zoom": 6
     },
@@ -1135,7 +1135,7 @@
     {
       "kind": "common-place",
       "name": "Falls of Rauros",
-      "position": [53.13, 56.69],
+      "position": [53.24, 56.14],
       "size": 1,
       "zoom": 6
     },
@@ -1161,9 +1161,9 @@
       "zoom": 6
     },
     {
-      "kind": "common-place",
+      "kind": "forest",
       "name": "Eryn Vorn",
-      "position": [18.98, 41.29],
+      "position": [18.45, 43.29],
       "size": 1,
       "zoom": 6
     },
