@@ -21,6 +21,8 @@ All points of interest were collected on various representations of existing Mid
 
 Feel free to open an issue or contribute if you'd like anything fixed or added.
 
+If you want to propose a new point of interest, or correct an existing one, you can retrieve the position of the point on the map by adding `?debug=true` to the URL, then click on the map to get the coordinates of the point in your clipboard.
+
 ## Development
 
 This project includes [live-server](https://www.npmjs.com/package/live-server) as dev dependencies to serve the map locally and [sharp](https://sharp.pixelplumbing.com/) for image processing.
