@@ -374,6 +374,13 @@
     },
     {
       "kind": "forest",
+      "name": "Bindbole Wood",
+      "position": [22.74, 23.1],
+      "size": 1,
+      "zoom": 8
+    },
+    {
+      "kind": "forest",
       "name": "Fangorn",
       "position": [43.79, 46.22],
       "size": 2,
@@ -572,9 +579,23 @@
     },
     {
       "kind": "city",
-      "name": "Annúminas",
-      "position": [22.13, 19.97],
+      "name": "Tuckborough",
+      "position": [23.06, 27.39],
       "size": 2,
+      "zoom": 7
+    },
+    {
+      "kind": "city",
+      "name": "Stock",
+      "position": [24.64, 25.33],
+      "size": 2,
+      "zoom": 7
+    },
+    {
+      "kind": "city",
+      "name": "Ruins of Annúminas",
+      "position": [22.13, 19.97],
+      "size": 1,
       "zoom": 5
     },
     {
@@ -749,6 +770,20 @@
       "kind": "river",
       "name": "Lhûm",
       "position": [17.2, 17.24],
+      "size": 1,
+      "zoom": 6
+    },
+    {
+      "kind": "river",
+      "name": "The Water",
+      "position": [24.03, 23.75],
+      "size": 1,
+      "zoom": 8
+    },
+    {
+      "kind": "river",
+      "name": "Brandywine",
+      "position": [24.34, 21.7],
       "size": 1,
       "zoom": 6
     },
@@ -1014,7 +1049,14 @@
     {
       "kind": "common-place",
       "name": "Bag End",
-      "position": [22.84, 23.85],
+      "position": [23.13, 23.6],
+      "size": 1,
+      "zoom": 8
+    },
+    {
+      "kind": "common-place",
+      "name": "Overhill",
+      "position": [22.32, 22.66],
       "size": 1,
       "zoom": 8
     },
@@ -1196,11 +1238,11 @@
       "zoom": 6
     },
     {
-      "kind": "common-place",
+      "kind": "city",
       "name": "Sarn Ford",
-      "position": [26.63, 30.48],
+      "position": [25.97, 30.71],
       "size": 1,
-      "zoom": 6
+      "zoom": 7
     },
     {
       "kind": "common-place",
@@ -1225,7 +1267,7 @@
     },
     {
       "kind": "common-place",
-      "name": "Bridge of Stonebows",
+      "name": "Brandywine Bridge",
       "position": [24.75, 24.18],
       "size": 1,
       "zoom": 6
@@ -1391,6 +1433,13 @@
       "kind": "common-place",
       "name": "White Downs",
       "position": [20.42, 28.03],
+      "size": 1,
+      "zoom": 6
+    },
+    {
+      "kind": "common-place",
+      "name": "The Far Downs",
+      "position": [19.09, 33.27],
       "size": 1,
       "zoom": 6
     },
