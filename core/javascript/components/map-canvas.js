@@ -115,6 +115,7 @@ export default class MapCanvas extends HTMLElement {
     this.tileSlotToTile = new WeakMap();
     this.tileLoadQueue = [];
     this.tileLoadInFlight = 0;
+    this.maxPoiZoom = 0;
     this.mapCompass = null;
     this.isPinching = false;
     this.pinchStartDistance = 0;
@@ -240,11 +241,13 @@ export default class MapCanvas extends HTMLElement {
       BASE_MAP_WIDTH * (POI_ZOOM_REFERENCE_HEIGHT / BASE_MAP_HEIGHT),
     );
     if (this.canvasNaturalWidth >= referenceNaturalWidth) return 0;
-    return Math.floor(
+    const rawOffset = Math.floor(
       (NUM_ZOOM_STEPS *
         Math.log(referenceNaturalWidth / this.canvasNaturalWidth)) /
         Math.log(MAX_SCALE),
     );
+    const maxAllowedOffset = Math.max(0, NUM_ZOOM_STEPS - 1 - this.maxPoiZoom);
+    return Math.min(rawOffset, maxAllowedOffset);
   };
 
   /**
@@ -1214,6 +1217,7 @@ export default class MapCanvas extends HTMLElement {
     const pois = await fetch("/assets/data/pois.json");
     const data = await pois.json();
     this.pois = data.pois;
+    this.maxPoiZoom = Math.max(...this.pois.map((p) => p.zoom));
   };
 
   /**
