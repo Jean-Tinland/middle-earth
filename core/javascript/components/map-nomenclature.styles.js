@@ -137,6 +137,14 @@ const styles = /* css */ `
     box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
   }
 
+  .city-dot--xs::before {
+    width: 5px;
+    height: 5px;
+    border: none;
+    border-radius: 50%;
+    box-shadow: none;
+  }
+
   .city-dot--sm::before {
     width: 7px;
     height: 7px;

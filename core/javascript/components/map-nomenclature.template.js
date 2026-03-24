@@ -14,16 +14,20 @@ export default function template() {
           <h3 class="group__title">Cities &amp; places</h3>
           <ul class="entries">
             <li class="entry">
+              <span class="city-dot city-dot--xs" aria-hidden="true"></span>
+              <span class="entry__label">Hamlet</span>
+            </li>
+            <li class="entry">
               <span class="city-dot city-dot--sm" aria-hidden="true"></span>
-              <span class="entry__label">Village / hamlet</span>
+              <span class="entry__label">Village</span>
             </li>
             <li class="entry">
               <span class="city-dot city-dot--md" aria-hidden="true"></span>
-              <span class="entry__label">Town / city</span>
+              <span class="entry__label">Town</span>
             </li>
             <li class="entry">
               <span class="city-dot city-dot--lg" aria-hidden="true"></span>
-              <span class="entry__label">Capital / fortress</span>
+              <span class="entry__label">City</span>
             </li>
             <li class="entry">
               <span class="text-sample text-sample--common-place" aria-hidden="true">Landmark</span>
