@@ -11,9 +11,9 @@ import styles from "./map-canvas.styles.js";
 /** Build version used for cache-busting tile URLs. Increment when tile assets change. */
 const BUILD_VERSION = "2";
 /** The number of discrete zoom steps available. */
-const NUM_ZOOM_STEPS = 16;
+const NUM_ZOOM_STEPS = 25;
 /** The maximum scale multiplier at the final zoom step. */
-const MAX_SCALE = 16;
+const MAX_SCALE = 20;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
