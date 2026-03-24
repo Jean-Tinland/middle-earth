@@ -5,24 +5,24 @@ const ILLUSTRATION_ZOOM_THRESHOLD = 9;
 const ILLUSTRATION_SIZE_MULTIPLIER = 2.5;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
-  region: Object.freeze({ 1: 0.8, 2: 1.15, 3: 1.45 }),
-  forest: Object.freeze({ 1: 0.65, 2: 0.8, 3: 0.95 }),
-  mountain: Object.freeze({ 1: 0.45, 2: 0.5, 3: 0.6 }),
-  "common-place": Object.freeze({ 1: 0.6, 2: 0.7, 3: 0.8 }),
-  sea: Object.freeze({ 1: 0.55, 2: 0.5, 3: 0.6 }),
-  city: Object.freeze({ 1: 0.45, 2: 0.55, 3: 0.65 }),
-  river: Object.freeze({ 1: 0.55, 2: 0.65, 3: 0.75 }),
+  region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8 }),
+  forest: Object.freeze({ 1: 0.95, 2: 0.8, 3: 0.65 }),
+  mountain: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.45 }),
+  "common-place": Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.6 }),
+  sea: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.55 }),
+  city: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45 }),
+  river: Object.freeze({ 1: 0.75, 2: 0.65, 3: 0.55 }),
 });
 
 const CITY_DOT_SIZE_MULTIPLIERS = Object.freeze({
-  1: 0.4,
-  2: 0.5,
-  3: 0.6,
-  4: 0.7,
+  1: 0.7,
+  2: 0.6,
+  3: 0.5,
+  4: 0.4,
 });
 
 const DEFAULT_TEXT_SIZE_MULTIPLIER = 1;
-const DEFAULT_CITY_DOT_SIZE_MULTIPLIER = CITY_DOT_SIZE_MULTIPLIERS[1];
+const DEFAULT_CITY_DOT_SIZE_MULTIPLIER = CITY_DOT_SIZE_MULTIPLIERS[4];
 
 /**
  * Represents a custom HTML element for map points of interest.

@@ -24,7 +24,7 @@ const styles = /* css */ `
   .poi[data-kind="region"],
   .poi[data-kind="forest"],
   .poi[data-kind="mountain"],
-  .poi[data-kind="sea"]:not([data-size="1"]) {
+  .poi[data-kind="sea"]:not([data-size="3"]) {
     font-family: var(--title-font);
     text-transform: uppercase;
   }
@@ -33,15 +33,15 @@ const styles = /* css */ `
     font-weight: 700;
   }
 
-  .poi[data-kind="region"][data-size="1"] {
+  .poi[data-kind="region"][data-size="3"] {
     text-transform: none;
   }
 
-  .poi[data-kind="region"][data-size="3"] {
+  .poi[data-kind="region"][data-size="1"] {
     font-weight: 700;
   }
 
-  .poi[data-kind="common-place"][data-size="1"] {
+  .poi[data-kind="common-place"][data-size="3"] {
     font-weight: 700;
   }
 
@@ -63,7 +63,7 @@ const styles = /* css */ `
   }
 
   .poi[data-kind="mountain"] .name,
-  .poi[data-kind="common-place"][data-size="1"] .name {
+  .poi[data-kind="common-place"][data-size="3"] .name {
     color: var(--black);
   }
 
@@ -92,8 +92,8 @@ const styles = /* css */ `
     box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
   }
 
-  .poi[data-kind="city"][data-size="3"] .dot,
-  .poi[data-kind="city"][data-size="4"] .dot {
+  .poi[data-kind="city"][data-size="1"] .dot,
+  .poi[data-kind="city"][data-size="2"] .dot {
     border-radius: 0;
   }
 
