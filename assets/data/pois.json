@@ -381,6 +381,13 @@
     },
     {
       "kind": "forest",
+      "name": "Woody End",
+      "position": [24.16, 26.37],
+      "size": 1,
+      "zoom": 8
+    },
+    {
+      "kind": "forest",
       "name": "Fangorn",
       "position": [43.79, 46.22],
       "size": 2,
