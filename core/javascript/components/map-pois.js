@@ -5,12 +5,13 @@ const ILLUSTRATION_ZOOM_THRESHOLD = 9;
 const ILLUSTRATION_SIZE_MULTIPLIER = 2.5;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
-  region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8 }),
-  forest: Object.freeze({ 1: 0.95, 2: 0.8, 3: 0.65 }),
-  mountain: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.45 }),
-  "common-place": Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.6 }),
-  sea: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.55 }),
-  city: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45 }),
+  region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8, 4: 0.7 }),
+  forest: Object.freeze({ 1: 0.95, 2: 0.8, 3: 0.65, 4: 0.55 }),
+  mountain: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.45, 4: 0.4 }),
+  "common-place": Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.6, 4: 0.5 }),
+  sea: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.55, 4: 0.45 }),
+  city: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45, 4: 0.4 }),
+  hamlet: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.4, 4: 0.4 }),
   river: Object.freeze({ 1: 0.75, 2: 0.65, 3: 0.55 }),
 });
 
@@ -93,7 +94,7 @@ export default class MapPois extends HTMLElement {
 
     let dotElement = null;
 
-    if (kind === "city") {
+    if (kind === "city" || kind === "hamlet") {
       dotElement = Object.assign(document.createElement("div"), {
         className: "dot",
       });
@@ -126,7 +127,9 @@ export default class MapPois extends HTMLElement {
       zoom,
       textSizeMultiplier: this.#getTextSizeMultiplier(kind, size),
       dotSizeMultiplier:
-        kind === "city" ? this.#getCityDotSizeMultiplier(size) : null,
+        kind === "city" || kind === "hamlet"
+          ? this.#getCityDotSizeMultiplier(size)
+          : null,
     };
   };
 

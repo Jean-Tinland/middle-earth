@@ -29,7 +29,7 @@ const styles = /* css */ `
     text-transform: uppercase;
   }
 
-  .poi[data-kind="city"] {
+  .poi:is([data-kind="city"], [data-kind="hamlet"]) {
     font-weight: 700;
   }
 
@@ -63,7 +63,7 @@ const styles = /* css */ `
   }
 
   .poi[data-kind="mountain"] .name,
-  .poi[data-kind="common-place"][data-size="3"] .name {
+  .poi[data-kind="common-place"]:is([data-size="3"], [data-size="4"]) .name {
     color: var(--black);
   }
 
@@ -76,14 +76,14 @@ const styles = /* css */ `
     font-style: italic;
   }
 
-  .poi[data-kind="city"] .name {
+  .poi:is([data-kind="city"], [data-kind="hamlet"]) .name {
     position: absolute;
     top: calc(100% + 1px);
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .poi[data-kind="city"] .dot {
+  .poi:is([data-kind="city"], [data-kind="hamlet"]) .dot {
     position: relative;
     background-color: var(--primary);
     aspect-ratio: 1;
@@ -92,7 +92,12 @@ const styles = /* css */ `
     box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
   }
 
-  .poi[data-kind="city"][data-size="1"] .dot {
+  .poi[data-kind="hamlet"] .dot {
+    border: none;
+    box-shadow: none;
+  }
+
+  .poi:is([data-kind="city"], [data-kind="hamlet"])[data-size="1"] .dot {
     border-radius: 0;
   }
 
