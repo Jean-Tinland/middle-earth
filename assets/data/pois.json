@@ -388,6 +388,13 @@
     },
     {
       "kind": "forest",
+      "name": "Chetwood",
+      "position": [29.06, 24.48],
+      "size": 3,
+      "zoom": 15
+    },
+    {
+      "kind": "forest",
       "name": "Fangorn",
       "position": [43.79, 46.22],
       "size": 2,
