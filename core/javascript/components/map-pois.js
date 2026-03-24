@@ -15,10 +15,10 @@ const TEXT_SIZE_MULTIPLIERS = Object.freeze({
 });
 
 const CITY_DOT_SIZE_MULTIPLIERS = Object.freeze({
-  1: 0.7,
-  2: 0.6,
-  3: 0.5,
-  4: 0.4,
+  1: 0.6,
+  2: 0.5,
+  3: 0.4,
+  4: 0.3,
 });
 
 const DEFAULT_TEXT_SIZE_MULTIPLIER = 1;
