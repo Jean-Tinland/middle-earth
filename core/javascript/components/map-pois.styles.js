@@ -92,8 +92,7 @@ const styles = /* css */ `
     box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
   }
 
-  .poi[data-kind="city"][data-size="1"] .dot,
-  .poi[data-kind="city"][data-size="2"] .dot {
+  .poi[data-kind="city"][data-size="1"] .dot {
     border-radius: 0;
   }
 
