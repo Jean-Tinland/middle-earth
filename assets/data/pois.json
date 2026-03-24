@@ -586,17 +586,38 @@
     },
     {
       "kind": "city",
+      "name": "Sackville",
+      "position": [22.35, 30.77],
+      "size": 2,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
+      "name": "Fennas Drûnîn",
+      "position": [37.57, 30.61],
+      "size": 2,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
+      "name": "Sarn Ford",
+      "position": [25.97, 30.71],
+      "size": 1,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
       "name": "Tuckborough",
       "position": [23.06, 27.39],
       "size": 2,
-      "zoom": 7
+      "zoom": 11
     },
     {
       "kind": "city",
       "name": "Stock",
       "position": [24.64, 25.33],
       "size": 2,
-      "zoom": 7
+      "zoom": 11
     },
     {
       "kind": "city",
@@ -646,6 +667,41 @@
       "position": [38.7, 52.27],
       "size": 2,
       "zoom": 5
+    },
+    {
+      "kind": "city",
+      "name": "Aldburg",
+      "position": [47.14, 60.69],
+      "size": 2,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
+      "name": "Dunharrow",
+      "position": [43.78, 60.02],
+      "size": 2,
+      "zoom": 9
+    },
+    {
+      "kind": "city",
+      "name": "Derwath",
+      "position": [37.57, 56.67],
+      "size": 2,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
+      "name": "Gineard",
+      "position": [36.85, 53.88],
+      "size": 2,
+      "zoom": 11
+    },
+    {
+      "kind": "city",
+      "name": "Onodrith",
+      "position": [46.96, 53.5],
+      "size": 2,
+      "zoom": 11
     },
     {
       "kind": "city",
@@ -1058,14 +1114,14 @@
       "name": "Bag End",
       "position": [23.13, 23.6],
       "size": 1,
-      "zoom": 8
+      "zoom": 13
     },
     {
       "kind": "common-place",
       "name": "Overhill",
       "position": [22.32, 22.66],
       "size": 1,
-      "zoom": 8
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1243,13 +1299,6 @@
       "position": [56.35, 80.44],
       "size": 1,
       "zoom": 6
-    },
-    {
-      "kind": "city",
-      "name": "Sarn Ford",
-      "position": [25.97, 30.71],
-      "size": 1,
-      "zoom": 7
     },
     {
       "kind": "common-place",
@@ -1440,13 +1489,6 @@
       "kind": "common-place",
       "name": "White Downs",
       "position": [20.42, 28.03],
-      "size": 1,
-      "zoom": 6
-    },
-    {
-      "kind": "common-place",
-      "name": "The Far Downs",
-      "position": [19.09, 33.27],
       "size": 1,
       "zoom": 6
     },
