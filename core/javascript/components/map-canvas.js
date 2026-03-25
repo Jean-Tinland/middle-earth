@@ -9,11 +9,15 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 
 /** Build version used for cache-busting tile URLs. Increment when tile assets change. */
-const BUILD_VERSION = "2";
+const TILES_BUILD_VERSION = "2";
 /** The number of discrete zoom steps available. */
 const NUM_ZOOM_STEPS = 25;
 /** The maximum scale multiplier at the final zoom step. */
 const MAX_SCALE = 20;
+/** Extra zoom steps granted on touch-primary (mobile) devices. */
+const MOBILE_EXTRA_ZOOM_STEPS = 5;
+/** Maximum scale multiplier on touch-primary (mobile) devices. */
+const MOBILE_MAX_SCALE = 35;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
@@ -55,13 +59,19 @@ const TILE_LOAD_BATCH_SIZE = 10;
 /**
  * Maps a discrete zoom level to a scale multiplier.
  * Uses an exponential curve so each step increases scale more than the last.
- * @param {number} zoomLevel - Integer from 0 to NUM_ZOOM_STEPS.
+ * @param {number} zoomLevel - Integer from 0 to numZoomSteps.
+ * @param {number} [numZoomSteps] - Total discrete zoom steps for this device.
+ * @param {number} [maxScale] - Maximum scale multiplier for this device.
  * @returns {number}
  */
-const computeScaleForZoomLevel = (zoomLevel) => {
+const computeScaleForZoomLevel = (
+  zoomLevel,
+  numZoomSteps = NUM_ZOOM_STEPS,
+  maxScale = MAX_SCALE,
+) => {
   if (zoomLevel <= 0) return 1;
-  if (zoomLevel >= NUM_ZOOM_STEPS) return MAX_SCALE;
-  return Math.pow(MAX_SCALE, zoomLevel / NUM_ZOOM_STEPS);
+  if (zoomLevel >= numZoomSteps) return maxScale;
+  return Math.pow(maxScale, zoomLevel / numZoomSteps);
 };
 
 const DEFAULTS = Object.freeze({
@@ -116,6 +126,8 @@ export default class MapCanvas extends HTMLElement {
     this.tileLoadQueue = [];
     this.tileLoadInFlight = 0;
     this.maxPoiZoom = 0;
+    this.numZoomSteps = NUM_ZOOM_STEPS;
+    this.maxZoomScale = MAX_SCALE;
     this.mapCompass = null;
     this.isPinching = false;
     this.pinchStartDistance = 0;
@@ -242,12 +254,27 @@ export default class MapCanvas extends HTMLElement {
     );
     if (this.canvasNaturalWidth >= referenceNaturalWidth) return 0;
     const rawOffset = Math.floor(
-      (NUM_ZOOM_STEPS *
+      (this.numZoomSteps *
         Math.log(referenceNaturalWidth / this.canvasNaturalWidth)) /
-        Math.log(MAX_SCALE),
+        Math.log(this.maxZoomScale),
     );
-    const maxAllowedOffset = Math.max(0, NUM_ZOOM_STEPS - 1 - this.maxPoiZoom);
+    const maxAllowedOffset = Math.max(
+      0,
+      this.numZoomSteps - 1 - this.maxPoiZoom,
+    );
     return Math.min(rawOffset, maxAllowedOffset);
+  };
+
+  /**
+   * Returns the font size reference for POI rendering.
+   * On mobile extra zoom levels (scale > MAX_SCALE) the value is capped at the
+   * equivalent of MAX_SCALE so dots and labels do not grow and overlap.
+   * @returns {number}
+   * @private
+   */
+  #computePoiFontSizeRef = () => {
+    if (this.scale <= MAX_SCALE) return this.fontSizeRef;
+    return this.fontSizeRef * (MAX_SCALE / this.scale);
   };
 
   /**
@@ -266,7 +293,7 @@ export default class MapCanvas extends HTMLElement {
     );
     this.mapPois.render(
       effectivePoiZoomLevel,
-      this.fontSizeRef,
+      this.#computePoiFontSizeRef(),
       this.zoomLevel,
     );
   };
@@ -417,8 +444,12 @@ export default class MapCanvas extends HTMLElement {
     const oldW = this.#canvasWidth();
     const oldH = this.#canvasHeight();
 
-    this.zoomLevel = Math.max(0, Math.min(targetLevel, NUM_ZOOM_STEPS));
-    this.scale = computeScaleForZoomLevel(this.zoomLevel);
+    this.zoomLevel = Math.max(0, Math.min(targetLevel, this.numZoomSteps));
+    this.scale = computeScaleForZoomLevel(
+      this.zoomLevel,
+      this.numZoomSteps,
+      this.maxZoomScale,
+    );
     this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
 
     this.#applyCanvasSize();
@@ -467,7 +498,7 @@ export default class MapCanvas extends HTMLElement {
    * Zooms in the canvas.
    */
   zoomIn = (e) => {
-    if (this.zoomLevel >= NUM_ZOOM_STEPS) return;
+    if (this.zoomLevel >= this.numZoomSteps) return;
     e.preventDefault();
 
     clearTimeout(this.transitionTimeoutId);
@@ -499,7 +530,7 @@ export default class MapCanvas extends HTMLElement {
     if (!this.controls?.zoomInButton || !this.controls?.zoomOutButton) return;
 
     this.controls.zoomOutButton.disabled = this.zoomLevel === 0;
-    this.controls.zoomInButton.disabled = this.zoomLevel === NUM_ZOOM_STEPS;
+    this.controls.zoomInButton.disabled = this.zoomLevel === this.numZoomSteps;
   };
 
   /**
@@ -925,11 +956,11 @@ export default class MapCanvas extends HTMLElement {
     );
     const ratio = currentDistance / this.pinchStartDistance;
     const zoomDelta = Math.round(
-      (Math.log(ratio) * NUM_ZOOM_STEPS) / Math.log(MAX_SCALE),
+      (Math.log(ratio) * this.numZoomSteps) / Math.log(this.maxZoomScale),
     );
     const targetLevel = Math.max(
       0,
-      Math.min(NUM_ZOOM_STEPS, this.pinchStartZoomLevel + zoomDelta),
+      Math.min(this.numZoomSteps, this.pinchStartZoomLevel + zoomDelta),
     );
     if (targetLevel !== this.zoomLevel) {
       this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
@@ -1000,7 +1031,7 @@ export default class MapCanvas extends HTMLElement {
         ].join(";");
 
         const image = document.createElement("img");
-        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${BUILD_VERSION}`;
+        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${TILES_BUILD_VERSION}`;
         image.alt = "";
         image.decoding = "async";
         image.dataset.src = src;
@@ -1352,12 +1383,16 @@ export default class MapCanvas extends HTMLElement {
     const x = parseFloat(params.get("x"));
     const y = parseFloat(params.get("y"));
 
-    if (!Number.isFinite(z) || z < 1 || z > NUM_ZOOM_STEPS) return;
+    if (!Number.isFinite(z) || z < 1 || z > this.numZoomSteps) return;
     if (!Number.isFinite(x) || x < 0 || x > 1) return;
     if (!Number.isFinite(y) || y < 0 || y > 1) return;
 
     this.zoomLevel = z;
-    this.scale = computeScaleForZoomLevel(z);
+    this.scale = computeScaleForZoomLevel(
+      z,
+      this.numZoomSteps,
+      this.maxZoomScale,
+    );
     this.zoom = Math.min(z, MAX_TILE_ZOOM);
 
     const w = this.#canvasWidth();
@@ -1392,6 +1427,10 @@ export default class MapCanvas extends HTMLElement {
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
     this.mapCompass = this.root.querySelector("map-compass");
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      this.numZoomSteps = NUM_ZOOM_STEPS + MOBILE_EXTRA_ZOOM_STEPS;
+      this.maxZoomScale = MOBILE_MAX_SCALE;
+    }
     await this.#waitForPageLoad();
     await this.#loadPois();
     this.#measureNaturalDimensions();
