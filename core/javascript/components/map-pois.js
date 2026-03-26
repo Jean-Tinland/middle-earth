@@ -1,8 +1,8 @@
 import styles from "./map-pois.styles.js";
 
 const DEFAULT_BASE_FONT_SIZE = 16;
-const ILLUSTRATION_ZOOM_THRESHOLD = 9;
-const ILLUSTRATION_SIZE_MULTIPLIER = 2.5;
+const ILLUSTRATION_ZOOM_THRESHOLD = 13;
+const ILLUSTRATION_SIZE_MULTIPLIER = 2;
 
 const TEXT_SIZE_MULTIPLIERS = Object.freeze({
   region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8, 4: 0.7 }),

@@ -15,9 +15,9 @@ const NUM_ZOOM_STEPS = 25;
 /** The maximum scale multiplier at the final zoom step. */
 const MAX_SCALE = 20;
 /** Extra zoom steps granted on touch-primary (mobile) devices. */
-const MOBILE_EXTRA_ZOOM_STEPS = 5;
+const MOBILE_EXTRA_ZOOM_STEPS = 8;
 /** Maximum scale multiplier on touch-primary (mobile) devices. */
-const MOBILE_MAX_SCALE = 35;
+const MOBILE_MAX_SCALE = 40;
 /** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
 /** Tile size in source map pixels. */
