@@ -587,9 +587,10 @@
     {
       "kind": "city",
       "name": "Hobbiton",
-      "position": [23.11, 24.32],
+      "position": [23.04, 24.07],
       "size": 3,
-      "zoom": 8
+      "zoom": 8,
+      "illustration": "/assets/images/places/hobbiton.png"
     },
     {
       "kind": "city",
