@@ -134,7 +134,7 @@ const styles = /* css */ `
     display: block;
     background-color: var(--primary);
     border: 2px solid var(--white);
-    box-shadow: 0 0 2px rgb(0 0 0 / 0.5);,
+    box-shadow: 0 0 2px rgb(0 0 0 / 0.5);
   }
 
   .city-dot--xs::before {

@@ -67,16 +67,10 @@ export default class MapModal extends HTMLElement {
 
   #focusModal = () => {
     document.activeElement.blur();
-    const hasAutofocusElement = Boolean(this.root.querySelector("[autofocus]"));
-    if (!hasAutofocusElement) {
-      let elementToFocus = this.root.querySelector("[autofocus]");
-      if (!elementToFocus) {
-        [elementToFocus] = this.root.querySelectorAll(FOCUSABLE_ELEMENTS);
-      }
-      if (elementToFocus) {
-        elementToFocus.focus();
-      }
-    }
+    const elementToFocus =
+      this.root.querySelector("[autofocus]") ||
+      this.root.querySelector(FOCUSABLE_ELEMENTS);
+    elementToFocus?.focus();
   };
 
   #handleFocus = (e) => {

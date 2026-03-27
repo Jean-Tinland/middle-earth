@@ -44,7 +44,6 @@ export default class MapCompass extends HTMLElement {
       );
     }
     if (this.#buttonElement) {
-      console.log(this.#rotation);
       const tooltip =
         this.#rotation !== 0
           ? "Reset map to north"

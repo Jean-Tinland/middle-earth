@@ -286,10 +286,6 @@ export default class MapPois extends HTMLElement {
       }
     }
   };
-
-  connectedCallback() {}
-
-  disconnectedCallback() {}
 }
 
 customElements.define("map-pois", MapPois);
