@@ -59,6 +59,19 @@ const ROTATION_SPEED = 0.3;
 const TILE_LOAD_BATCH_SIZE = 10;
 
 /**
+ * Maps a discrete zoom level to a tile zoom index (0–MAX_TILE_ZOOM).
+ * Spreads the 8 available tile layers evenly across all zoom steps.
+ * @param {number} zoomLevel - Integer from 0 to numZoomSteps.
+ * @param {number} numZoomSteps - Total discrete zoom steps for this device.
+ * @returns {number}
+ */
+const computeTileZoom = (zoomLevel, numZoomSteps) =>
+  Math.min(
+    MAX_TILE_ZOOM,
+    Math.round((zoomLevel * MAX_TILE_ZOOM) / numZoomSteps),
+  );
+
+/**
  * Maps a discrete zoom level to a scale multiplier.
  * Uses an exponential curve so each step increases scale more than the last.
  * @param {number} zoomLevel - Integer from 0 to numZoomSteps.
@@ -459,7 +472,7 @@ export default class MapCanvas extends HTMLElement {
       this.numZoomSteps,
       this.maxZoomScale,
     );
-    this.zoom = Math.min(this.zoomLevel, MAX_TILE_ZOOM);
+    this.zoom = computeTileZoom(this.zoomLevel, this.numZoomSteps);
 
     this.#applyCanvasSize();
     this.#installBackdrop(oldW, oldH);
@@ -1431,7 +1444,7 @@ export default class MapCanvas extends HTMLElement {
       this.numZoomSteps,
       this.maxZoomScale,
     );
-    this.zoom = Math.min(z, MAX_TILE_ZOOM);
+    this.zoom = computeTileZoom(this.zoomLevel, this.numZoomSteps);
 
     const w = this.#canvasWidth();
     const h = this.#canvasHeight();
