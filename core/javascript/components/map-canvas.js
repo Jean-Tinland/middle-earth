@@ -49,8 +49,10 @@ const POI_ZOOM_REFERENCE_HEIGHT = 900;
 const ZOOM_TRANSITION_MS = 120;
 /** Small threshold used when comparing floating-point translate values. */
 const TRANSLATE_EPSILON = 0.01;
-/** Milliseconds of zoom inactivity before tile loading begins. */
+/** Milliseconds of zoom inactivity before tile loading begins when zooming in. */
 const TILE_LOAD_DEBOUNCE_MS = 600;
+/** Milliseconds of zoom inactivity before tile loading begins when zooming out. */
+const TILE_LOAD_DEBOUNCE_ZOOM_OUT_MS = 150;
 /** Degrees of map rotation applied per horizontal pixel during shift-drag. */
 const ROTATION_SPEED = 0.3;
 /** Number of tiles to load concurrently before waiting for completions. */
@@ -119,7 +121,7 @@ export default class MapCanvas extends HTMLElement {
     this.tileLayers = new Map();
     this.activeTileZoom = DEFAULTS.ZOOM;
     this.previousTileZoom = null;
-    this.backdropElement = null;
+    this.backdropLayer = null;
     this.backdropOriginalWidth = 0;
     this.tileLoadTimeoutId = null;
     this.tileSlotToTile = new WeakMap();
@@ -158,13 +160,16 @@ export default class MapCanvas extends HTMLElement {
   #canvasHeight = () => Math.round(this.canvasNaturalHeight * this.scale);
 
   /**
-   * Removes the zoom-in backdrop element from the DOM.
+   * Removes the zoom-in backdrop element from the DOM and releases its tile images.
    * @private
    */
   #removeBackdrop = () => {
-    if (!this.backdropElement) return;
-    this.backdropElement.remove();
-    this.backdropElement = null;
+    if (!this.backdropLayer) return;
+    for (const tile of this.backdropLayer.tiles) {
+      tile.image.removeAttribute("src");
+    }
+    this.backdropLayer.element.remove();
+    this.backdropLayer = null;
   };
 
   /**
@@ -176,18 +181,21 @@ export default class MapCanvas extends HTMLElement {
    * @private
    */
   #installBackdrop = (oldW, oldH) => {
-    if (this.backdropElement) {
+    if (this.backdropLayer) {
       // A backdrop from a previous rapid zoom already exists: just rescale it
       // to match the new canvas dimensions without replacing it.
       const newW = this.#canvasWidth();
       const scaleRatio = newW / this.backdropOriginalWidth;
-      this.backdropElement.style.transform = `scale(${scaleRatio})`;
+      this.backdropLayer.element.style.transform = `scale(${scaleRatio})`;
       return;
     }
 
     const activeLayer = this.tileLayers.get(this.activeTileZoom);
     if (!activeLayer) return;
 
+    // Disconnect the observer — intersection tracking is no longer needed for
+    // a layer that is only used as a visual placeholder.
+    activeLayer.observer?.disconnect();
     this.tileLayers.delete(this.activeTileZoom);
 
     const newW = this.#canvasWidth();
@@ -208,7 +216,7 @@ export default class MapCanvas extends HTMLElement {
     activeLayer.element.hidden = false;
 
     this.backdropOriginalWidth = oldW;
-    this.backdropElement = activeLayer.element;
+    this.backdropLayer = activeLayer;
   };
 
   /**
@@ -392,12 +400,12 @@ export default class MapCanvas extends HTMLElement {
    * @param {number} zoom
    * @private
    */
-  #scheduleTileLoad = (zoom) => {
+  #scheduleTileLoad = (zoom, delay = TILE_LOAD_DEBOUNCE_MS) => {
     this.#cancelPendingTileLoad();
     this.tileLoadTimeoutId = setTimeout(() => {
       this.tileLoadTimeoutId = null;
       this.#renderTiles(zoom);
-    }, TILE_LOAD_DEBOUNCE_MS);
+    }, delay);
   };
 
   /**
@@ -476,14 +484,12 @@ export default class MapCanvas extends HTMLElement {
     this.#updateControls();
     this.#updateUrlState();
     this.#dispatchZoomChange();
-
-    const isZoomingOut = targetLevel < previousZoomLevel;
-    if (isZoomingOut) {
-      this.#cancelPendingTileLoad();
-      this.#renderTiles(this.zoom);
-    } else {
-      this.#scheduleTileLoad(this.zoom);
-    }
+    this.#scheduleTileLoad(
+      this.zoom,
+      targetLevel < previousZoomLevel
+        ? TILE_LOAD_DEBOUNCE_ZOOM_OUT_MS
+        : TILE_LOAD_DEBOUNCE_MS,
+    );
   };
 
   /**
@@ -991,10 +997,11 @@ export default class MapCanvas extends HTMLElement {
    * Builds a tile layer for one zoom level.
    * Tiles fill the real-size canvas (naturalWidth * scale) at integer pixels.
    * @param {number} zoom
+   * @param {Object} layerState - Object to track the layer's ready and intersecting tiles for handoff logic.
    * @returns {{ element: HTMLDivElement, tiles: Array }}
    * @private
    */
-  #buildTileLayer = (zoom) => {
+  #buildTileLayer = (zoom, layerState) => {
     const sourceScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
     const canvasW = this.#canvasWidth();
     const canvasH = this.#canvasHeight();
@@ -1059,6 +1066,7 @@ export default class MapCanvas extends HTMLElement {
         const markTileReady = () => {
           if (tile.ready) return;
           tile.ready = true;
+          if (tile.intersecting) layerState.readyIntersectingCount++;
           this.tileLoadInFlight = Math.max(0, this.tileLoadInFlight - 1);
           this.#drainTileLoadQueue();
           this.#checkLayerHandoff();
@@ -1088,11 +1096,16 @@ export default class MapCanvas extends HTMLElement {
 
   /**
    * Clears all cached tile layers so they can be rebuilt for a new size.
+   * Explicitly releases image src attributes to prompt iOS Safari to reclaim
+   * decoded texture memory rather than waiting for garbage collection.
    * @private
    */
   #resetTileLayers = () => {
     for (const layer of this.tileLayers.values()) {
       layer.observer?.disconnect();
+      for (const tile of layer.tiles) {
+        tile.image.removeAttribute("src");
+      }
       layer.element.remove();
     }
     this.tileLayers.clear();
@@ -1111,7 +1124,10 @@ export default class MapCanvas extends HTMLElement {
     const existingLayer = this.tileLayers.get(zoom);
     if (existingLayer) return existingLayer;
 
-    const newLayer = this.#buildTileLayer(zoom);
+    const newLayer = { intersectingCount: 0, readyIntersectingCount: 0 };
+    const { element, tiles } = this.#buildTileLayer(zoom, newLayer);
+    newLayer.element = element;
+    newLayer.tiles = tiles;
     this.tileLayers.set(zoom, newLayer);
     this.map.prepend(newLayer.element);
     this.#observeTileLayer(newLayer);
@@ -1149,7 +1165,7 @@ export default class MapCanvas extends HTMLElement {
 
     activeLayer.element.hidden = false;
 
-    const activeZIndex = this.backdropElement ? "-1" : "0";
+    const activeZIndex = this.backdropLayer ? "-1" : "0";
 
     if (this.previousTileZoom !== null) {
       const previousLayer = this.tileLayers.get(this.previousTileZoom);
@@ -1174,10 +1190,27 @@ export default class MapCanvas extends HTMLElement {
         for (const entry of entries) {
           const tile = this.tileSlotToTile.get(entry.target);
           if (!tile) continue;
+          const wasIntersecting = tile.intersecting;
           tile.intersecting = entry.isIntersecting;
-          if (entry.isIntersecting && !tile.requested) {
-            tile.requested = true;
-            this.tileLoadQueue.push(tile);
+          if (entry.isIntersecting && !wasIntersecting) {
+            layer.intersectingCount++;
+            if (tile.ready) layer.readyIntersectingCount++;
+            if (!tile.requested) {
+              tile.requested = true;
+              this.tileLoadQueue.push(tile);
+            }
+          } else if (!entry.isIntersecting && wasIntersecting) {
+            layer.intersectingCount--;
+            if (tile.ready) {
+              layer.readyIntersectingCount--;
+              // Release the decoded GPU texture for tiles that leave the viewport.
+              // iOS Safari holds decoded images in memory indefinitely; explicit
+              // src removal lets it reclaim that memory under pressure. The tile
+              // will be re-queued and reloaded from HTTP cache when it re-enters.
+              tile.image.removeAttribute("src");
+              tile.ready = false;
+              tile.requested = false;
+            }
           }
         }
         this.#drainTileLoadQueue();
@@ -1202,14 +1235,11 @@ export default class MapCanvas extends HTMLElement {
     const activeLayer = this.tileLayers.get(this.activeTileZoom);
     if (!activeLayer) return;
 
-    const hasIntersectingTiles = activeLayer.tiles.some(
-      (tile) => tile.intersecting,
-    );
     const allIntersectingReady =
-      hasIntersectingTiles &&
-      activeLayer.tiles.every((tile) => !tile.intersecting || tile.ready);
+      activeLayer.intersectingCount > 0 &&
+      activeLayer.intersectingCount === activeLayer.readyIntersectingCount;
 
-    if (this.backdropElement && allIntersectingReady) {
+    if (this.backdropLayer && allIntersectingReady) {
       this.#removeBackdrop();
       activeLayer.element.style.setProperty("z-index", "0");
     }
