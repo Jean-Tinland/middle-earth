@@ -57,6 +57,12 @@ const TILE_LOAD_DEBOUNCE_ZOOM_OUT_MS = 150;
 const ROTATION_SPEED = 0.3;
 /** Number of tiles to load concurrently before waiting for completions. */
 const TILE_LOAD_BATCH_SIZE = 10;
+/**
+ * Minimum cumulative twist angle (degrees) required to engage rotation during a pinch.
+ * Accumulation resets whenever a zoom step fires, so this threshold only counts
+ * intentional rotation: not incidental finger twist that occurs while zooming.
+ */
+const PINCH_ROTATE_ENGAGE_DEG = 7;
 
 /**
  * Maps a discrete zoom level to a tile zoom index (0–MAX_TILE_ZOOM).
@@ -149,6 +155,8 @@ export default class MapCanvas extends HTMLElement {
     this.pinchStartZoomLevel = 0;
     this.pinchFocalPoint = null;
     this.pinchCurrentAngle = 0;
+    this.pinchRotationEngaged = false;
+    this.pinchCumulativeAngleDelta = 0;
 
     this.root = this.attachShadow({ mode: "open" });
 
@@ -962,6 +970,8 @@ export default class MapCanvas extends HTMLElement {
       y: (t1.clientY + t2.clientY) / 2,
     };
     this.pinchCurrentAngle = this.#touchAngle(t1, t2);
+    this.pinchRotationEngaged = false;
+    this.pinchCumulativeAngleDelta = 0;
   };
 
   /**
@@ -989,17 +999,35 @@ export default class MapCanvas extends HTMLElement {
       0,
       Math.min(this.numZoomSteps, this.pinchStartZoomLevel + zoomDelta),
     );
-    if (targetLevel !== this.zoomLevel) {
+    const didZoom = targetLevel !== this.zoomLevel;
+    if (didZoom) {
       this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
     }
 
     const newAngle = this.#touchAngle(t1, t2);
     let angleDelta = newAngle - this.pinchCurrentAngle;
-    // Normalise to (-180, 180] to avoid wrap-around jumps.
+    // Normalise to (-180, 180) to avoid wrap-around jumps.
     if (angleDelta > 180) angleDelta -= 360;
     if (angleDelta < -180) angleDelta += 360;
     this.pinchCurrentAngle = newAngle;
-    if (Math.abs(angleDelta) > 0.1) {
+
+    if (!this.pinchRotationEngaged) {
+      // Reset accumulator whenever scale is actively changing so that
+      // incidental twist during a zoom gesture never triggers rotation.
+      if (didZoom) {
+        this.pinchCumulativeAngleDelta = 0;
+      } else {
+        this.pinchCumulativeAngleDelta += angleDelta;
+        if (
+          Math.abs(this.pinchCumulativeAngleDelta) >= PINCH_ROTATE_ENGAGE_DEG
+        ) {
+          this.pinchRotationEngaged = true;
+          this.#rotateAroundViewportCenter(this.pinchCumulativeAngleDelta);
+          this.#updateCanvas();
+          this.#notifyRotationChange();
+        }
+      }
+    } else if (Math.abs(angleDelta) > 0.1) {
       this.#rotateAroundViewportCenter(angleDelta);
       this.#updateCanvas();
       this.#notifyRotationChange();
