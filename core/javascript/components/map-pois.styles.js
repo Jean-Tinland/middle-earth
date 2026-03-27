@@ -14,7 +14,7 @@ const styles = /* css */ `
     --shadow: var(--paper);
 
     position: absolute;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(var(--poi-rotation, 0deg));
   }
 
   .poi[hidden] {
@@ -105,6 +105,7 @@ const styles = /* css */ `
     display: block;
     height: auto;
     margin: 0 auto;
+    transform: rotate(var(--illustration-rotation, 0deg));
   }
 
   .illustration[hidden] {

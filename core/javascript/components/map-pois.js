@@ -30,6 +30,17 @@ const DEFAULT_CITY_DOT_SIZE_MULTIPLIER = CITY_DOT_SIZE_MULTIPLIERS[4];
  * @extends HTMLElement
  */
 export default class MapPois extends HTMLElement {
+  /** @type {Map<number, Array>} POI elements grouped by their zoom-appearance threshold. */
+  #poisByZoom = new Map();
+  /** @type {number[]} Zoom thresholds in ascending order. */
+  #sortedThresholds = [];
+  /** @type {Array} POI elements that have an illustration image. */
+  #illustrationPois = [];
+  /** @type {number} Zoom level from the most recent render call; -1 before first render. */
+  #lastZoom = -1;
+  /** @type {boolean | null} Illustration mode from the most recent render call. */
+  #lastIllustrationMode = null;
+
   /**
    * Creates an instance of MapPois.
    * @param {Array} pois - The points of interest to display on the map.
@@ -37,8 +48,6 @@ export default class MapPois extends HTMLElement {
   constructor(pois) {
     super();
 
-    this.pois = pois;
-    this.poiElements = [];
     this.lastBaseFontSize = null;
 
     this.root = this.attachShadow({ mode: "open" });
@@ -47,23 +56,36 @@ export default class MapPois extends HTMLElement {
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
 
-    this.#buildPois();
+    this.#buildPois(pois);
     this.render(0);
   }
 
   /**
-   * Creates all POI DOM elements once upfront.
+   * Creates all POI DOM elements once upfront and indexes them by zoom threshold.
+   * @param {Array} pois
    * @private
    */
-  #buildPois = () => {
+  #buildPois = (pois) => {
     const fragment = document.createDocumentFragment();
 
-    for (const poi of this.pois) {
+    for (const poi of pois) {
       const poiElement = this.#createPoiElement(poi);
-      this.poiElements.push(poiElement);
+
+      const bucket = this.#poisByZoom.get(poi.zoom);
+      if (bucket) {
+        bucket.push(poiElement);
+      } else {
+        this.#poisByZoom.set(poi.zoom, [poiElement]);
+      }
+
+      if (poiElement.illustrationElement) {
+        this.#illustrationPois.push(poiElement);
+      }
+
       fragment.appendChild(poiElement.element);
     }
 
+    this.#sortedThresholds = [...this.#poisByZoom.keys()].sort((a, b) => a - b);
     this.root.appendChild(fragment);
   };
 
@@ -223,7 +245,9 @@ export default class MapPois extends HTMLElement {
   };
 
   /**
-   * Shows/hides POIs based on the current zoom level.
+   * Shows/hides POIs based on the current zoom level, only touching the DOM
+   * for buckets that cross a visibility threshold, and only updating sizes
+   * for visible POIs when the base font size changes.
    * @param {number} zoom - The effective zoom level used to gate POI visibility.
    * @param {number} [baseFontSize] - Base font size used to compute POI sizes.
    * @param {number} [illustrationZoom] - The raw zoom level used only for illustration
@@ -231,60 +255,73 @@ export default class MapPois extends HTMLElement {
    */
   render = (zoom, baseFontSize, illustrationZoom = zoom) => {
     const resolvedBaseFontSize = this.#resolveBaseFontSize(baseFontSize);
-    const shouldRecalculateSizes =
-      this.lastBaseFontSize !== resolvedBaseFontSize;
+    const sizesDirty = this.lastBaseFontSize !== resolvedBaseFontSize;
+    const illustrationMode = illustrationZoom >= ILLUSTRATION_ZOOM_THRESHOLD;
+    const illustrationChanged = illustrationMode !== this.#lastIllustrationMode;
+    const lastZoom = this.#lastZoom;
 
-    for (const poiElement of this.poiElements) {
-      if (shouldRecalculateSizes) {
-        this.#applyPixelSizes(poiElement, resolvedBaseFontSize);
+    for (const threshold of this.#sortedThresholds) {
+      const wasVisible = threshold <= lastZoom;
+      const isVisible = threshold <= zoom;
+
+      if (isVisible && !wasVisible) {
+        // Bucket just came into view — size and show its POIs.
+        for (const poi of this.#poisByZoom.get(threshold)) {
+          this.#applyPixelSizes(poi, resolvedBaseFontSize);
+          if (poi.illustrationElement) {
+            this.#applyIllustrationMode(poi, illustrationMode);
+          }
+          poi.element.hidden = false;
+        }
+      } else if (!isVisible && wasVisible) {
+        // Bucket just left view — hide its POIs.
+        for (const poi of this.#poisByZoom.get(threshold)) {
+          poi.element.hidden = true;
+        }
+      } else if (isVisible && sizesDirty) {
+        // Already visible — update sizes only.
+        for (const poi of this.#poisByZoom.get(threshold)) {
+          this.#applyPixelSizes(poi, resolvedBaseFontSize);
+        }
       }
+    }
 
-      poiElement.element.hidden = poiElement.zoom > zoom;
-
-      this.#applyIllustrationMode(poiElement, illustrationZoom);
+    // Update illustration mode for visible illustration POIs when threshold is crossed.
+    if (illustrationChanged) {
+      for (const poi of this.#illustrationPois) {
+        if (!poi.element.hidden) {
+          this.#applyIllustrationMode(poi, illustrationMode);
+        }
+      }
     }
 
     this.lastBaseFontSize = resolvedBaseFontSize;
+    this.#lastZoom = zoom;
+    this.#lastIllustrationMode = illustrationMode;
   };
 
   /**
-   * Toggles between the illustration image and the traditional dot marker
-   * based on the current zoom level.
-   * @param {{dotElement: HTMLElement | null, illustrationElement: HTMLElement | null}} poiElement
-   * @param {number} zoom
+   * Toggles between the illustration image and the dot marker.
+   * Only called for POIs that have an illustration element.
+   * @param {{dotElement: HTMLElement | null, illustrationElement: HTMLElement}} poiElement
+   * @param {boolean} show - Whether the illustration should be shown.
    * @private
    */
-  #applyIllustrationMode = (poiElement, zoom) => {
-    if (!poiElement.illustrationElement) return;
-
-    const showIllustration = zoom >= ILLUSTRATION_ZOOM_THRESHOLD;
-
+  #applyIllustrationMode = (poiElement, show) => {
     if (poiElement.dotElement) {
-      poiElement.dotElement.hidden = showIllustration;
+      poiElement.dotElement.hidden = show;
     }
-
-    poiElement.illustrationElement.hidden = !showIllustration;
+    poiElement.illustrationElement.hidden = !show;
   };
 
   /**
-   * Counter-rotates all POI elements to keep labels horizontal while the map rotates.
-   * Illustrations are re-rotated back so they always face up.
+   * Counter-rotates all POI labels to keep them horizontal while the map rotates.
+   * Sets CSS custom properties on the host so all POIs update in a single paint.
    * @param {number} degrees - Current map rotation in degrees.
    */
   setRotation = (degrees) => {
-    for (const { element, illustrationElement } of this.poiElements) {
-      element.style.setProperty(
-        "transform",
-        `translate(-50%, -50%) rotate(${-degrees}deg)`,
-      );
-
-      if (illustrationElement) {
-        illustrationElement.style.setProperty(
-          "transform",
-          `rotate(${degrees}deg)`,
-        );
-      }
-    }
+    this.style.setProperty("--poi-rotation", `${-degrees}deg`);
+    this.style.setProperty("--illustration-rotation", `${degrees}deg`);
   };
 }
 
