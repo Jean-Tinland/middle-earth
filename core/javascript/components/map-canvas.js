@@ -443,6 +443,7 @@ export default class MapCanvas extends HTMLElement {
     const oldTranslateY = this.translateY;
     const oldW = this.#canvasWidth();
     const oldH = this.#canvasHeight();
+    const previousZoomLevel = this.zoomLevel;
 
     this.zoomLevel = Math.max(0, Math.min(targetLevel, this.numZoomSteps));
     this.scale = computeScaleForZoomLevel(
@@ -475,7 +476,14 @@ export default class MapCanvas extends HTMLElement {
     this.#updateControls();
     this.#updateUrlState();
     this.#dispatchZoomChange();
-    this.#scheduleTileLoad(this.zoom);
+
+    const isZoomingOut = targetLevel < previousZoomLevel;
+    if (isZoomingOut) {
+      this.#cancelPendingTileLoad();
+      this.#renderTiles(this.zoom);
+    } else {
+      this.#scheduleTileLoad(this.zoom);
+    }
   };
 
   /**
