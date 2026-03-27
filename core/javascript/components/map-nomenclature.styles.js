@@ -11,8 +11,8 @@ const styles = /* css */ `
     :host {
       --size: 48px;
 
-      top: 16px;
-      left: 16px;
+      top: calc(16px + env(safe-area-inset-top, 0px));
+      left: calc(16px + env(safe-area-inset-left, 0px));
     }
   }
 

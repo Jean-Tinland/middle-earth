@@ -1,6 +1,6 @@
 const styles = /* css */ `
 :host {
-  position: absolute;
+  position: fixed;
   bottom: 26px;
   left: 26px;
   display: flex;
@@ -9,9 +9,9 @@ const styles = /* css */ `
 
 @media (pointer: coarse) {
   :host {
-    top: 16px;
+    top: calc(16px + env(safe-area-inset-top, 0px));
     bottom: unset;
-    right: 16px;
+    right: calc(16px + env(safe-area-inset-right, 0px));
     left: unset;
   }
 }

@@ -4,7 +4,7 @@ const styles = /* css */ `
 }
 
 .controls {
-  position: absolute;
+  position: fixed;
   top: 26px;
   right: 26px;
   display: flex;
@@ -18,7 +18,6 @@ const styles = /* css */ `
 
 @media (pointer: coarse) {
   .controls {
-    position: fixed;
     top: unset;
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     right: calc(16px + env(safe-area-inset-right, 0px));

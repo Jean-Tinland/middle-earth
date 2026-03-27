@@ -1,33 +1,14 @@
 const styles = /* css */ `
 :host {
-  --size: 36px;
-
-  position: absolute;
-  bottom: 26px;
-  right: 26px;
-}
-
-@media (pointer: coarse) {
-  :host {
-    --size: 48px;
-
-    bottom: 16px;
-    left: 16px;
-    right: unset;
-  }
-}
-
-@media (pointer: coarse) {
-  :host {
-
-    position: fixed;
-    top: unset;
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    left: 16px;
-  }
+  touch-action: manipulation;
 }
 
 .information {
+  --size: 36px;
+
+  position: fixed;
+  bottom: 26px;
+  right: 26px;
   width: var(--size);
   height: var(--size);
   display: flex;
@@ -42,6 +23,19 @@ const styles = /* css */ `
   cursor: pointer;
   touch-action: manipulation;
 }
+
+
+@media (pointer: coarse) {
+  .information {
+    --size: 48px;
+
+    top: unset;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: calc(16px + env(safe-area-inset-left, 0px));
+    right: unset;
+  }
+}
+
 
 .icon {
   flex: 0 0 18px;

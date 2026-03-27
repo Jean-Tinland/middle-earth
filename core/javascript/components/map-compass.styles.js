@@ -27,7 +27,7 @@ const styles = /* css */ `
     position: fixed;
     top: unset;
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    right: 130px;
+    right: calc(130px + env(safe-area-inset-right, 0px));
   }
 }
 
