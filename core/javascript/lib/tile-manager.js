@@ -1,5 +1,7 @@
 const TILE_SIZE = 512;
 const MAX_TILE_ZOOM = 7;
+const TILE_PRELOAD_MARGIN = 128;
+const TILE_LOAD_BATCH_SIZE = 10;
 const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
 
 export { MAX_TILE_ZOOM };
@@ -10,6 +12,9 @@ export default class TileManager {
   #baseMapWidth;
   #baseMapHeight;
   #tileLayers = new Map();
+  #tileSlotToTile = new WeakMap();
+  #tileLoadQueue = [];
+  #tileLoadInFlight = 0;
   #tileLoadTimeoutId = null;
   #activeTileZoom = 0;
   #previousTileZoom = null;
@@ -36,8 +41,8 @@ export default class TileManager {
 
   removeBackdrop() {
     if (!this.#backdropLayer) return;
-    for (const img of this.#backdropLayer.images) {
-      img.removeAttribute("src");
+    for (const tile of this.#backdropLayer.tiles) {
+      tile.image.removeAttribute("src");
     }
     this.#backdropLayer.element.remove();
     this.#backdropLayer = null;
@@ -53,6 +58,7 @@ export default class TileManager {
     const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
     if (!activeLayer) return;
 
+    activeLayer.observer?.disconnect();
     this.#tileLayers.delete(this.#activeTileZoom);
 
     const scaleRatio = canvasWidth / oldW;
@@ -77,13 +83,16 @@ export default class TileManager {
 
   resetLayers() {
     for (const layer of this.#tileLayers.values()) {
-      for (const img of layer.images) {
-        img.removeAttribute("src");
+      layer.observer?.disconnect();
+      for (const tile of layer.tiles) {
+        tile.image.removeAttribute("src");
       }
       layer.element.remove();
     }
     this.#tileLayers.clear();
     this.#previousTileZoom = null;
+    this.#tileLoadQueue = [];
+    this.#tileLoadInFlight = 0;
   }
 
   cancelPendingLoad() {
@@ -140,21 +149,9 @@ export default class TileManager {
     const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
     if (!activeLayer) return;
 
-    const vpW = window.innerWidth;
-    const vpH = window.innerHeight;
-    let intersectingCount = 0;
-    let readyIntersectingCount = 0;
-
-    for (const img of activeLayer.images) {
-      const r = img.getBoundingClientRect();
-      if (r.right > 0 && r.bottom > 0 && r.left < vpW && r.top < vpH) {
-        intersectingCount++;
-        if (activeLayer.decoded.has(img)) readyIntersectingCount++;
-      }
-    }
-
     const allReady =
-      intersectingCount > 0 && intersectingCount === readyIntersectingCount;
+      activeLayer.intersectingCount > 0 &&
+      activeLayer.intersectingCount === activeLayer.readyIntersectingCount;
 
     if (this.#backdropLayer && allReady) {
       this.removeBackdrop();
@@ -188,17 +185,17 @@ export default class TileManager {
     const existing = this.#tileLayers.get(zoom);
     if (existing) return existing;
 
-    const decoded = new WeakSet();
-    const state = { element: null, images: null, decoded };
-    const { element, images } = this.#buildLayer(zoom, decoded);
+    const state = { intersectingCount: 0, readyIntersectingCount: 0 };
+    const { element, tiles } = this.#buildLayer(zoom, state);
     state.element = element;
-    state.images = images;
+    state.tiles = tiles;
     this.#tileLayers.set(zoom, state);
     this.#mapElement.prepend(state.element);
+    this.#observeLayer(state);
     return state;
   }
 
-  #buildLayer(zoom, decoded) {
+  #buildLayer(zoom, layerState) {
     const canvasW = this.canvasWidth;
     const canvasH = this.canvasHeight;
     const sourceScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
@@ -209,10 +206,10 @@ export default class TileManager {
 
     const layer = document.createElement("div");
     layer.style.cssText =
-      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;";
+      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;content-visibility:auto;contain-intrinsic-size:auto auto;";
     layer.hidden = true;
 
-    const images = [];
+    const tiles = [];
 
     const colEdges = new Array(cols + 1);
     for (let c = 0; c <= cols; c++) {
@@ -234,36 +231,105 @@ export default class TileManager {
         const width = colEdges[col + 1] - left;
         const height = rowEdges[row + 1] - top;
 
-        const img = document.createElement("img");
-        img.loading = "lazy";
-        img.alt = "";
-        img.decoding = "async";
-        img.src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
-        img.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:block;pointer-events:none;`;
+        const slot = document.createElement("div");
+        slot.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px`;
 
-        const markDecoded = () => {
-          decoded.add(img);
+        const image = document.createElement("img");
+        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
+        image.alt = "";
+        image.decoding = "async";
+        image.dataset.src = src;
+        image.style.cssText =
+          "display:block;width:100%;height:100%;pointer-events:none;";
+
+        const tile = {
+          slot,
+          image,
+          src,
+          requested: false,
+          ready: false,
+          intersecting: false,
+        };
+        this.#tileSlotToTile.set(slot, tile);
+
+        const markReady = () => {
+          if (tile.ready) return;
+          tile.ready = true;
+          if (tile.intersecting) layerState.readyIntersectingCount++;
+          this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
+          this.#drainQueue();
           this.checkLayerHandoff();
         };
 
-        img.addEventListener("load", () => {
-          if (typeof img.decode === "function") {
-            img
-              .decode()
-              .catch(() => {})
-              .finally(markDecoded);
-          } else {
-            markDecoded();
+        image.addEventListener("load", () => {
+          if (typeof image.decode !== "function") {
+            markReady();
+            return;
           }
+          image
+            .decode()
+            .catch(() => {})
+            .finally(markReady);
         });
-        img.addEventListener("error", markDecoded);
+        image.addEventListener("error", markReady);
 
-        layer.appendChild(img);
-        images.push(img);
+        slot.appendChild(image);
+        layer.appendChild(slot);
+        tiles.push(tile);
       }
     }
 
-    return { element: layer, images };
+    return { element: layer, tiles };
+  }
+
+  #observeLayer(layer) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const tile = this.#tileSlotToTile.get(entry.target);
+          if (!tile) continue;
+          const wasIntersecting = tile.intersecting;
+          tile.intersecting = entry.isIntersecting;
+          if (entry.isIntersecting && !wasIntersecting) {
+            layer.intersectingCount++;
+            if (tile.ready) layer.readyIntersectingCount++;
+            if (!tile.requested) {
+              tile.requested = true;
+              this.#tileLoadQueue.push(tile);
+            }
+          } else if (!entry.isIntersecting && wasIntersecting) {
+            layer.intersectingCount--;
+            if (tile.ready) {
+              layer.readyIntersectingCount--;
+              tile.image.removeAttribute("src");
+              tile.ready = false;
+              tile.requested = false;
+            }
+          }
+        }
+        this.#drainQueue();
+        this.checkLayerHandoff();
+      },
+      { rootMargin: `${TILE_PRELOAD_MARGIN}px` },
+    );
+
+    for (const tile of layer.tiles) {
+      observer.observe(tile.slot);
+    }
+
+    layer.observer = observer;
+  }
+
+  #drainQueue() {
+    while (
+      this.#tileLoadInFlight < TILE_LOAD_BATCH_SIZE &&
+      this.#tileLoadQueue.length > 0
+    ) {
+      const tile = this.#tileLoadQueue.shift();
+      if (tile.ready) continue;
+      this.#tileLoadInFlight++;
+      tile.image.src = tile.image.dataset.src;
+    }
   }
 
   /** Must be set by the canvas before each operation that builds layers. */
