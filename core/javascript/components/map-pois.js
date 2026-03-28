@@ -131,6 +131,7 @@ export default class MapPois extends HTMLElement {
         src: illustration,
         alt: name,
         hidden: true,
+        loading: "lazy",
       });
       el.appendChild(illustrationElement);
     }
