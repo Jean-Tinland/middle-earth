@@ -12,7 +12,7 @@ export default class TileManager {
   #baseMapWidth;
   #baseMapHeight;
   #tileLayers = new Map();
-  #tileSlotToTile = new WeakMap();
+  #imgToTile = new WeakMap();
   #tileLoadQueue = [];
   #tileLoadInFlight = 0;
   #tileLoadTimeoutId = null;
@@ -20,6 +20,7 @@ export default class TileManager {
   #previousTileZoom = null;
   #backdropLayer = null;
   #backdropOriginalWidth = 0;
+  #tileObserver = null;
 
   constructor(mapElement, baseMapWidth, baseMapHeight) {
     this.#mapElement = mapElement;
@@ -58,7 +59,11 @@ export default class TileManager {
     const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
     if (!activeLayer) return;
 
-    activeLayer.observer?.disconnect();
+    if (this.#tileObserver) {
+      for (const tile of activeLayer.tiles) {
+        this.#tileObserver.unobserve(tile.image);
+      }
+    }
     this.#tileLayers.delete(this.#activeTileZoom);
 
     const scaleRatio = canvasWidth / oldW;
@@ -82,8 +87,9 @@ export default class TileManager {
   }
 
   resetLayers() {
+    this.#tileObserver?.disconnect();
+    this.#tileObserver = null;
     for (const layer of this.#tileLayers.values()) {
-      layer.observer?.disconnect();
       for (const tile of layer.tiles) {
         tile.image.removeAttribute("src");
       }
@@ -231,26 +237,20 @@ export default class TileManager {
         const width = colEdges[col + 1] - left;
         const height = rowEdges[row + 1] - top;
 
-        const slot = document.createElement("div");
-        slot.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px`;
-
         const image = document.createElement("img");
-        const src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
         image.alt = "";
         image.decoding = "async";
-        image.dataset.src = src;
-        image.style.cssText =
-          "display:block;width:100%;height:100%;pointer-events:none;";
+        image.dataset.src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
+        image.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;pointer-events:none;`;
 
         const tile = {
-          slot,
           image,
-          src,
           requested: false,
           ready: false,
           intersecting: false,
+          layerState,
         };
-        this.#tileSlotToTile.set(slot, tile);
+        this.#imgToTile.set(image, tile);
 
         const markReady = () => {
           if (tile.ready) return;
@@ -273,8 +273,7 @@ export default class TileManager {
         });
         image.addEventListener("error", markReady);
 
-        slot.appendChild(image);
-        layer.appendChild(slot);
+        layer.appendChild(image);
         tiles.push(tile);
       }
     }
@@ -283,11 +282,20 @@ export default class TileManager {
   }
 
   #observeLayer(layer) {
-    const observer = new IntersectionObserver(
+    const observer = this.#getOrCreateObserver();
+    for (const tile of layer.tiles) {
+      observer.observe(tile.image);
+    }
+  }
+
+  #getOrCreateObserver() {
+    if (this.#tileObserver) return this.#tileObserver;
+    this.#tileObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const tile = this.#tileSlotToTile.get(entry.target);
+          const tile = this.#imgToTile.get(entry.target);
           if (!tile) continue;
+          const layer = tile.layerState;
           const wasIntersecting = tile.intersecting;
           tile.intersecting = entry.isIntersecting;
           if (entry.isIntersecting && !wasIntersecting) {
@@ -312,12 +320,7 @@ export default class TileManager {
       },
       { rootMargin: `${TILE_PRELOAD_MARGIN}px` },
     );
-
-    for (const tile of layer.tiles) {
-      observer.observe(tile.slot);
-    }
-
-    layer.observer = observer;
+    return this.#tileObserver;
   }
 
   #drainQueue() {
