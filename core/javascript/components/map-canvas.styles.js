@@ -5,6 +5,7 @@ const styles = /* css */ `
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100svh;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -26,6 +27,7 @@ const styles = /* css */ `
   max-width: 100vw;
   height: auto;
   max-height: 100vh;
+  max-height: 100svh;
   display: flex;
   cursor: grab;
   touch-action: none;
