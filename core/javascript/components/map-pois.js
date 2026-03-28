@@ -30,6 +30,8 @@ const DEFAULT_CITY_DOT_SIZE_MULTIPLIER = CITY_DOT_SIZE_MULTIPLIERS[4];
  * @extends HTMLElement
  */
 export default class MapPois extends HTMLElement {
+  /** @type {string} The build version of the application. */
+  #buildVersion = document.documentElement.dataset.buildVersion || "0";
   /** @type {Map<number, Array>} POI elements grouped by their zoom-appearance threshold. */
   #poisByZoom = new Map();
   /** @type {number[]} Zoom thresholds in ascending order. */
@@ -128,7 +130,7 @@ export default class MapPois extends HTMLElement {
     if (illustration) {
       illustrationElement = Object.assign(document.createElement("img"), {
         className: "illustration",
-        src: illustration,
+        src: `${illustration}?v=${this.#buildVersion}`,
         alt: name,
         hidden: true,
         loading: "lazy",

@@ -1,4 +1,3 @@
-const TILES_BUILD_VERSION = "2";
 const TILE_SIZE = 512;
 const MAX_TILE_ZOOM = 7;
 const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
@@ -6,6 +5,7 @@ const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
 export { MAX_TILE_ZOOM };
 
 export default class TileManager {
+  #buildVersion = document.documentElement.dataset.buildVersion || "0";
   #mapElement;
   #baseMapWidth;
   #baseMapHeight;
@@ -238,7 +238,7 @@ export default class TileManager {
         img.loading = "lazy";
         img.alt = "";
         img.decoding = "async";
-        img.src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${TILES_BUILD_VERSION}`;
+        img.src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
         img.style.cssText = `position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:block;pointer-events:none;`;
 
         const markDecoded = () => {
