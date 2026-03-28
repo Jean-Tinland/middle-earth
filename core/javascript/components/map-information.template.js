@@ -42,7 +42,7 @@ export const content = /* html */ `
           Map drawn by myself from existing Middle-Earth maps in Figma with custom terrain & landmark elements.
         </li>
         <li>
-          Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks. Hobbiton is a copy of <a href="https://tolkiengateway.net/wiki/Hobbiton#/media/File:J.R.R._Tolkien_-_The_Hill_-_Hobbiton-across-the-Water_(Colored).jpg" target="_blank" rel="nofollow noopener">the Tolkien painting depicting it</a>.
+          Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks.
         </li>
         <li>
           Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>.

@@ -13,7 +13,7 @@ All points of interest were collected on various representations of existing Mid
 ## Credits
 
 - Map drawn in Figma with custom terrain & landmark elements.
-- Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks. Hobbiton is a copy of [the Tolkien painting depicting it](<https://tolkiengateway.net/wiki/Hobbiton#/media/File:J.R.R._Tolkien_-_The_Hill_-_Hobbiton-across-the-Water_(Colored).jpg>).
+- Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks.
 - Button's icons: extracted from [Remix Icon collection](https://remixicon.com/).
 - Favicon: [One Ring](https://icons8.com/icon/20169/one-ring) icon by [Icons8](https://icons8.com).
 - Map texture overlay: [Image by rawpixel.com on Freepik](https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture).
