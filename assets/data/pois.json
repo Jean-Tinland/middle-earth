@@ -589,8 +589,7 @@
       "name": "Hobbiton",
       "position": [23.04, 24.07],
       "size": 3,
-      "zoom": 8,
-      "illustration": "/assets/images/places/hobbiton.png"
+      "zoom": 8
     },
     {
       "kind": "city",
@@ -1176,9 +1175,10 @@
     {
       "kind": "common-place",
       "name": "Bag End",
-      "position": [23.13, 23.6],
+      "position": [23.13, 23.44],
       "size": 4,
-      "zoom": 21
+      "zoom": 21,
+      "illustration": "/assets/images/places/bag_end.png"
     },
     {
       "kind": "common-place",
