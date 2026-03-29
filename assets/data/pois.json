@@ -706,9 +706,10 @@
     {
       "kind": "city",
       "name": "Tharbad",
-      "position": [32.27, 36.3],
+      "position": [32.05, 36.79],
       "size": 2,
-      "zoom": 8
+      "zoom": 8,
+      "illustration": "/assets/images/places/tharbad.png"
     },
     {
       "kind": "city",
