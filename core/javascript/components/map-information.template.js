@@ -43,6 +43,14 @@ export const content = /* html */ `
         </li>
         <li>
           Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks.
+          <ul>
+            <li>
+              Thardbad is drawn based on Rob Alexander's painting of the city: <a href="https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg" target="_blank" rel="nofollow noopener">Tharbad</a>.
+            </li>
+            <li>
+              Tower Hill is drawn based on the painting of the same place by Nasmith Elostirion: <a href="https://lotr.fandom.com/wiki/Tower_Hills?file=Nasmith_elostirion.jpg" target="_blank" rel="nofollow noopener">Tower Hill</a>.
+            </li>
+          </ul>
         </li>
         <li>
           Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>.
@@ -71,7 +79,11 @@ export const content = /* html */ `
     </div>
     <div class="known-issues">
       <h2>Known issues</h2>
-      <p>As of now, there are no known issues. Please open an issue if you encounter any.</p>
+      <ul>
+        <li>
+          After prolonged use, the map can totally freeze on IOS devices. A simple page refresh fixes the issue. I'm working on finding a solution.
+        </li>
+      </ul>
     </div>
   </div>
 `;
