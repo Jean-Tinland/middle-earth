@@ -14,7 +14,7 @@ All points of interest were collected on various representations of existing Mid
 
 - Map drawn in Figma with custom terrain & landmark elements.
 - Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks:
-  - Thardbad is drawn based on Rob Alexander's painting of the city: [Tharbad](https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg).
+  - Tharbad is drawn based on Rob Alexander's painting of the city: [Tharbad](https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg).
   - Tower Hill is drawn based on the painting of the same place by Nasmith Elostirion: [Tower Hill](https://lotr.fandom.com/wiki/Tower_Hills?file=Nasmith_elostirion.jpg).
 - Button's icons: extracted from [Remix Icon collection](https://remixicon.com/).
 - Favicon: [One Ring](https://icons8.com/icon/20169/one-ring) icon by [Icons8](https://icons8.com).
