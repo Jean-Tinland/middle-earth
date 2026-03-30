@@ -30,22 +30,22 @@ export const content = /* html */ `
   <div class="content">
     <div class="description">
       <p>
-        This project aims to provide an <b>interactive map of Middle-Earth</b> during the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
+        This project aims to provide an <b>interactive map of Middle-earth</b> during the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
         <br />
-        All points of interest were collected on various representation of existing Middle-Earth maps.
+        All points of interest were collected on various representation of existing Middle-earth maps.
       </p>
     </div>
     <div class="credits">
       <h2>Credits</h2>
       <ul>
         <li>
-          Map drawn by myself from existing Middle-Earth maps in Figma with custom terrain & landmark elements.
+          Map drawn by myself from existing Middle-earth maps in Figma with custom terrain & landmark elements.
         </li>
         <li>
-          Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks.
+          Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-earth paintings and artworks.
           <ul>
             <li>
-              Thardbad is drawn based on Rob Alexander's painting of the city: <a href="https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg" target="_blank" rel="nofollow noopener">Tharbad</a>.
+              Tharbad is drawn based on Rob Alexander's painting of the city: <a href="https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg" target="_blank" rel="nofollow noopener">Tharbad</a>.
             </li>
             <li>
               Tower Hill is drawn based on the painting of the same place by Nasmith Elostirion: <a href="https://lotr.fandom.com/wiki/Tower_Hills?file=Nasmith_elostirion.jpg" target="_blank" rel="nofollow noopener">Tower Hill</a>.
