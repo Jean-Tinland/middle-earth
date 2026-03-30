@@ -241,6 +241,13 @@
     },
     {
       "kind": "region",
+      "name": "Angmar",
+      "position": [38.17, 10.82],
+      "zoom": 3,
+      "size": 3
+    },
+    {
+      "kind": "region",
       "name": "The Shire",
       "position": [25.41, 28.8],
       "zoom": 3,
@@ -587,7 +594,7 @@
     {
       "kind": "city",
       "name": "Hobbiton",
-      "position": [23.04, 24.07],
+      "position": [23.08, 24.08],
       "size": 3,
       "zoom": 8
     },
@@ -601,7 +608,7 @@
     {
       "kind": "hamlet",
       "name": "Waymoot",
-      "position": [22.49, 25.36],
+      "position": [22.34, 24.92],
       "size": 4,
       "zoom": 21
     },
@@ -615,28 +622,42 @@
     {
       "kind": "hamlet",
       "name": "Bywater",
-      "position": [23.48, 24.14],
+      "position": [23.37, 24.24],
       "size": 4,
       "zoom": 21
     },
     {
       "kind": "hamlet",
       "name": "Frogmorton",
-      "position": [23.98, 23.91],
+      "position": [23.85, 23.93],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "name": "Brockenborings",
+      "position": [23.6, 22.67],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "name": "Scary",
+      "position": [23.91, 22.92],
       "size": 4,
       "zoom": 21
     },
     {
       "kind": "hamlet",
       "name": "Whitfurrows",
-      "position": [24.42, 23.81],
+      "position": [24.28, 23.88],
       "size": 4,
       "zoom": 21
     },
     {
       "kind": "hamlet",
       "name": "Willowbottom",
-      "position": [24.22, 27.14],
+      "position": [24.17, 27.09],
       "size": 4,
       "zoom": 21
     },
@@ -671,14 +692,14 @@
     {
       "kind": "city",
       "name": "Tuckborough",
-      "position": [22.59, 26.83],
+      "position": [22.52, 26.29],
       "size": 4,
       "zoom": 18
     },
     {
       "kind": "city",
       "name": "Stock",
-      "position": [24.64, 25.33],
+      "position": [24.56, 25.26],
       "size": 4,
       "zoom": 18
     },
@@ -686,6 +707,13 @@
       "kind": "city",
       "name": "Ruins of Annúminas",
       "position": [22.13, 19.97],
+      "size": 3,
+      "zoom": 8
+    },
+    {
+      "kind": "city",
+      "name": "Deadmen's Dike",
+      "position": [27.3, 18.53],
       "size": 3,
       "zoom": 8
     },
@@ -1268,7 +1296,7 @@
     {
       "kind": "common-place",
       "name": "Fornost",
-      "position": [28.42, 18.82],
+      "position": [27.31, 18.18],
       "size": 3,
       "zoom": 13
     },
