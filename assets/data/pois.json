@@ -756,9 +756,10 @@
     {
       "kind": "city",
       "name": "Isengard",
-      "position": [38.7, 52.27],
+      "position": [38.26, 52.32],
       "size": 2,
-      "zoom": 8
+      "zoom": 8,
+      "illustration": "/assets/images/places/isengard.png"
     },
     {
       "kind": "city",
