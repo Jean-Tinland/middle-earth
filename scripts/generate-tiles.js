@@ -7,7 +7,7 @@ const ZOOM_LEVELS = 8;
 const INPUT_DIR = "./assets/images/map";
 const OUTPUT_DIR = "./assets/images/map/tiles";
 const JPEG_QUALITY = 85;
-const WORKER_COUNT = navigator.hardwareConcurrency / 2 || 4;
+const WORKER_COUNT = 4;
 
 // Each tile is small (512px); one libvips thread per tile avoids contention.
 sharp.concurrency(1);
