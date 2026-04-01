@@ -7,7 +7,7 @@ const ZOOM_LEVELS = 8;
 const INPUT_DIR = "./assets/images/map";
 const OUTPUT_DIR = "./assets/images/map/tiles";
 const JPEG_QUALITY = 85;
-const WORKER_COUNT = navigator.hardwareConcurrency || 8;
+const WORKER_COUNT = navigator.hardwareConcurrency / 2 || 4;
 
 // Each tile is small (512px); one libvips thread per tile avoids contention.
 sharp.concurrency(1);
@@ -77,16 +77,31 @@ async function runWithWorkers(jobs, workerCount) {
   process.stdout.write("\n");
 }
 
+function resolveTargetZooms() {
+  const arg = process.argv[2];
+  if (arg === undefined)
+    return Array.from({ length: ZOOM_LEVELS }, (_, i) => i);
+
+  const zoom = parseInt(arg, 10);
+  if (Number.isNaN(zoom) || zoom < 0 || zoom >= ZOOM_LEVELS) {
+    console.error(
+      `Invalid zoom level "${arg}". Must be an integer between 0 and ${ZOOM_LEVELS - 1}.`,
+    );
+    process.exit(1);
+  }
+  return [zoom];
+}
+
 async function main() {
   const start = performance.now();
+  const targetZooms = resolveTargetZooms();
+
   console.log("Generating tiles...\n");
 
   const [sources] = await Promise.all([
+    Promise.all(targetZooms.map((zoom) => loadSource(zoom))),
     Promise.all(
-      Array.from({ length: ZOOM_LEVELS }, (_, zoom) => loadSource(zoom)),
-    ),
-    Promise.all(
-      Array.from({ length: ZOOM_LEVELS }, (_, zoom) =>
+      targetZooms.map((zoom) =>
         mkdir(join(OUTPUT_DIR, `${zoom}`), { recursive: true }),
       ),
     ),
