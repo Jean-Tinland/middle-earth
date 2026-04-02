@@ -268,7 +268,7 @@ export default class MapPois extends HTMLElement {
       const isVisible = threshold <= zoom;
 
       if (isVisible && !wasVisible) {
-        // Bucket just came into view — size and show its POIs.
+        // Bucket just came into view: size and show its POIs.
         for (const poi of this.#poisByZoom.get(threshold)) {
           this.#applyPixelSizes(poi, resolvedBaseFontSize);
           if (poi.illustrationElement) {
@@ -277,12 +277,12 @@ export default class MapPois extends HTMLElement {
           poi.element.hidden = false;
         }
       } else if (!isVisible && wasVisible) {
-        // Bucket just left view — hide its POIs.
+        // Bucket just left view: hide its POIs.
         for (const poi of this.#poisByZoom.get(threshold)) {
           poi.element.hidden = true;
         }
       } else if (isVisible && sizesDirty) {
-        // Already visible — update sizes only.
+        // Already visible: update sizes only.
         for (const poi of this.#poisByZoom.get(threshold)) {
           this.#applyPixelSizes(poi, resolvedBaseFontSize);
         }

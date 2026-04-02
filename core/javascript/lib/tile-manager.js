@@ -1,7 +1,17 @@
+/** Tile size in pixels.  */
 const TILE_SIZE = 512;
+/** Maximum tile zoom level. */
 const MAX_TILE_ZOOM = 7;
+/** Pixels outside the viewport to start loading tiles on desktop. */
 const TILE_PRELOAD_MARGIN = 128;
+/** On mobile, only load what is actually on screen to save memory. */
+const MOBILE_TILE_PRELOAD_MARGIN = 0;
+/** Maximum concurrent tile requests on desktop. */
 const TILE_LOAD_BATCH_SIZE = 10;
+/** Fewer concurrent requests on mobile to reduce peak memory. */
+const MOBILE_TILE_LOAD_BATCH_SIZE = 4;
+/** How long (ms) a backdrop layer may live on mobile before being force-removed. */
+const MOBILE_BACKDROP_MAX_AGE_MS = 1500;
 const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
 
 export { MAX_TILE_ZOOM };
@@ -11,21 +21,33 @@ export default class TileManager {
   #mapElement;
   #baseMapWidth;
   #baseMapHeight;
+  #isMobile;
+  #batchSize;
+  #preloadMargin;
   #tileLayers = new Map();
-  #imgToTile = new WeakMap();
+  /** Maps placeholder <div> elements → tile objects. */
+  #elemToTile = new WeakMap();
   #tileLoadQueue = [];
   #tileLoadInFlight = 0;
   #tileLoadTimeoutId = null;
+  #backdropTimeoutId = null;
   #activeTileZoom = 0;
   #previousTileZoom = null;
   #backdropLayer = null;
   #backdropOriginalWidth = 0;
   #tileObserver = null;
 
-  constructor(mapElement, baseMapWidth, baseMapHeight) {
+  constructor(mapElement, baseMapWidth, baseMapHeight, isMobile = false) {
     this.#mapElement = mapElement;
     this.#baseMapWidth = baseMapWidth;
     this.#baseMapHeight = baseMapHeight;
+    this.#isMobile = isMobile;
+    this.#batchSize = isMobile
+      ? MOBILE_TILE_LOAD_BATCH_SIZE
+      : TILE_LOAD_BATCH_SIZE;
+    this.#preloadMargin = isMobile
+      ? MOBILE_TILE_PRELOAD_MARGIN
+      : TILE_PRELOAD_MARGIN;
   }
 
   get activeTileZoom() {
@@ -42,8 +64,17 @@ export default class TileManager {
 
   removeBackdrop() {
     if (!this.#backdropLayer) return;
+    if (this.#backdropTimeoutId !== null) {
+      clearTimeout(this.#backdropTimeoutId);
+      this.#backdropTimeoutId = null;
+    }
     for (const tile of this.#backdropLayer.tiles) {
-      tile.image.removeAttribute("src");
+      if (tile.image) {
+        tile.imgVersion++;
+        tile.image.src = "";
+        tile.placeholder.removeChild(tile.image);
+        tile.image = null;
+      }
     }
     this.#backdropLayer.element.remove();
     this.#backdropLayer = null;
@@ -61,7 +92,7 @@ export default class TileManager {
 
     if (this.#tileObserver) {
       for (const tile of activeLayer.tiles) {
-        this.#tileObserver.unobserve(tile.image);
+        this.#tileObserver.unobserve(tile.placeholder);
       }
     }
     this.#tileLayers.delete(this.#activeTileZoom);
@@ -84,6 +115,17 @@ export default class TileManager {
 
     this.#backdropOriginalWidth = oldW;
     this.#backdropLayer = activeLayer;
+
+    if (this.#isMobile) {
+      this.#backdropTimeoutId = setTimeout(() => {
+        this.#backdropTimeoutId = null;
+        this.removeBackdrop();
+        const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
+        if (activeLayer) {
+          activeLayer.element.style.setProperty("z-index", "0");
+        }
+      }, MOBILE_BACKDROP_MAX_AGE_MS);
+    }
   }
 
   resetLayers() {
@@ -91,7 +133,12 @@ export default class TileManager {
     this.#tileObserver = null;
     for (const layer of this.#tileLayers.values()) {
       for (const tile of layer.tiles) {
-        tile.image.removeAttribute("src");
+        if (tile.image) {
+          tile.imgVersion++;
+          tile.image.src = "";
+          // tile.image is a child of tile.placeholder which is a child of
+          // layer.element: layer.element.remove() cleans up the whole tree.
+        }
       }
       layer.element.remove();
     }
@@ -183,6 +230,10 @@ export default class TileManager {
 
   destroy() {
     this.cancelPendingLoad();
+    if (this.#backdropTimeoutId !== null) {
+      clearTimeout(this.#backdropTimeoutId);
+      this.#backdropTimeoutId = null;
+    }
     this.removeBackdrop();
     this.resetLayers();
   }
@@ -237,43 +288,27 @@ export default class TileManager {
         const width = colEdges[col + 1] - left;
         const height = rowEdges[row + 1] - top;
 
-        const image = document.createElement("img");
-        image.alt = "";
-        image.decoding = "async";
-        image.dataset.src = `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`;
-        image.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;pointer-events:none;`;
+        // Lightweight placeholder: no <img> until the tile enters the
+        // viewport. This keeps hundreds of invisible img elements out of the
+        // DOM, dramatically reducing memory pressure on iOS.
+        const placeholder = document.createElement("div");
+        placeholder.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;pointer-events:none;contain:strict;`;
 
         const tile = {
-          image,
+          placeholder,
+          image: null,
+          src: `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`,
+          imgVersion: 0,
           requested: false,
           ready: false,
+          /** True while tile.image.src has been set but load/error hasn't fired. */
+          inFlight: false,
           intersecting: false,
           layerState,
         };
-        this.#imgToTile.set(image, tile);
 
-        const markReady = () => {
-          if (tile.ready) return;
-          tile.ready = true;
-          if (tile.intersecting) layerState.readyIntersectingCount++;
-          this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
-          this.#drainQueue();
-          this.checkLayerHandoff();
-        };
-
-        image.addEventListener("load", () => {
-          if (typeof image.decode !== "function") {
-            markReady();
-            return;
-          }
-          image
-            .decode()
-            .catch(() => {})
-            .finally(markReady);
-        });
-        image.addEventListener("error", markReady);
-
-        layer.appendChild(image);
+        this.#elemToTile.set(placeholder, tile);
+        layer.appendChild(placeholder);
         tiles.push(tile);
       }
     }
@@ -281,10 +316,67 @@ export default class TileManager {
     return { element: layer, tiles };
   }
 
+  /** Create and attach an <img> element to a tile's placeholder. */
+  #createTileImage(tile) {
+    const image = document.createElement("img");
+    image.alt = "";
+    image.decoding = "async";
+    image.style.cssText =
+      "display:block;width:100%;height:100%;pointer-events:none;";
+
+    const version = ++tile.imgVersion;
+
+    const markReady = () => {
+      if (tile.imgVersion !== version) return; // stale: tile was destroyed
+      if (tile.ready) return;
+      tile.ready = true;
+      tile.inFlight = false;
+      if (tile.intersecting) tile.layerState.readyIntersectingCount++;
+      this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
+      this.#drainQueue();
+      this.checkLayerHandoff();
+    };
+
+    image.addEventListener("load", () => {
+      if (typeof image.decode !== "function") {
+        markReady();
+        return;
+      }
+      image
+        .decode()
+        .catch(() => {})
+        .finally(markReady);
+    });
+    image.addEventListener("error", markReady);
+
+    tile.placeholder.appendChild(image);
+    return image;
+  }
+
+  /**
+   * Cancel and remove a tile's <img> element, freeing its memory.
+   * Correctly handles in-flight requests so tileLoadInFlight stays accurate.
+   */
+  #destroyTileImage(tile) {
+    if (!tile.image) return;
+    const wasInFlight = tile.inFlight;
+    tile.imgVersion++; // invalidate any pending markReady / decode callbacks
+    tile.inFlight = false;
+    tile.image.src = ""; // cancel pending HTTP request
+    tile.placeholder.removeChild(tile.image);
+    tile.image = null;
+    tile.ready = false;
+    tile.requested = false;
+    if (wasInFlight) {
+      this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
+      this.#drainQueue(); // free up the reclaimed slot immediately
+    }
+  }
+
   #observeLayer(layer) {
     const observer = this.#getOrCreateObserver();
     for (const tile of layer.tiles) {
-      observer.observe(tile.image);
+      observer.observe(tile.placeholder);
     }
   }
 
@@ -293,7 +385,7 @@ export default class TileManager {
     this.#tileObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const tile = this.#imgToTile.get(entry.target);
+          const tile = this.#elemToTile.get(entry.target);
           if (!tile) continue;
           const layer = tile.layerState;
           const wasIntersecting = tile.intersecting;
@@ -303,35 +395,34 @@ export default class TileManager {
             if (tile.ready) layer.readyIntersectingCount++;
             if (!tile.requested) {
               tile.requested = true;
+              tile.image = this.#createTileImage(tile);
               this.#tileLoadQueue.push(tile);
             }
           } else if (!entry.isIntersecting && wasIntersecting) {
             layer.intersectingCount--;
-            if (tile.ready) {
-              layer.readyIntersectingCount--;
-              tile.image.removeAttribute("src");
-              tile.ready = false;
-              tile.requested = false;
-            }
+            if (tile.ready) layer.readyIntersectingCount--;
+            this.#destroyTileImage(tile);
           }
         }
         this.#drainQueue();
         this.checkLayerHandoff();
       },
-      { rootMargin: `${TILE_PRELOAD_MARGIN}px` },
+      { rootMargin: `${this.#preloadMargin}px` },
     );
     return this.#tileObserver;
   }
 
   #drainQueue() {
     while (
-      this.#tileLoadInFlight < TILE_LOAD_BATCH_SIZE &&
+      this.#tileLoadInFlight < this.#batchSize &&
       this.#tileLoadQueue.length > 0
     ) {
       const tile = this.#tileLoadQueue.shift();
-      if (tile.ready) continue;
+      // Skip tiles that finished loading or whose image was destroyed.
+      if (tile.ready || !tile.image) continue;
+      tile.inFlight = true;
       this.#tileLoadInFlight++;
-      tile.image.src = tile.image.dataset.src;
+      tile.image.src = tile.src;
     }
   }
 

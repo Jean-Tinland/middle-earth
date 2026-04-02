@@ -881,6 +881,7 @@ export default class MapCanvas extends HTMLElement {
       this.map,
       BASE_MAP_WIDTH,
       BASE_MAP_HEIGHT,
+      window.matchMedia("(pointer: coarse)").matches,
     );
     this.#restoreStateFromUrl();
     this.#applyCanvasSize();
