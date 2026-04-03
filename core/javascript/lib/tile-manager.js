@@ -90,11 +90,11 @@ export default class TileManager {
     const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
     if (!activeLayer) return;
 
-    if (this.#tileObserver) {
-      for (const tile of activeLayer.tiles) {
-        this.#tileObserver.unobserve(tile.placeholder);
-      }
-    }
+    // Disconnect all observations atomically: far cheaper than n individual
+    // unobserve() calls (936 calls at zoom level 7). resetLayers(), called
+    // immediately after by the canvas, will re-establish observations for the
+    // new layer via #observeLayer once the debounce fires.
+    this.#tileObserver?.disconnect();
     this.#tileLayers.delete(this.#activeTileZoom);
 
     const scaleRatio = canvasWidth / oldW;
