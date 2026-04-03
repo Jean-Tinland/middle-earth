@@ -59,7 +59,8 @@ export default class MapScale extends HTMLElement {
   };
 
   /**
-   * Rebuilds the bar segments and distance labels.
+   * Updates bar segments and distance labels in-place.
+   * Avoids innerHTML / DOM reconstruction on every zoom step.
    * @param {number} barPx - Total bar width in screen pixels.
    * @param {number} distance - Total distance represented by the bar.
    * @private
@@ -69,20 +70,14 @@ export default class MapScale extends HTMLElement {
     const segmentDistance = distance / SEGMENT_COUNT;
 
     this.barRow.style.setProperty("width", `${barPx}px`);
+    for (const div of this.barItems) {
+      div.style.setProperty("width", `${segmentPx}px`);
+    }
 
-    this.barRow.innerHTML = Array.from(
-      { length: SEGMENT_COUNT },
-      () => `<div class="bar" style="width:${segmentPx}px"></div>`,
-    ).join("");
-
-    const labelValues = Array.from(
-      { length: SEGMENT_COUNT + 1 },
-      (_, i) => i * segmentDistance,
-    );
     this.labelsRow.style.setProperty("width", `${barPx}px`);
-    this.labelsRow.innerHTML = labelValues
-      .map((v) => `<span class="label">${v}</span>`)
-      .join("");
+    for (let i = 0; i < this.labelItems.length; i++) {
+      this.labelItems[i].textContent = String(i * segmentDistance);
+    }
   };
 
   /**
@@ -102,6 +97,22 @@ export default class MapScale extends HTMLElement {
   connectedCallback() {
     this.barRow = this.root.querySelector(".bar-row");
     this.labelsRow = this.root.querySelector(".labels");
+
+    // Pre-build bar and label elements once so #renderBar never touches innerHTML.
+    this.barItems = [];
+    for (let i = 0; i < SEGMENT_COUNT; i++) {
+      const div = document.createElement("div");
+      div.className = "bar";
+      this.barRow.appendChild(div);
+      this.barItems.push(div);
+    }
+    this.labelItems = [];
+    for (let i = 0; i <= SEGMENT_COUNT; i++) {
+      const span = document.createElement("span");
+      span.className = "label";
+      this.labelsRow.appendChild(span);
+      this.labelItems.push(span);
+    }
 
     this.canvas = document.querySelector("map-canvas");
     this.canvas.addEventListener("zoom-change", this.#onZoomChange);
