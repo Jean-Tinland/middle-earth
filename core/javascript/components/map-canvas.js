@@ -514,10 +514,12 @@ export default class MapCanvas extends HTMLElement {
     this.isPinching = false;
     this.isDragging = true;
     const touch = e.touches[0];
-    this.previousTouch = {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-    };
+    if (this.previousTouch) {
+      this.previousTouch.clientX = touch.clientX;
+      this.previousTouch.clientY = touch.clientY;
+    } else {
+      this.previousTouch = { clientX: touch.clientX, clientY: touch.clientY };
+    }
   };
 
   #applyPendingDrag = () => {
@@ -639,10 +641,12 @@ export default class MapCanvas extends HTMLElement {
         ? touch.clientY - this.previousTouch.clientY
         : 0;
 
-      this.previousTouch = {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-      };
+      if (this.previousTouch) {
+        this.previousTouch.clientX = touch.clientX;
+        this.previousTouch.clientY = touch.clientY;
+      } else {
+        this.previousTouch = { clientX: touch.clientX, clientY: touch.clientY };
+      }
     }
 
     if (e.shiftKey && !this.isPinching) {
@@ -743,7 +747,10 @@ export default class MapCanvas extends HTMLElement {
     const pois = await fetch("/assets/data/pois.json");
     const data = await pois.json();
     this.pois = data.pois;
-    this.maxPoiZoom = Math.max(...this.pois.map((p) => p.zoom));
+    this.maxPoiZoom = this.pois.reduce(
+      (max, p) => (p.zoom > max ? p.zoom : max),
+      0,
+    );
   };
 
   #drawPois = () => {
