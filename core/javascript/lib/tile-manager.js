@@ -130,7 +130,6 @@ export default class TileManager {
 
   resetLayers() {
     this.#tileObserver?.disconnect();
-    this.#tileObserver = null;
     for (const layer of this.#tileLayers.values()) {
       for (const tile of layer.tiles) {
         if (tile.image) {
@@ -263,7 +262,7 @@ export default class TileManager {
 
     const layer = document.createElement("div");
     layer.style.cssText =
-      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;content-visibility:auto;contain-intrinsic-size:auto auto;";
+      "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;contain:layout paint style;";
     layer.hidden = true;
 
     const tiles = [];

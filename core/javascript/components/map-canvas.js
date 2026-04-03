@@ -108,6 +108,7 @@ export default class MapCanvas extends HTMLElement {
     this.dragRafId = null;
     this.resizeRafId = null;
     this.transitionTimeoutId = null;
+    this.urlStateTimeoutId = null;
     this.pendingMovementX = 0;
     this.pendingMovementY = 0;
     this.isDragging = false;
@@ -802,6 +803,12 @@ export default class MapCanvas extends HTMLElement {
   };
 
   #updateUrlState = () => {
+    clearTimeout(this.urlStateTimeoutId);
+    this.urlStateTimeoutId = setTimeout(this.#commitUrlState, 400);
+  };
+
+  #commitUrlState = () => {
+    this.urlStateTimeoutId = null;
     const params = new URLSearchParams(window.location.search);
     if (this.zoomLevel === 0) {
       params.delete("z");
@@ -917,6 +924,7 @@ export default class MapCanvas extends HTMLElement {
       cancelAnimationFrame(this.dragRafId);
     }
     clearTimeout(this.transitionTimeoutId);
+    clearTimeout(this.urlStateTimeoutId);
     if (this.resizeRafId !== null) {
       cancelAnimationFrame(this.resizeRafId);
     }
