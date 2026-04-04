@@ -60,24 +60,14 @@
     <link rel="stylesheet" href="./core/styles/base.css" />
   </head>
   <body>
+    <script
+      type="module"
+      src="./core/javascript/components/map-canvas.js?v=10"
+    ></script>
     <script>
-      async function loadCanvasScript() {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-          script.type = "module";
-          const version =
-            document.documentElement.getAttribute("data-build-version");
-          script.src = `./core/javascript/components/map-canvas.js?v=${version}`;
-          document.body.appendChild(script);
-          script.onload = resolve;
-          script.onerror = reject;
-        });
-      }
-
       window.addEventListener(
         "load",
         async () => {
-          await loadCanvasScript();
           await customElements.whenDefined("map-canvas");
           document.body.appendChild(document.createElement("map-canvas"));
         },
