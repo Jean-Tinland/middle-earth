@@ -104,6 +104,7 @@ export default class MapCanvas extends HTMLElement {
     this.translateX = DEFAULTS.TRANSLATE_X;
     this.translateY = DEFAULTS.TRANSLATE_Y;
     this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
+    this.touchGestureMoved = false;
     this.wheelDeltaAccumulator = 0;
     this.dragRafId = null;
     this.resizeRafId = null;
@@ -498,11 +499,12 @@ export default class MapCanvas extends HTMLElement {
   };
 
   #touchStart = (e) => {
-    e.preventDefault();
     clearTimeout(this.transitionTimeoutId);
     this.canvas.style.setProperty("transition", "none");
 
     if (e.touches.length === 2) {
+      e.preventDefault();
+      this.touchGestureMoved = true;
       this.isDragging = false;
       this.previousTouch = undefined;
       this.#initPinch(e);
@@ -511,6 +513,7 @@ export default class MapCanvas extends HTMLElement {
 
     if (e.touches.length !== 1) return;
 
+    this.touchGestureMoved = false;
     this.isPinching = false;
     this.isDragging = true;
     const touch = e.touches[0];
@@ -545,9 +548,17 @@ export default class MapCanvas extends HTMLElement {
   #dragEnd = (e) => {
     if (!this.isDragging) return;
     this.isDragging = false;
+    const wasPinching = this.isPinching;
     this.isPinching = false;
-    e.preventDefault();
-    e.stopPropagation();
+    const isTouchEnd = e.type === "touchend";
+    const shouldPreventDefault =
+      !isTouchEnd || this.touchGestureMoved || wasPinching;
+
+    if (shouldPreventDefault) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     this.canvas.removeEventListener("pointermove", this.#dragging);
     this.canvas.style.removeProperty("cursor");
     this.canvas.style.removeProperty("transition");
@@ -560,6 +571,7 @@ export default class MapCanvas extends HTMLElement {
     }
 
     this.previousTouch = undefined;
+    this.touchGestureMoved = false;
 
     if (this.zoomLevel === 0) {
       const didSnapToDefault =
@@ -628,6 +640,7 @@ export default class MapCanvas extends HTMLElement {
 
       if (this.isPinching || e.touches.length === 2) {
         if (!this.isPinching) this.#initPinch(e);
+        this.touchGestureMoved = true;
         this.#handlePinchMove(e);
         return;
       }
@@ -640,6 +653,10 @@ export default class MapCanvas extends HTMLElement {
       e.movementY = this.previousTouch
         ? touch.clientY - this.previousTouch.clientY
         : 0;
+
+      if (e.movementX !== 0 || e.movementY !== 0) {
+        this.touchGestureMoved = true;
+      }
 
       if (this.previousTouch) {
         this.previousTouch.clientX = touch.clientX;
