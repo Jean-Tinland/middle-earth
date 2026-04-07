@@ -1,4 +1,5 @@
 import styles from "./map-pois.styles.js";
+import MapPopover from "./map-popover.js";
 
 const DEFAULT_BASE_FONT_SIZE = 16;
 const ILLUSTRATION_ZOOM_THRESHOLD = 13;
@@ -42,6 +43,22 @@ export default class MapPois extends HTMLElement {
   #lastZoom = -1;
   /** @type {boolean | null} Illustration mode from the most recent render call. */
   #lastIllustrationMode = null;
+  /** @type {boolean} Whether to hide non-canon POIs. */
+  #canonOnly = false;
+  /** @type {boolean} Canon-only value from the most recent render call. */
+  #lastCanonOnly = false;
+  /** @type {boolean} Whether illustrations are enabled. */
+  #illustrationsEnabled = true;
+  /** @type {number} Zoom stored from the most recent render call. */
+  #currentZoom = 0;
+  /** @type {number | undefined} Base font size stored from the most recent render call. */
+  #currentBaseFontSize = undefined;
+  /** @type {number} Illustration zoom stored from the most recent render call. */
+  #currentIllustrationZoom = 0;
+  /** @type {MapPopover | null} The currently visible popover, if any. */
+  #currentPopover = null;
+  /** @type {HTMLElement | null} The POI element that opened the current popover. */
+  #currentPopoverAnchor = null;
 
   /**
    * Creates an instance of MapPois.
@@ -84,6 +101,10 @@ export default class MapPois extends HTMLElement {
         this.#illustrationPois.push(poiElement);
       }
 
+      poiElement.element.addEventListener("click", (event) =>
+        this.#openPopover(poiElement, event),
+      );
+
       fragment.appendChild(poiElement.element);
     }
 
@@ -105,7 +126,7 @@ export default class MapPois extends HTMLElement {
    * @private
    */
   #createPoiElement = (poi) => {
-    const { name, kind, position, size, zoom, illustration } = poi;
+    const { name, kind, position, size, zoom, illustration, source } = poi;
     const [x, y] = position;
 
     const el = Object.assign(document.createElement("div"), {
@@ -149,6 +170,9 @@ export default class MapPois extends HTMLElement {
       nameElement: nameEl,
       dotElement,
       illustrationElement,
+      isCanon: source === "Canon",
+      name,
+      source,
       zoom,
       textSizeMultiplier: this.#getTextSizeMultiplier(kind, size),
       dotSizeMultiplier:
@@ -178,6 +202,41 @@ export default class MapPois extends HTMLElement {
    */
   #getCityDotSizeMultiplier = (size) => {
     return CITY_DOT_SIZE_MULTIPLIERS[size] ?? DEFAULT_CITY_DOT_SIZE_MULTIPLIER;
+  };
+
+  /**
+   * Opens a popover for the given POI, or closes it if already open (toggle).
+   * Replaces any previously open popover.
+   * @param {{ name: string, source: string, element: HTMLElement }} poi
+   * @param {MouseEvent} event
+   * @private
+   */
+  #openPopover = (poi, event) => {
+    const existingIsOpen =
+      this.#currentPopover && !this.#currentPopover.isClosed;
+
+    if (existingIsOpen) {
+      const isSameAnchor = this.#currentPopoverAnchor === poi.element;
+      this.#currentPopover.close();
+      this.#currentPopover = null;
+      this.#currentPopoverAnchor = null;
+      if (isSameAnchor) return;
+    }
+
+    const anchorRect = poi.element.getBoundingClientRect();
+    const fallbackX = anchorRect.left + anchorRect.width / 2;
+    const fallbackY = anchorRect.top + anchorRect.height / 2;
+    const usePointerCoordinates =
+      Number.isFinite(event?.clientX) &&
+      Number.isFinite(event?.clientY) &&
+      event.detail > 0;
+    const clickX = usePointerCoordinates ? event.clientX : fallbackX;
+    const clickY = usePointerCoordinates ? event.clientY : fallbackY;
+
+    const popover = new MapPopover(poi.name, poi.source, clickX, clickY);
+    document.body.appendChild(popover);
+    this.#currentPopover = popover;
+    this.#currentPopoverAnchor = poi.element;
   };
 
   /**
@@ -259,31 +318,36 @@ export default class MapPois extends HTMLElement {
   render = (zoom, baseFontSize, illustrationZoom = zoom) => {
     const resolvedBaseFontSize = this.#resolveBaseFontSize(baseFontSize);
     const sizesDirty = this.lastBaseFontSize !== resolvedBaseFontSize;
-    const illustrationMode = illustrationZoom >= ILLUSTRATION_ZOOM_THRESHOLD;
+    const illustrationMode =
+      this.#illustrationsEnabled &&
+      illustrationZoom >= ILLUSTRATION_ZOOM_THRESHOLD;
     const illustrationChanged = illustrationMode !== this.#lastIllustrationMode;
+    const canonDirty = this.#canonOnly !== this.#lastCanonOnly;
     const lastZoom = this.#lastZoom;
 
     for (const threshold of this.#sortedThresholds) {
       const wasVisible = threshold <= lastZoom;
       const isVisible = threshold <= zoom;
+      const bucketNeedsUpdate =
+        isVisible !== wasVisible || (isVisible && (sizesDirty || canonDirty));
 
-      if (isVisible && !wasVisible) {
-        // Bucket just came into view: size and show its POIs.
-        for (const poi of this.#poisByZoom.get(threshold)) {
+      if (!bucketNeedsUpdate) continue;
+
+      for (const poi of this.#poisByZoom.get(threshold)) {
+        const poiAllowed = !this.#canonOnly || poi.isCanon;
+        const wasAllowed = !this.#lastCanonOnly || poi.isCanon;
+        const shouldShow = isVisible && poiAllowed;
+        const wasShowing = wasVisible && wasAllowed;
+
+        if (shouldShow && !wasShowing) {
           this.#applyPixelSizes(poi, resolvedBaseFontSize);
           if (poi.illustrationElement) {
             this.#applyIllustrationMode(poi, illustrationMode);
           }
           poi.element.hidden = false;
-        }
-      } else if (!isVisible && wasVisible) {
-        // Bucket just left view: hide its POIs.
-        for (const poi of this.#poisByZoom.get(threshold)) {
+        } else if (!shouldShow && wasShowing) {
           poi.element.hidden = true;
-        }
-      } else if (isVisible && sizesDirty) {
-        // Already visible: update sizes only.
-        for (const poi of this.#poisByZoom.get(threshold)) {
+        } else if (shouldShow && sizesDirty) {
           this.#applyPixelSizes(poi, resolvedBaseFontSize);
         }
       }
@@ -301,6 +365,10 @@ export default class MapPois extends HTMLElement {
     this.lastBaseFontSize = resolvedBaseFontSize;
     this.#lastZoom = zoom;
     this.#lastIllustrationMode = illustrationMode;
+    this.#lastCanonOnly = this.#canonOnly;
+    this.#currentZoom = zoom;
+    this.#currentBaseFontSize = baseFontSize;
+    this.#currentIllustrationZoom = illustrationZoom;
   };
 
   /**
@@ -315,6 +383,34 @@ export default class MapPois extends HTMLElement {
       poiElement.dotElement.hidden = show;
     }
     poiElement.illustrationElement.hidden = !show;
+  };
+
+  /**
+   * Hides or restores non-canon POIs and re-renders.
+   * @param {boolean} value
+   */
+  setCanonOnly = (value) => {
+    if (this.#canonOnly === value) return;
+    this.#canonOnly = value;
+    this.render(
+      this.#currentZoom,
+      this.#currentBaseFontSize,
+      this.#currentIllustrationZoom,
+    );
+  };
+
+  /**
+   * Enables or disables illustration images, falling back to dot markers.
+   * @param {boolean} value
+   */
+  setIllustrationsEnabled = (value) => {
+    if (this.#illustrationsEnabled === value) return;
+    this.#illustrationsEnabled = value;
+    this.render(
+      this.#currentZoom,
+      this.#currentBaseFontSize,
+      this.#currentIllustrationZoom,
+    );
   };
 
   /**

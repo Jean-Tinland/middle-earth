@@ -24,7 +24,7 @@ const styles = /* css */ `
     justify-content: center;
     color: var(--primary);
     background-color: var(--paper);
-    box-shadow: var(--shadow-100), 0 0 8px var(--primary) inset;
+    box-shadow: var(--shadow-200), var(--surface-inset-shadow) inset;
     border: 1px solid var(--primary);
     border-radius: var(--radius);
     outline: none;
@@ -46,59 +46,66 @@ const styles = /* css */ `
     position: absolute;
     top: calc(var(--size) + 8px);
     left: 0;
-    min-width: 240px;
+    min-width: 250px;
     max-height: 70vh;
     overflow-y: auto;
     display: none;
     background-color: var(--paper);
-    box-shadow: var(--shadow-100), 0 0 8px var(--primary) inset;
+    box-shadow: var(--shadow-200), var(--surface-inset-shadow) inset;
     border: 1px solid var(--primary);
     border-radius: var(--radius);
-    font-family: var(--content-font);
-    color: var(--primary);
+    color: inherit;
+  }
+
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: var(--surface-inner-frame-inset);
+    border: 1px solid var(--surface-inner-frame-color);
+    border-radius: calc(var(--radius) - 1px);
+    pointer-events: none;
   }
 
   .panel[open] {
     display: block;
-    animation: panel-appear 200ms var(--transition-easing);
+    animation: panel-appear 240ms var(--transition-easing);
   }
 
   @keyframes panel-appear {
     from {
       opacity: 0;
-      transform: translateY(-4px);
+      transform: scale(var(--surface-appear-scale));
     }
   }
 
-  .panel__header {
-    padding: 10px 14px 8px;
-    border-bottom: 1px solid rgba(100, 51, 34, 0.2);
-  }
-
-  .panel__title {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
   .panel__content {
+    position: relative;
+    z-index: 1;
     padding: 6px 0;
   }
 
   .group + .group {
-    border-top: 1px solid rgba(100, 51, 34, 0.2);
+    position: relative;
+  }
+
+  .group + .group::before {
+    content: "";
+    position: absolute;
+    top: calc(0px - var(--surface-inner-frame-inset) * 2);
+    left: calc(var(--surface-inner-frame-inset) * 3);
+    right: calc(var(--surface-inner-frame-inset) * 3);
+    border-top: 1px solid var(--surface-divider-soft-color);
+    pointer-events: none;
   }
 
   .group__title {
     margin: 6px 0 2px;
     padding: 0 14px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    opacity: 0.5;
+    opacity: 0.7;
   }
 
   .entries {
@@ -116,7 +123,7 @@ const styles = /* css */ `
   }
 
   .entry__label {
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
     opacity: 0.8;
   }
@@ -212,6 +219,63 @@ const styles = /* css */ `
     font-size: 12px;
     font-weight: 700;
     color: var(--primary);
+  }
+
+  .preference__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    user-select: none;
+    opacity: 0.8;
+    transition: opacity 100ms;
+  }
+
+  .preference__label:hover {
+    opacity: 1;
+  }
+
+  .preference__checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .preference__check {
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--primary);
+    border-radius: 2px;
+    background-color: var(--paper);
+    box-shadow: 0 0 6px var(--interactive-link-color) inset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .preference__check::after {
+    content: "";
+    display: block;
+    width: 4px;
+    height: 7px;
+    border-right: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
+    transform: rotate(45deg) translateY(-1px);
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+
+  .preference__checkbox:checked + .preference__check::after {
+    opacity: 1;
+  }
+
+  .preference__checkbox:focus-visible + .preference__check {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
   }
 `;
 

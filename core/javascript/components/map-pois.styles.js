@@ -15,6 +15,8 @@ const styles = /* css */ `
 
     position: absolute;
     transform: translate(-50%, -50%) rotate(var(--poi-rotation, 0deg));
+    pointer-events: auto;
+    cursor: pointer;
   }
 
   .poi[hidden] {

@@ -756,6 +756,23 @@ export default class MapCanvas extends HTMLElement {
   #drawPois = () => {
     this.mapPois = new MapPois(this.pois);
     this.map.appendChild(this.mapPois);
+    this.#applyStoredPoiPreferences();
+  };
+
+  #applyStoredPoiPreferences = () => {
+    const canonOnly = localStorage.getItem("map-canon-only") === "true";
+    const illustrationsEnabled =
+      localStorage.getItem("map-illustrations") !== "false";
+    this.mapPois.setCanonOnly(canonOnly);
+    this.mapPois.setIllustrationsEnabled(illustrationsEnabled);
+  };
+
+  #handleCanonOnlyChange = (e) => {
+    this.mapPois?.setCanonOnly(e.detail.canonOnly);
+  };
+
+  #handleIllustrationsChange = (e) => {
+    this.mapPois?.setIllustrationsEnabled(e.detail.illustrationsEnabled);
   };
 
   #onMapLoad = () => {
@@ -924,6 +941,14 @@ export default class MapCanvas extends HTMLElement {
     window.addEventListener("wheel", this.#handleMouseWheel);
     window.addEventListener("mouseout", this.#dragEnd);
     window.addEventListener("resize", this.#handleResize);
+    this.root.addEventListener(
+      "poi-canon-only-change",
+      this.#handleCanonOnlyChange,
+    );
+    this.root.addEventListener(
+      "poi-illustrations-change",
+      this.#handleIllustrationsChange,
+    );
   }
 
   disconnectedCallback() {
@@ -940,6 +965,14 @@ export default class MapCanvas extends HTMLElement {
     window.removeEventListener("mouseout", this.#dragEnd);
     window.removeEventListener("wheel", this.#handleMouseWheel);
     this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
+    this.root.removeEventListener(
+      "poi-canon-only-change",
+      this.#handleCanonOnlyChange,
+    );
+    this.root.removeEventListener(
+      "poi-illustrations-change",
+      this.#handleIllustrationsChange,
+    );
     this.canvas.removeEventListener("touchend", this.#dragEnd);
     this.canvas.removeEventListener("touchmove", this.#dragging);
     this.canvas.removeEventListener("touchstart", this.#touchStart);

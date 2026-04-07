@@ -6,9 +6,6 @@ export default function template() {
       ${renderIcon("list", "icon")}
     </button>
     <div class="panel">
-      <div class="panel__header">
-        <h2 class="panel__title">Map legend</h2>
-      </div>
       <div class="panel__content">
         <section class="group">
           <h3 class="group__title">Cities &amp; places</h3>
@@ -62,6 +59,25 @@ export default function template() {
             <li class="entry">
               <span class="text-sample text-sample--river" aria-hidden="true">Anduin</span>
               <span class="entry__label">River</span>
+            </li>
+          </ul>
+        </section>
+        <section class="group">
+          <h3 class="group__title">Display</h3>
+          <ul class="entries">
+            <li class="entry">
+              <label class="preference__label">
+                <input type="checkbox" id="canon-only" class="preference__checkbox" />
+                <span class="preference__check" aria-hidden="true"></span>
+                Canon sources only
+              </label>
+            </li>
+            <li class="entry">
+              <label class="preference__label">
+                <input type="checkbox" id="show-illustrations" class="preference__checkbox" />
+                <span class="preference__check" aria-hidden="true"></span>
+                Show illustrations
+              </label>
             </li>
           </ul>
         </section>

@@ -10,7 +10,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["kind", "name", "position", "zoom", "size"],
+        "required": ["kind", "name", "position", "zoom", "size", "source"],
         "properties": {
           "kind": {
             "type": "string",
@@ -55,6 +55,11 @@
           "illustration": {
             "type": "string",
             "description": "The name of the illustration to use for the point of interest visible after zooming a certain level (optional)"
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the point of interest, e.g. canon, MERP, etc.",
+            "enum": ["Canon", "MERP", "other"]
           }
         }
       }

@@ -30,9 +30,7 @@ export const content = /* html */ `
   <div class="content">
     <div class="description">
       <p>
-        This project aims to provide an <b>interactive map of Middle-earth</b> during the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
-        <br />
-        All points of interest were collected on various representation of existing Middle-earth maps.
+        This project aims to provide an <b>interactive map of Middle-earth</b> at the end of the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
       </p>
     </div>
     <div class="credits">
@@ -53,6 +51,9 @@ export const content = /* html */ `
           </ul>
         </li>
         <li>
+          Points of interest have been collected from various sources, including original maps by J.R.R. Tolkien and his son Christopher Tolkien, <b>The Atlas of Middle-earth</b> by Karen Wynn Fonstad and <b>MERP maps</b> by various artists.
+        </li>
+        <li>
           Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>.
         </li>
         <li>
@@ -68,6 +69,9 @@ export const content = /* html */ `
           Font: <a href="https://fonts.google.com/specimen/IM+Fell+DW+Pica" target="_blank" rel="nofollow noopener">IM Fell DW Pica</a>.
         </li>
       </ul>
+      <p>
+        <i>Places from all sources are displayed by default, but you can filter them and display only "canon" places from the map nomenclature at the top left of the screen.</i>
+      </p>
     </div>
     <div class="source">
       <h2>Source</h2>
