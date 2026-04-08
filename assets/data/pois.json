@@ -983,7 +983,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Endil",
       "position": [42.75, 75.18],
       "size": 3,
@@ -1015,7 +1015,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Gobel Tolfalas",
       "position": [47.14, 78.79],
       "size": 3,
