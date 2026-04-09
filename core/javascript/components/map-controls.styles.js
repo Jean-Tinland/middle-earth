@@ -1,8 +1,4 @@
 const styles = /* css */ `
-:host {
-  touch-action: manipulation;
-}
-
 .controls {
   position: fixed;
   top: 26px;

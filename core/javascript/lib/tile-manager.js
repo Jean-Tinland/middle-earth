@@ -1,431 +1,542 @@
-/** Tile size in pixels.  */
 const TILE_SIZE = 512;
-/** Maximum tile zoom level. */
 const MAX_TILE_ZOOM = 7;
-/** Pixels outside the viewport to start loading tiles on desktop. */
-const TILE_PRELOAD_MARGIN = 128;
-/** On mobile, only load what is actually on screen to save memory. */
-const MOBILE_TILE_PRELOAD_MARGIN = 0;
-/** Maximum concurrent tile requests on desktop. */
-const TILE_LOAD_BATCH_SIZE = 10;
-/** Fewer concurrent requests on mobile to reduce peak memory. */
-const MOBILE_TILE_LOAD_BATCH_SIZE = 4;
-/** How long (ms) a backdrop layer may live on mobile before being force-removed. */
-const MOBILE_BACKDROP_MAX_AGE_MS = 1500;
 const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
+
+const DESKTOP_PRELOAD_MARGIN = 128;
+const DESKTOP_BATCH_SIZE = 10;
+const MOBILE_PRELOAD_MARGIN = 0;
+const MOBILE_BATCH_SIZE = 4;
+const MOBILE_BACKDROP_TTL = 1500;
 
 export { MAX_TILE_ZOOM };
 
 export default class TileManager {
-  #buildVersion = document.documentElement.dataset.buildVersion || "0";
-  #mapElement;
-  #baseMapWidth;
-  #baseMapHeight;
-  #isMobile;
-  #batchSize;
-  #preloadMargin;
-  #tileLayers = new Map();
-  /** Maps placeholder <div> elements → tile objects. */
-  #elemToTile = new WeakMap();
-  #tileLoadQueue = [];
-  #tileLoadInFlight = 0;
-  #tileLoadTimeoutId = null;
-  #backdropTimeoutId = null;
-  #activeTileZoom = 0;
-  #previousTileZoom = null;
-  #backdropLayer = null;
-  #backdropOriginalWidth = 0;
-  #tileObserver = null;
+  /** @type {string} */
+  #version;
+  /** @type {HTMLElement} */
+  #container;
+  /** @type {number} */
+  #baseW;
+  /** @type {number} */
+  #baseH;
+  /** @type {boolean} */
+  #mobile;
+  /** @type {number} */
+  #batch;
+  /** @type {number} */
+  #margin;
 
-  constructor(mapElement, baseMapWidth, baseMapHeight, isMobile = false) {
-    this.#mapElement = mapElement;
-    this.#baseMapWidth = baseMapWidth;
-    this.#baseMapHeight = baseMapHeight;
-    this.#isMobile = isMobile;
-    this.#batchSize = isMobile
-      ? MOBILE_TILE_LOAD_BATCH_SIZE
-      : TILE_LOAD_BATCH_SIZE;
-    this.#preloadMargin = isMobile
-      ? MOBILE_TILE_PRELOAD_MARGIN
-      : TILE_PRELOAD_MARGIN;
+  // Active layer state
+  /** @type {number} */
+  #activeZoom = -1;
+  /** @type {HTMLElement|null} */
+  #activeEl = null;
+  /** @type {Uint8Array|null} Tile state bitfield: bit0=requested, bit1=ready, bit2=intersecting, bit3=inFlight */
+  #activeState = null;
+  /** @type {HTMLElement[]|null} Placeholder divs */
+  #activePlaceholders = null;
+  /** @type {HTMLImageElement[]|null} Image elements (sparse: null when not loaded) */
+  #activeImages = null;
+  /** @type {string[]|null} Source URLs */
+  #activeSrcs = null;
+  /** @type {number} */
+  #activeCols = 0;
+  /** @type {number} */
+  #activeRows = 0;
+  /** @type {number} */
+  #activeIntersecting = 0;
+  /** @type {number} */
+  #activeReadyIntersecting = 0;
+  /** @type {Uint32Array|null} Version counter per tile to invalidate stale callbacks */
+  #activeVersions = null;
+
+  // Previous layer (kept for handoff)
+  /** @type {HTMLElement|null} */
+  #prevEl = null;
+
+  // Backdrop
+  /** @type {HTMLElement|null} */
+  #backdropEl = null;
+  /** @type {number} */
+  #backdropBaseW = 0;
+  /** @type {number} */
+  #backdropTimerId = 0;
+
+  // Loading
+  /** @type {number[]} Queue of tile indices */
+  #queue = [];
+  /** @type {number} */
+  #inFlight = 0;
+  /** @type {number} */
+  #loadTimerId = 0;
+
+  // Observer
+  /** @type {IntersectionObserver|null} */
+  #observer = null;
+  /** @type {WeakMap<HTMLElement, number>} Maps placeholder → tile index */
+  #elToIdx = new WeakMap();
+
+  // Public: set by canvas before layer builds
+  canvasWidth = 0;
+  canvasHeight = 0;
+
+  // State bits
+  static #REQUESTED = 1;
+  static #READY = 2;
+  static #INTERSECTING = 4;
+  static #IN_FLIGHT = 8;
+
+  constructor(container, baseW, baseH, mobile = false) {
+    this.#version = document.documentElement.dataset.buildVersion || "0";
+    this.#container = container;
+    this.#baseW = baseW;
+    this.#baseH = baseH;
+    this.#mobile = mobile;
+    this.#batch = mobile ? MOBILE_BATCH_SIZE : DESKTOP_BATCH_SIZE;
+    this.#margin = mobile ? MOBILE_PRELOAD_MARGIN : DESKTOP_PRELOAD_MARGIN;
   }
 
   get activeTileZoom() {
-    return this.#activeTileZoom;
-  }
-
-  get previousTileZoom() {
-    return this.#previousTileZoom;
+    return this.#activeZoom;
   }
 
   get hasBackdrop() {
-    return this.#backdropLayer !== null;
+    return this.#backdropEl !== null;
   }
 
   removeBackdrop() {
-    if (!this.#backdropLayer) return;
-    if (this.#backdropTimeoutId !== null) {
-      clearTimeout(this.#backdropTimeoutId);
-      this.#backdropTimeoutId = null;
+    if (!this.#backdropEl) return;
+    if (this.#backdropTimerId) {
+      clearTimeout(this.#backdropTimerId);
+      this.#backdropTimerId = 0;
     }
-    for (const tile of this.#backdropLayer.tiles) {
-      if (tile.image) {
-        tile.imgVersion++;
-        tile.image.src = "";
-        tile.placeholder.removeChild(tile.image);
-        tile.image = null;
-      }
-    }
-    this.#backdropLayer.element.remove();
-    this.#backdropLayer = null;
+    this.#backdropEl.remove();
+    this.#backdropEl = null;
   }
 
-  installBackdrop(oldW, oldH, canvasWidth) {
-    if (this.#backdropLayer) {
-      const scaleRatio = canvasWidth / this.#backdropOriginalWidth;
-      this.#backdropLayer.element.style.transform = `scale(${scaleRatio})`;
+  installBackdrop(oldW, oldH, newW) {
+    if (this.#backdropEl) {
+      this.#backdropEl.style.transform = `scale(${newW / this.#backdropBaseW})`;
       return;
     }
 
-    const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
-    if (!activeLayer) return;
+    if (!this.#activeEl) return;
 
-    // Disconnect all observations atomically: far cheaper than n individual
-    // unobserve() calls (936 calls at zoom level 7). resetLayers(), called
-    // immediately after by the canvas, will re-establish observations for the
-    // new layer via #observeLayer once the debounce fires.
-    this.#tileObserver?.disconnect();
-    this.#tileLayers.delete(this.#activeTileZoom);
+    // Detach observer before stealing the active layer
+    this.#observer?.disconnect();
 
-    const scaleRatio = canvasWidth / oldW;
+    const el = this.#activeEl;
+    // Release JS references so the typed arrays can be GC'd, but do NOT
+    // blank image sources: the loaded pixels must stay visible as backdrop.
+    this.#releaseActiveRefs();
 
-    activeLayer.element.style.cssText = [
+    el.style.cssText = [
       "position:absolute",
-      "top:0",
-      "left:0",
-      `width:${oldW}px`,
-      `height:${oldH}px`,
+      "top:0;left:0",
+      `width:${oldW}px;height:${oldH}px`,
       "overflow:hidden",
       "pointer-events:none",
-      `transform:scale(${scaleRatio})`,
+      `transform:scale(${newW / oldW})`,
       "transform-origin:top left",
       "z-index:0",
     ].join(";");
-    activeLayer.element.hidden = false;
+    el.hidden = false;
 
-    this.#backdropOriginalWidth = oldW;
-    this.#backdropLayer = activeLayer;
+    this.#backdropBaseW = oldW;
+    this.#backdropEl = el;
 
-    if (this.#isMobile) {
-      this.#backdropTimeoutId = setTimeout(() => {
-        this.#backdropTimeoutId = null;
+    if (this.#mobile) {
+      this.#backdropTimerId = setTimeout(() => {
+        this.#backdropTimerId = 0;
         this.removeBackdrop();
-        const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
-        if (activeLayer) {
-          activeLayer.element.style.setProperty("z-index", "0");
-        }
-      }, MOBILE_BACKDROP_MAX_AGE_MS);
+        if (this.#activeEl) this.#activeEl.style.zIndex = "0";
+      }, MOBILE_BACKDROP_TTL);
+    }
+  }
+
+  renderTiles(zoom) {
+    const z = Math.max(0, Math.min(MAX_TILE_ZOOM, zoom));
+    const prevZoom = this.#activeZoom;
+
+    // Build layer if zoom changed or no layer exists
+    if (z !== this.#activeZoom || !this.#activeEl) {
+      // Stash current active as previous for handoff
+      if (this.#activeEl && prevZoom !== z) {
+        this.#disposePreviousLayer();
+        this.#prevEl = this.#activeEl;
+        this.#prevEl.style.zIndex = "-1";
+        this.#prevEl.hidden = false;
+        // Clear active bookkeeping but keep DOM
+        this.#clearActiveLayer(false);
+      }
+
+      this.#buildLayer(z);
+      this.#observeActive();
+    }
+
+    // Z-index management
+    if (this.#activeEl) {
+      this.#activeEl.hidden = false;
+      this.#activeEl.style.zIndex = this.#backdropEl ? "-1" : "0";
+    }
+    if (this.#prevEl) {
+      this.#prevEl.hidden = false;
+      this.#prevEl.style.zIndex = "-1";
+      if (this.#activeEl) {
+        this.#activeEl.style.zIndex = this.#backdropEl ? "-1" : "0";
+      }
     }
   }
 
   resetLayers() {
-    this.#tileObserver?.disconnect();
-    for (const layer of this.#tileLayers.values()) {
-      for (const tile of layer.tiles) {
-        if (tile.image) {
-          tile.imgVersion++;
-          tile.image.src = "";
-          // tile.image is a child of tile.placeholder which is a child of
-          // layer.element: layer.element.remove() cleans up the whole tree.
-        }
-      }
-      layer.element.remove();
-    }
-    this.#tileLayers.clear();
-    this.#previousTileZoom = null;
-    this.#tileLoadQueue = [];
-    this.#tileLoadInFlight = 0;
+    this.#observer?.disconnect();
+    this.#disposePreviousLayer();
+    this.#clearActiveLayer(true);
+    this.#queue.length = 0;
+    this.#inFlight = 0;
   }
 
   cancelPendingLoad() {
-    if (this.#tileLoadTimeoutId === null) return;
-    clearTimeout(this.#tileLoadTimeoutId);
-    this.#tileLoadTimeoutId = null;
+    if (this.#loadTimerId) {
+      clearTimeout(this.#loadTimerId);
+      this.#loadTimerId = 0;
+    }
   }
 
   scheduleTileLoad(zoom, delay) {
     this.cancelPendingLoad();
-    this.#tileLoadTimeoutId = setTimeout(() => {
-      this.#tileLoadTimeoutId = null;
+    this.#loadTimerId = setTimeout(() => {
+      this.#loadTimerId = 0;
       this.renderTiles(zoom);
     }, delay);
   }
 
-  renderTiles(zoom) {
-    const boundedZoom = Math.max(0, Math.min(MAX_TILE_ZOOM, zoom));
-    const previousZoom = this.#activeTileZoom;
-    const activeLayer = this.#getLayer(boundedZoom);
-
-    this.#activeTileZoom = boundedZoom;
-
-    const hasPreviousLayer =
-      previousZoom !== boundedZoom && this.#tileLayers.has(previousZoom);
-    this.#previousTileZoom = hasPreviousLayer ? previousZoom : null;
-
-    const visibleZooms = new Set([this.#activeTileZoom]);
-    if (this.#previousTileZoom !== null) {
-      visibleZooms.add(this.#previousTileZoom);
-      const previousLayer = this.#tileLayers.get(this.#previousTileZoom);
-      previousLayer.element.hidden = false;
-    }
-
-    for (const [layerZoom, layer] of this.#tileLayers.entries()) {
-      layer.element.hidden = !visibleZooms.has(layerZoom);
-      layer.element.style.setProperty("z-index", "-2");
-    }
-
-    activeLayer.element.hidden = false;
-
-    const activeZIndex = this.#backdropLayer ? "-1" : "0";
-
-    if (this.#previousTileZoom !== null) {
-      const previousLayer = this.#tileLayers.get(this.#previousTileZoom);
-      previousLayer.element.style.setProperty("z-index", "-1");
-      activeLayer.element.style.setProperty("z-index", activeZIndex);
-    } else {
-      activeLayer.element.style.setProperty("z-index", activeZIndex);
-    }
-  }
-
   checkLayerHandoff() {
-    const activeLayer = this.#tileLayers.get(this.#activeTileZoom);
-    if (!activeLayer) return;
+    if (!this.#activeEl || !this.#activeState) return;
 
     const allReady =
-      activeLayer.intersectingCount > 0 &&
-      activeLayer.intersectingCount === activeLayer.readyIntersectingCount;
+      this.#activeIntersecting > 0 &&
+      this.#activeIntersecting === this.#activeReadyIntersecting;
 
-    if (this.#backdropLayer && allReady) {
+    if (this.#backdropEl && allReady) {
       this.removeBackdrop();
-      activeLayer.element.style.setProperty("z-index", "0");
+      this.#activeEl.style.zIndex = "0";
     }
 
-    if (this.#previousTileZoom === null) return;
-
-    const previousLayer = this.#tileLayers.get(this.#previousTileZoom);
-    if (!previousLayer) {
-      this.#previousTileZoom = null;
-      activeLayer.element.style.setProperty("z-index", "0");
-      return;
+    if (this.#prevEl && allReady) {
+      this.#disposePreviousLayer();
+      this.#activeEl.style.zIndex = "0";
     }
-
-    if (!allReady) return;
-
-    previousLayer.element.hidden = true;
-    previousLayer.element.style.setProperty("z-index", "-2");
-    activeLayer.element.style.setProperty("z-index", "0");
-    this.#previousTileZoom = null;
   }
 
   destroy() {
     this.cancelPendingLoad();
-    if (this.#backdropTimeoutId !== null) {
-      clearTimeout(this.#backdropTimeoutId);
-      this.#backdropTimeoutId = null;
+    if (this.#backdropTimerId) {
+      clearTimeout(this.#backdropTimerId);
+      this.#backdropTimerId = 0;
     }
     this.removeBackdrop();
     this.resetLayers();
+    this.#observer = null;
   }
 
-  #getLayer(zoom) {
-    const existing = this.#tileLayers.get(zoom);
-    if (existing) return existing;
+  #buildLayer(zoom) {
+    const cw = this.canvasWidth;
+    const ch = this.canvasHeight;
+    const srcScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
+    const srcW = this.#baseW * srcScale;
+    const srcH = this.#baseH * srcScale;
+    const cols = Math.ceil(srcW / TILE_SIZE);
+    const rows = Math.ceil(srcH / TILE_SIZE);
+    const count = cols * rows;
 
-    const state = { intersectingCount: 0, readyIntersectingCount: 0 };
-    const { element, tiles } = this.#buildLayer(zoom, state);
-    state.element = element;
-    state.tiles = tiles;
-    this.#tileLayers.set(zoom, state);
-    this.#mapElement.prepend(state.element);
-    this.#observeLayer(state);
-    return state;
-  }
+    // Pre-compute edge positions (integer pixel coordinates)
+    const colEdge = new Float64Array(cols + 1);
+    for (let c = 0; c <= cols; c++) {
+      colEdge[c] = Math.round((Math.min(c * TILE_SIZE, srcW) / srcW) * cw);
+    }
+    const rowEdge = new Float64Array(rows + 1);
+    for (let r = 0; r <= rows; r++) {
+      rowEdge[r] = Math.round((Math.min(r * TILE_SIZE, srcH) / srcH) * ch);
+    }
 
-  #buildLayer(zoom, layerState) {
-    const canvasW = this.canvasWidth;
-    const canvasH = this.canvasHeight;
-    const sourceScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
-    const sourceWidth = this.#baseMapWidth * sourceScale;
-    const sourceHeight = this.#baseMapHeight * sourceScale;
-    const cols = Math.ceil(sourceWidth / TILE_SIZE);
-    const rows = Math.ceil(sourceHeight / TILE_SIZE);
+    // Typed arrays for tile data
+    const state = new Uint8Array(count);
+    const versions = new Uint32Array(count);
+    const placeholders = new Array(count);
+    const images = new Array(count).fill(null);
+    const srcs = new Array(count);
 
     const layer = document.createElement("div");
     layer.style.cssText =
       "position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;contain:layout paint style;";
     layer.hidden = true;
 
-    const tiles = [];
+    // Use a fragment to batch DOM insertions
+    const frag = document.createDocumentFragment();
 
-    const colEdges = new Array(cols + 1);
-    for (let c = 0; c <= cols; c++) {
-      colEdges[c] = Math.round(
-        (Math.min(c * TILE_SIZE, sourceWidth) / sourceWidth) * canvasW,
-      );
-    }
-    const rowEdges = new Array(rows + 1);
-    for (let r = 0; r <= rows; r++) {
-      rowEdges[r] = Math.round(
-        (Math.min(r * TILE_SIZE, sourceHeight) / sourceHeight) * canvasH,
-      );
-    }
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c;
+        const left = colEdge[c];
+        const top = rowEdge[r];
+        const w = colEdge[c + 1] - left;
+        const h = rowEdge[r + 1] - top;
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const left = colEdges[col];
-        const top = rowEdges[row];
-        const width = colEdges[col + 1] - left;
-        const height = rowEdges[row + 1] - top;
+        srcs[i] =
+          `./assets/images/map/tiles/${zoom}/${r}-${c}.jpg?v=${this.#version}`;
 
-        // Lightweight placeholder: no <img> until the tile enters the
-        // viewport. This keeps hundreds of invisible img elements out of the
-        // DOM, dramatically reducing memory pressure on iOS.
-        const placeholder = document.createElement("div");
-        placeholder.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;pointer-events:none;contain:strict;`;
-
-        const tile = {
-          placeholder,
-          image: null,
-          src: `./assets/images/map/tiles/${zoom}/${row}-${col}.jpg?v=${this.#buildVersion}`,
-          imgVersion: 0,
-          requested: false,
-          ready: false,
-          /** True while tile.image.src has been set but load/error hasn't fired. */
-          inFlight: false,
-          intersecting: false,
-          layerState,
-        };
-
-        this.#elemToTile.set(placeholder, tile);
-        layer.appendChild(placeholder);
-        tiles.push(tile);
+        const ph = document.createElement("div");
+        ph.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${w}px;height:${h}px;pointer-events:none;contain:strict;`;
+        placeholders[i] = ph;
+        this.#elToIdx.set(ph, i);
+        frag.appendChild(ph);
       }
     }
 
-    return { element: layer, tiles };
+    layer.appendChild(frag);
+    this.#container.prepend(layer);
+
+    this.#activeZoom = zoom;
+    this.#activeEl = layer;
+    this.#activeState = state;
+    this.#activePlaceholders = placeholders;
+    this.#activeImages = images;
+    this.#activeSrcs = srcs;
+    this.#activeCols = cols;
+    this.#activeRows = rows;
+    this.#activeVersions = versions;
+    this.#activeIntersecting = 0;
+    this.#activeReadyIntersecting = 0;
   }
 
-  /** Create and attach an <img> element to a tile's placeholder. */
-  #createTileImage(tile) {
-    const image = document.createElement("img");
-    image.alt = "";
-    image.decoding = "async";
-    image.style.cssText =
+  #observeActive() {
+    if (!this.#activePlaceholders) return;
+
+    if (!this.#observer) {
+      this.#observer = new IntersectionObserver(this.#onIntersect, {
+        rootMargin: `${this.#margin}px`,
+      });
+    }
+
+    const phs = this.#activePlaceholders;
+    for (let i = 0, len = phs.length; i < len; i++) {
+      this.#observer.observe(phs[i]);
+    }
+  }
+
+  #onIntersect = (entries) => {
+    const S = TileManager;
+    for (let e = 0, elen = entries.length; e < elen; e++) {
+      const entry = entries[e];
+      const idx = this.#elToIdx.get(entry.target);
+      if (idx === undefined || !this.#activeState) continue;
+
+      const was = this.#activeState[idx];
+      const wasIntersecting = was & S.#INTERSECTING;
+
+      if (entry.isIntersecting && !wasIntersecting) {
+        this.#activeState[idx] |= S.#INTERSECTING;
+        this.#activeIntersecting++;
+        if (was & S.#READY) this.#activeReadyIntersecting++;
+
+        if (!(was & S.#REQUESTED)) {
+          this.#activeState[idx] |= S.#REQUESTED;
+          this.#createTileImage(idx);
+          this.#queue.push(idx);
+        }
+      } else if (!entry.isIntersecting && wasIntersecting) {
+        this.#activeState[idx] &= ~S.#INTERSECTING;
+        this.#activeIntersecting--;
+        if (was & S.#READY) this.#activeReadyIntersecting--;
+        this.#destroyTileImage(idx);
+      }
+    }
+
+    this.#drain();
+    this.checkLayerHandoff();
+  };
+
+  #createTileImage(idx) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.decoding = "async";
+    img.style.cssText =
       "display:block;width:100%;height:100%;pointer-events:none;";
 
-    const version = ++tile.imgVersion;
+    const version = ++this.#activeVersions[idx];
 
-    const markReady = () => {
-      if (tile.imgVersion !== version) return; // stale: tile was destroyed
-      if (tile.ready) return;
-      tile.ready = true;
-      tile.inFlight = false;
-      if (tile.intersecting) tile.layerState.readyIntersectingCount++;
-      this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
-      this.#drainQueue();
+    const onDone = () => {
+      if (!this.#activeVersions || this.#activeVersions[idx] !== version)
+        return;
+      if (this.#activeState[idx] & TileManager.#READY) return;
+
+      this.#activeState[idx] |= TileManager.#READY;
+      this.#activeState[idx] &= ~TileManager.#IN_FLIGHT;
+
+      if (this.#activeState[idx] & TileManager.#INTERSECTING) {
+        this.#activeReadyIntersecting++;
+      }
+
+      this.#inFlight = Math.max(0, this.#inFlight - 1);
+      this.#drain();
       this.checkLayerHandoff();
     };
 
-    image.addEventListener("load", () => {
-      if (typeof image.decode !== "function") {
-        markReady();
-        return;
+    img.onload = () => {
+      if (typeof img.decode === "function") {
+        img
+          .decode()
+          .catch(() => {})
+          .finally(onDone);
+      } else {
+        onDone();
       }
-      image
-        .decode()
-        .catch(() => {})
-        .finally(markReady);
-    });
-    image.addEventListener("error", markReady);
+    };
+    img.onerror = onDone;
 
-    tile.placeholder.appendChild(image);
-    return image;
+    this.#activePlaceholders[idx].appendChild(img);
+    this.#activeImages[idx] = img;
+  }
+
+  #destroyTileImage(idx) {
+    const img = this.#activeImages[idx];
+    if (!img) return;
+
+    const wasInFlight = this.#activeState[idx] & TileManager.#IN_FLIGHT;
+    this.#activeVersions[idx]++;
+    this.#activeState[idx] &= ~(
+      TileManager.#IN_FLIGHT |
+      TileManager.#READY |
+      TileManager.#REQUESTED
+    );
+
+    img.onload = null;
+    img.onerror = null;
+    img.src = "";
+    img.remove();
+    this.#activeImages[idx] = null;
+
+    if (wasInFlight) {
+      this.#inFlight = Math.max(0, this.#inFlight - 1);
+      this.#drain();
+    }
+  }
+
+  #drain() {
+    while (this.#inFlight < this.#batch && this.#queue.length > 0) {
+      const idx = this.#queue.shift();
+      if (!this.#activeState || !this.#activeImages) break;
+      if (this.#activeState[idx] & TileManager.#READY) continue;
+      if (!this.#activeImages[idx]) continue;
+
+      this.#activeState[idx] |= TileManager.#IN_FLIGHT;
+      this.#inFlight++;
+      this.#activeImages[idx].src = this.#activeSrcs[idx];
+    }
   }
 
   /**
-   * Cancel and remove a tile's <img> element, freeing its memory.
-   * Correctly handles in-flight requests so tileLoadInFlight stays accurate.
+   * Release JS references for the active layer without touching DOM or
+   * image sources. Used when the layer element is being repurposed as a
+   * backdrop: the images must remain visible.
    */
-  #destroyTileImage(tile) {
-    if (!tile.image) return;
-    const wasInFlight = tile.inFlight;
-    tile.imgVersion++; // invalidate any pending markReady / decode callbacks
-    tile.inFlight = false;
-    tile.image.src = ""; // cancel pending HTTP request
-    tile.placeholder.removeChild(tile.image);
-    tile.image = null;
-    tile.ready = false;
-    tile.requested = false;
-    if (wasInFlight) {
-      this.#tileLoadInFlight = Math.max(0, this.#tileLoadInFlight - 1);
-      this.#drainQueue(); // free up the reclaimed slot immediately
-    }
-  }
-
-  #observeLayer(layer) {
-    const observer = this.#getOrCreateObserver();
-    for (const tile of layer.tiles) {
-      observer.observe(tile.placeholder);
-    }
-  }
-
-  #getOrCreateObserver() {
-    if (this.#tileObserver) return this.#tileObserver;
-    this.#tileObserver = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const tile = this.#elemToTile.get(entry.target);
-          if (!tile) continue;
-          const layer = tile.layerState;
-          const wasIntersecting = tile.intersecting;
-          tile.intersecting = entry.isIntersecting;
-          if (entry.isIntersecting && !wasIntersecting) {
-            layer.intersectingCount++;
-            if (tile.ready) layer.readyIntersectingCount++;
-            if (!tile.requested) {
-              tile.requested = true;
-              tile.image = this.#createTileImage(tile);
-              this.#tileLoadQueue.push(tile);
-            }
-          } else if (!entry.isIntersecting && wasIntersecting) {
-            layer.intersectingCount--;
-            if (tile.ready) layer.readyIntersectingCount--;
-            this.#destroyTileImage(tile);
-          }
+  #releaseActiveRefs() {
+    if (this.#activeImages) {
+      for (let i = 0, len = this.#activeImages.length; i < len; i++) {
+        const img = this.#activeImages[i];
+        if (img) {
+          img.onload = null;
+          img.onerror = null;
         }
-        this.#drainQueue();
-        this.checkLayerHandoff();
-      },
-      { rootMargin: `${this.#preloadMargin}px` },
-    );
-    return this.#tileObserver;
-  }
-
-  #drainQueue() {
-    while (
-      this.#tileLoadInFlight < this.#batchSize &&
-      this.#tileLoadQueue.length > 0
-    ) {
-      const tile = this.#tileLoadQueue.shift();
-      // Skip tiles that finished loading or whose image was destroyed.
-      if (tile.ready || !tile.image) continue;
-      tile.inFlight = true;
-      this.#tileLoadInFlight++;
-      tile.image.src = tile.src;
+      }
     }
+    this.#activeEl = null;
+    this.#activeState = null;
+    this.#activePlaceholders = null;
+    this.#activeImages = null;
+    this.#activeSrcs = null;
+    this.#activeVersions = null;
+    this.#activeZoom = -1;
+    this.#activeIntersecting = 0;
+    this.#activeReadyIntersecting = 0;
   }
 
-  /** Must be set by the canvas before each operation that builds layers. */
-  canvasWidth = 0;
-  canvasHeight = 0;
+  #clearActiveLayer(removeDOM) {
+    if (this.#activeImages) {
+      for (let i = 0, len = this.#activeImages.length; i < len; i++) {
+        const img = this.#activeImages[i];
+        if (img) {
+          img.onload = null;
+          img.onerror = null;
+          img.src = "";
+        }
+      }
+    }
+
+    if (removeDOM && this.#activeEl) {
+      this.#activeEl.remove();
+    }
+
+    this.#activeEl = null;
+    this.#activeState = null;
+    this.#activePlaceholders = null;
+    this.#activeImages = null;
+    this.#activeSrcs = null;
+    this.#activeVersions = null;
+    this.#activeZoom = -1;
+    this.#activeIntersecting = 0;
+    this.#activeReadyIntersecting = 0;
+  }
+
+  #disposePreviousLayer() {
+    if (!this.#prevEl) return;
+    this.#prevEl.remove();
+    this.#prevEl = null;
+  }
+
+  /**
+   * Reposition tiles of the active layer to match current canvasWidth/Height
+   * without rebuilding. Returns true if the layer was resized, false if there
+   * is no active layer to resize.
+   */
+  resizeActiveLayer() {
+    if (!this.#activeEl || this.#activeZoom < 0) return false;
+
+    const zoom = this.#activeZoom;
+    const cw = this.canvasWidth;
+    const ch = this.canvasHeight;
+    const srcScale = ZOOM_SOURCE_SCALE[zoom] ?? zoom + 1;
+    const srcW = this.#baseW * srcScale;
+    const srcH = this.#baseH * srcScale;
+    const cols = this.#activeCols;
+    const rows = this.#activeRows;
+
+    const colEdge = new Float64Array(cols + 1);
+    for (let c = 0; c <= cols; c++) {
+      colEdge[c] = Math.round((Math.min(c * TILE_SIZE, srcW) / srcW) * cw);
+    }
+    const rowEdge = new Float64Array(rows + 1);
+    for (let r = 0; r <= rows; r++) {
+      rowEdge[r] = Math.round((Math.min(r * TILE_SIZE, srcH) / srcH) * ch);
+    }
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c;
+        const left = colEdge[c];
+        const top = rowEdge[r];
+        const w = colEdge[c + 1] - left;
+        const h = rowEdge[r + 1] - top;
+
+        const ph = this.#activePlaceholders[i];
+        ph.style.left = `${left}px`;
+        ph.style.top = `${top}px`;
+        ph.style.width = `${w}px`;
+        ph.style.height = `${h}px`;
+      }
+    }
+
+    return true;
+  }
 }

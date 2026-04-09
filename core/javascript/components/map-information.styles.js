@@ -1,8 +1,4 @@
 const styles = /* css */ `
-:host {
-  touch-action: manipulation;
-}
-
 .information {
   --size: 36px;
 
@@ -24,6 +20,10 @@ const styles = /* css */ `
   touch-action: manipulation;
 }
 
+.information:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
 
 @media (pointer: coarse) {
   .information {

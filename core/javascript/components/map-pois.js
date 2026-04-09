@@ -1,11 +1,11 @@
 import styles from "./map-pois.styles.js";
 import MapPopover from "./map-popover.js";
 
-const DEFAULT_BASE_FONT_SIZE = 16;
-const ILLUSTRATION_ZOOM_THRESHOLD = 13;
-const ILLUSTRATION_SIZE_MULTIPLIER = 2.6;
+const BASE_FONT = 16;
+const ILLUST_ZOOM = 13;
+const ILLUST_MULT = 2.6;
 
-const TEXT_SIZE_MULTIPLIERS = Object.freeze({
+const TEXT_MULT = Object.freeze({
   region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8, 4: 0.7 }),
   forest: Object.freeze({ 1: 0.95, 2: 0.8, 3: 0.65, 4: 0.55 }),
   mountain: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.45, 4: 0.4 }),
@@ -16,412 +16,300 @@ const TEXT_SIZE_MULTIPLIERS = Object.freeze({
   river: Object.freeze({ 1: 0.75, 2: 0.65, 3: 0.55 }),
 });
 
-const CITY_DOT_SIZE_MULTIPLIERS = Object.freeze({
-  1: 0.6,
-  2: 0.5,
-  3: 0.4,
-  4: 0.3,
-});
-
-const DEFAULT_TEXT_SIZE_MULTIPLIER = 1;
-const DEFAULT_CITY_DOT_SIZE_MULTIPLIER = CITY_DOT_SIZE_MULTIPLIERS[4];
+const DOT_MULT = Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.4, 4: 0.3 });
 
 /**
- * Represents a custom HTML element for map points of interest.
- * @extends HTMLElement
+ * Memory-optimised POI renderer.
+ *
+ * Design goals:
+ * - SoA (Structure of Arrays) layout: per-POI data stored in parallel typed
+ *   arrays instead of per-POI objects. This reduces GC pressure from hundreds
+ *   of small objects and keeps hot iteration paths cache-friendly.
+ * - Minimal DOM touches: only toggle `hidden` and style properties on actual
+ *   visibility/size changes.
+ * - Single shared popover instance.
  */
 export default class MapPois extends HTMLElement {
-  /** @type {string} The build version of the application. */
-  #buildVersion = document.documentElement.dataset.buildVersion || "0";
-  /** @type {Map<number, Array>} POI elements grouped by their zoom-appearance threshold. */
-  #poisByZoom = new Map();
-  /** @type {number[]} Zoom thresholds in ascending order. */
-  #sortedThresholds = [];
-  /** @type {Array} POI elements that have an illustration image. */
-  #illustrationPois = [];
-  /** @type {number} Zoom level from the most recent render call; -1 before first render. */
-  #lastZoom = -1;
-  /** @type {boolean | null} Illustration mode from the most recent render call. */
-  #lastIllustrationMode = null;
-  /** @type {boolean} Whether to hide non-canon POIs. */
-  #canonOnly = false;
-  /** @type {boolean} Canon-only value from the most recent render call. */
-  #lastCanonOnly = false;
-  /** @type {boolean} Whether illustrations are enabled. */
-  #illustrationsEnabled = true;
-  /** @type {number} Zoom stored from the most recent render call. */
-  #currentZoom = 0;
-  /** @type {number | undefined} Base font size stored from the most recent render call. */
-  #currentBaseFontSize = undefined;
-  /** @type {number} Illustration zoom stored from the most recent render call. */
-  #currentIllustrationZoom = 0;
-  /** @type {MapPopover | null} The currently visible popover, if any. */
-  #currentPopover = null;
-  /** @type {HTMLElement | null} The POI element that opened the current popover. */
-  #currentPopoverAnchor = null;
+  #version = document.documentElement.dataset.buildVersion || "0";
 
-  /**
-   * Creates an instance of MapPois.
-   * @param {Array} pois - The points of interest to display on the map.
-   */
+  /** @type {HTMLElement[]} POI root divs */
+  #els;
+  /** @type {HTMLElement[]} Name divs */
+  #names;
+  /** @type {(HTMLElement|null)[]} Dot divs (cities/hamlets only) */
+  #dots;
+  /** @type {(HTMLImageElement|null)[]} Illustration images */
+  #illusts;
+  /** @type {Float32Array} Text size multiplier per POI */
+  #textMult;
+  /** @type {Float32Array} Dot size multiplier per POI (0 if none) */
+  #dotMult;
+  /** @type {Uint8Array} Flags: bit0=isCanon, bit1=hasIllustration */
+  #flags;
+  /** @type {string[]} POI names */
+  #poiNames;
+  /** @type {string[]} POI sources */
+  #poiSources;
+
+  /** @type {Map<number, number[]>} zoom → array of indices */
+  #buckets = new Map();
+  /** @type {number[]} Sorted zoom thresholds */
+  #thresholds = [];
+  /** @type {number[]} Indices of POIs with illustrations */
+  #illustIndices = [];
+
+  #lastZoom = -1;
+  #lastFont = -1;
+  #lastIllustMode = false;
+  #lastCanon = false;
+  #canonOnly = false;
+  #illustEnabled = true;
+  #curZoom = 0;
+  #curFont = 0;
+  #curIllustZoom = 0;
+
+  /** @type {MapPopover|null} */
+  #popover = null;
+  /** @type {HTMLElement|null} */
+  #popoverAnchor = null;
+
+  // Bit flags
+  static #CANON = 1;
+  static #HAS_ILLUST = 2;
+
   constructor(pois) {
     super();
-
-    this.lastBaseFontSize = null;
-
     this.root = this.attachShadow({ mode: "open" });
-
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
 
-    this.#buildPois(pois);
+    this.#build(pois);
     this.render(0);
   }
 
-  /**
-   * Creates all POI DOM elements once upfront and indexes them by zoom threshold.
-   * @param {Array} pois
-   * @private
-   */
-  #buildPois = (pois) => {
-    const fragment = document.createDocumentFragment();
+  #build(pois) {
+    const n = pois.length;
+    this.#els = new Array(n);
+    this.#names = new Array(n);
+    this.#dots = new Array(n);
+    this.#illusts = new Array(n);
+    this.#textMult = new Float32Array(n);
+    this.#dotMult = new Float32Array(n);
+    this.#flags = new Uint8Array(n);
+    this.#poiNames = new Array(n);
+    this.#poiSources = new Array(n);
 
-    for (const poi of pois) {
-      const poiElement = this.#createPoiElement(poi);
+    const frag = document.createDocumentFragment();
 
-      const bucket = this.#poisByZoom.get(poi.zoom);
+    for (let i = 0; i < n; i++) {
+      const p = pois[i];
+      const { name, kind, position, size, zoom, illustration, source } = p;
+
+      this.#poiNames[i] = name;
+      this.#poiSources[i] = source;
+      this.#textMult[i] = TEXT_MULT[kind]?.[size] ?? 1;
+      this.#dotMult[i] =
+        kind === "city" || kind === "hamlet" ? (DOT_MULT[size] ?? 0.3) : 0;
+
+      let flags = 0;
+      if (source === "Canon") flags |= MapPois.#CANON;
+      if (illustration) flags |= MapPois.#HAS_ILLUST;
+      this.#flags[i] = flags;
+
+      // DOM
+      const el = document.createElement("div");
+      el.className = "poi";
+      el.hidden = true;
+      el.style.cssText = `top:${position[1]}%;left:${position[0]}%;`;
+      el.dataset.kind = kind;
+      el.dataset.size = size;
+
+      let dot = null;
+      if (kind === "city" || kind === "hamlet") {
+        dot = document.createElement("div");
+        dot.className = "dot";
+        el.appendChild(dot);
+      }
+      this.#dots[i] = dot;
+
+      let illust = null;
+      if (illustration) {
+        illust = document.createElement("img");
+        illust.className = "illustration";
+        illust.src = `${illustration}?v=${this.#version}`;
+        illust.alt = name;
+        illust.hidden = true;
+        illust.loading = "lazy";
+        el.appendChild(illust);
+        this.#illustIndices.push(i);
+      }
+      this.#illusts[i] = illust;
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "name";
+      nameEl.textContent = name;
+      el.appendChild(nameEl);
+      this.#names[i] = nameEl;
+      this.#els[i] = el;
+
+      // Bucket
+      let bucket = this.#buckets.get(zoom);
       if (bucket) {
-        bucket.push(poiElement);
+        bucket.push(i);
       } else {
-        this.#poisByZoom.set(poi.zoom, [poiElement]);
+        this.#buckets.set(zoom, [i]);
       }
 
-      if (poiElement.illustrationElement) {
-        this.#illustrationPois.push(poiElement);
-      }
-
-      poiElement.element.addEventListener("click", (event) =>
-        this.#openPopover(poiElement, event),
-      );
-
-      fragment.appendChild(poiElement.element);
+      frag.appendChild(el);
     }
 
-    this.#sortedThresholds = [...this.#poisByZoom.keys()].sort((a, b) => a - b);
-    this.root.appendChild(fragment);
+    this.#thresholds = [...this.#buckets.keys()].sort((a, b) => a - b);
+
+    // Delegated click handler: one listener for all POIs
+    this.root.appendChild(frag);
+    this.root.addEventListener("click", this.#onClick);
+  }
+
+  #onClick = (e) => {
+    const poiEl = e.target.closest(".poi");
+    if (!poiEl) return;
+
+    // Find index: we search the array since clicks are infrequent
+    const idx = this.#els.indexOf(poiEl);
+    if (idx < 0) return;
+
+    this.#openPopover(idx, e);
   };
 
-  /**
-   * Creates a single POI DOM element.
-   * @param {Object} poi - The point of interest data.
-   * @returns {{
-   *   element: HTMLElement,
-   *   nameElement: HTMLElement,
-   *   dotElement: HTMLElement | null,
-   *   zoom: number,
-   *   textSizeMultiplier: number,
-   *   dotSizeMultiplier: number | null
-   * }}
-   * @private
-   */
-  #createPoiElement = (poi) => {
-    const { name, kind, position, size, zoom, illustration, source } = poi;
-    const [x, y] = position;
-
-    const el = Object.assign(document.createElement("div"), {
-      className: "poi",
-      hidden: true,
-      style: `top: ${y}%; left: ${x}%;`,
-    });
-    el.dataset.kind = kind;
-    el.dataset.size = size;
-
-    let dotElement = null;
-
-    if (kind === "city" || kind === "hamlet") {
-      dotElement = Object.assign(document.createElement("div"), {
-        className: "dot",
-      });
-      el.appendChild(dotElement);
+  #openPopover(idx, event) {
+    if (this.#popover && !this.#popover.isClosed) {
+      const same = this.#popoverAnchor === this.#els[idx];
+      this.#popover.close();
+      this.#popover = null;
+      this.#popoverAnchor = null;
+      if (same) return;
     }
 
-    let illustrationElement = null;
-
-    if (illustration) {
-      illustrationElement = Object.assign(document.createElement("img"), {
-        className: "illustration",
-        src: `${illustration}?v=${this.#buildVersion}`,
-        alt: name,
-        hidden: true,
-        loading: "lazy",
-      });
-      el.appendChild(illustrationElement);
-    }
-
-    const nameEl = Object.assign(document.createElement("div"), {
-      className: "name",
-      textContent: name,
-    });
-    el.appendChild(nameEl);
-
-    return {
-      element: el,
-      nameElement: nameEl,
-      dotElement,
-      illustrationElement,
-      isCanon: source === "Canon",
-      name,
-      source,
-      zoom,
-      textSizeMultiplier: this.#getTextSizeMultiplier(kind, size),
-      dotSizeMultiplier:
-        kind === "city" || kind === "hamlet"
-          ? this.#getCityDotSizeMultiplier(size)
-          : null,
-    };
-  };
-
-  /**
-   * Returns the text size multiplier for one POI.
-   * @param {string} kind
-   * @param {number} size
-   * @returns {number}
-   * @private
-   */
-  #getTextSizeMultiplier = (kind, size) => {
-    const multipliersByKind = TEXT_SIZE_MULTIPLIERS[kind];
-    return multipliersByKind?.[size] ?? DEFAULT_TEXT_SIZE_MULTIPLIER;
-  };
-
-  /**
-   * Returns the city dot size multiplier for one POI.
-   * @param {number} size
-   * @returns {number}
-   * @private
-   */
-  #getCityDotSizeMultiplier = (size) => {
-    return CITY_DOT_SIZE_MULTIPLIERS[size] ?? DEFAULT_CITY_DOT_SIZE_MULTIPLIER;
-  };
-
-  /**
-   * Opens a popover for the given POI, or closes it if already open (toggle).
-   * Replaces any previously open popover.
-   * @param {{ name: string, source: string, element: HTMLElement }} poi
-   * @param {MouseEvent} event
-   * @private
-   */
-  #openPopover = (poi, event) => {
-    const existingIsOpen =
-      this.#currentPopover && !this.#currentPopover.isClosed;
-
-    if (existingIsOpen) {
-      const isSameAnchor = this.#currentPopoverAnchor === poi.element;
-      this.#currentPopover.close();
-      this.#currentPopover = null;
-      this.#currentPopoverAnchor = null;
-      if (isSameAnchor) return;
-    }
-
-    const anchorRect = poi.element.getBoundingClientRect();
-    const fallbackX = anchorRect.left + anchorRect.width / 2;
-    const fallbackY = anchorRect.top + anchorRect.height / 2;
-    const usePointerCoordinates =
+    const el = this.#els[idx];
+    const rect = el.getBoundingClientRect();
+    const fx = rect.left + rect.width / 2;
+    const fy = rect.top + rect.height / 2;
+    const usePtr =
       Number.isFinite(event?.clientX) &&
       Number.isFinite(event?.clientY) &&
       event.detail > 0;
-    const clickX = usePointerCoordinates ? event.clientX : fallbackX;
-    const clickY = usePointerCoordinates ? event.clientY : fallbackY;
+    const cx = usePtr ? event.clientX : fx;
+    const cy = usePtr ? event.clientY : fy;
 
-    const popover = new MapPopover(poi.name, poi.source, clickX, clickY);
-    document.body.appendChild(popover);
-    this.#currentPopover = popover;
-    this.#currentPopoverAnchor = poi.element;
-  };
+    const pop = new MapPopover(
+      this.#poiNames[idx],
+      this.#poiSources[idx],
+      cx,
+      cy,
+    );
+    document.body.appendChild(pop);
+    this.#popover = pop;
+    this.#popoverAnchor = el;
+  }
 
-  /**
-   * Rounds a value to the closest integer pixel.
-   * @param {number} value
-   * @returns {number}
-   * @private
-   */
-  #roundToPixel = (value) => {
-    return Math.max(1, Math.round(value));
-  };
+  #px = (v) => Math.max(1, Math.round(v));
 
-  /**
-   * Resolves the base font size in pixels.
-   * @param {number | undefined} baseFontSize
-   * @returns {number}
-   * @private
-   */
-  #resolveBaseFontSize = (baseFontSize) => {
-    if (Number.isFinite(baseFontSize) && baseFontSize > 0) return baseFontSize;
-
-    const inheritedFontSize = Number.parseFloat(
+  #resolveFont(raw) {
+    if (Number.isFinite(raw) && raw > 0) return raw;
+    const css = Number.parseFloat(
       getComputedStyle(this).getPropertyValue("--font-size-ref"),
     );
+    return Number.isFinite(css) && css > 0 ? css : BASE_FONT;
+  }
 
-    if (Number.isFinite(inheritedFontSize) && inheritedFontSize > 0) {
-      return inheritedFontSize;
+  #applySizes(idx, font) {
+    const ts = this.#px(font * this.#textMult[idx]);
+    this.#names[idx].style.fontSize = `${ts}px`;
+
+    const ill = this.#illusts[idx];
+    if (ill) ill.style.width = `${this.#px(font * ILLUST_MULT)}px`;
+
+    if (this.#dotMult[idx] > 0) {
+      const ds = this.#px(font * this.#dotMult[idx]);
+      const dot = this.#dots[idx];
+      dot.style.width = `${ds}px`;
+      dot.style.height = `${ds}px`;
     }
+  }
 
-    return DEFAULT_BASE_FONT_SIZE;
-  };
+  #applyIllustMode(idx, show) {
+    if (this.#dots[idx]) this.#dots[idx].hidden = show;
+    this.#illusts[idx].hidden = !show;
+  }
 
-  /**
-   * Applies computed pixel sizes to one POI.
-   * @param {{
-   *   element: HTMLElement,
-   *   nameElement: HTMLElement,
-   *   dotElement: HTMLElement | null,
-   *   textSizeMultiplier: number,
-   *   dotSizeMultiplier: number | null
-   * }} poiElement
-   * @param {number} baseFontSize
-   * @private
-   */
-  #applyPixelSizes = (poiElement, baseFontSize) => {
-    const textSize = this.#roundToPixel(
-      baseFontSize * poiElement.textSizeMultiplier,
-    );
-    poiElement.nameElement.style.setProperty("font-size", `${textSize}px`);
+  render(zoom, baseFontSize, illustrationZoom = zoom) {
+    const font = this.#resolveFont(baseFontSize);
+    const sizeDirty = this.#lastFont !== font;
+    const illustMode = this.#illustEnabled && illustrationZoom >= ILLUST_ZOOM;
+    const illustChanged = illustMode !== this.#lastIllustMode;
+    const canonDirty = this.#canonOnly !== this.#lastCanon;
+    const prevZoom = this.#lastZoom;
 
-    if (poiElement.illustrationElement) {
-      const illustrationSize = this.#roundToPixel(
-        baseFontSize * ILLUSTRATION_SIZE_MULTIPLIER,
-      );
-      poiElement.illustrationElement.style.setProperty(
-        "width",
-        `${illustrationSize}px`,
-      );
-    }
+    for (let t = 0, tlen = this.#thresholds.length; t < tlen; t++) {
+      const thresh = this.#thresholds[t];
+      const wasVis = thresh <= prevZoom;
+      const isVis = thresh <= zoom;
+      if (isVis === wasVis && !(isVis && (sizeDirty || canonDirty))) continue;
 
-    if (!poiElement.dotElement || poiElement.dotSizeMultiplier === null) return;
+      const bucket = this.#buckets.get(thresh);
+      for (let b = 0, blen = bucket.length; b < blen; b++) {
+        const idx = bucket[b];
+        const f = this.#flags[idx];
+        const okNow = !this.#canonOnly || f & MapPois.#CANON;
+        const okBefore = !this.#lastCanon || f & MapPois.#CANON;
+        const show = isVis && okNow;
+        const wasShowing = wasVis && okBefore;
 
-    const dotSize = this.#roundToPixel(
-      baseFontSize * poiElement.dotSizeMultiplier,
-    );
-    poiElement.dotElement.style.setProperty("width", `${dotSize}px`);
-    poiElement.dotElement.style.setProperty("height", `${dotSize}px`);
-  };
-
-  /**
-   * Shows/hides POIs based on the current zoom level, only touching the DOM
-   * for buckets that cross a visibility threshold, and only updating sizes
-   * for visible POIs when the base font size changes.
-   * @param {number} zoom - The effective zoom level used to gate POI visibility.
-   * @param {number} [baseFontSize] - Base font size used to compute POI sizes.
-   * @param {number} [illustrationZoom] - The raw zoom level used only for illustration
-   *   mode switching. Defaults to `zoom` when omitted.
-   */
-  render = (zoom, baseFontSize, illustrationZoom = zoom) => {
-    const resolvedBaseFontSize = this.#resolveBaseFontSize(baseFontSize);
-    const sizesDirty = this.lastBaseFontSize !== resolvedBaseFontSize;
-    const illustrationMode =
-      this.#illustrationsEnabled &&
-      illustrationZoom >= ILLUSTRATION_ZOOM_THRESHOLD;
-    const illustrationChanged = illustrationMode !== this.#lastIllustrationMode;
-    const canonDirty = this.#canonOnly !== this.#lastCanonOnly;
-    const lastZoom = this.#lastZoom;
-
-    for (const threshold of this.#sortedThresholds) {
-      const wasVisible = threshold <= lastZoom;
-      const isVisible = threshold <= zoom;
-      const bucketNeedsUpdate =
-        isVisible !== wasVisible || (isVisible && (sizesDirty || canonDirty));
-
-      if (!bucketNeedsUpdate) continue;
-
-      for (const poi of this.#poisByZoom.get(threshold)) {
-        const poiAllowed = !this.#canonOnly || poi.isCanon;
-        const wasAllowed = !this.#lastCanonOnly || poi.isCanon;
-        const shouldShow = isVisible && poiAllowed;
-        const wasShowing = wasVisible && wasAllowed;
-
-        if (shouldShow && !wasShowing) {
-          this.#applyPixelSizes(poi, resolvedBaseFontSize);
-          if (poi.illustrationElement) {
-            this.#applyIllustrationMode(poi, illustrationMode);
-          }
-          poi.element.hidden = false;
-        } else if (!shouldShow && wasShowing) {
-          poi.element.hidden = true;
-        } else if (shouldShow && sizesDirty) {
-          this.#applyPixelSizes(poi, resolvedBaseFontSize);
+        if (show && !wasShowing) {
+          this.#applySizes(idx, font);
+          if (f & MapPois.#HAS_ILLUST) this.#applyIllustMode(idx, illustMode);
+          this.#els[idx].hidden = false;
+        } else if (!show && wasShowing) {
+          this.#els[idx].hidden = true;
+        } else if (show && sizeDirty) {
+          this.#applySizes(idx, font);
         }
       }
     }
 
-    // Update illustration mode for visible illustration POIs when threshold is crossed.
-    if (illustrationChanged) {
-      for (const poi of this.#illustrationPois) {
-        if (!poi.element.hidden) {
-          this.#applyIllustrationMode(poi, illustrationMode);
-        }
+    if (illustChanged) {
+      for (let i = 0, ilen = this.#illustIndices.length; i < ilen; i++) {
+        const idx = this.#illustIndices[i];
+        if (!this.#els[idx].hidden) this.#applyIllustMode(idx, illustMode);
       }
     }
 
-    this.lastBaseFontSize = resolvedBaseFontSize;
+    this.#lastFont = font;
     this.#lastZoom = zoom;
-    this.#lastIllustrationMode = illustrationMode;
-    this.#lastCanonOnly = this.#canonOnly;
-    this.#currentZoom = zoom;
-    this.#currentBaseFontSize = baseFontSize;
-    this.#currentIllustrationZoom = illustrationZoom;
-  };
+    this.#lastIllustMode = illustMode;
+    this.#lastCanon = this.#canonOnly;
+    this.#curZoom = zoom;
+    this.#curFont = baseFontSize;
+    this.#curIllustZoom = illustrationZoom;
+  }
 
-  /**
-   * Toggles between the illustration image and the dot marker.
-   * Only called for POIs that have an illustration element.
-   * @param {{dotElement: HTMLElement | null, illustrationElement: HTMLElement}} poiElement
-   * @param {boolean} show - Whether the illustration should be shown.
-   * @private
-   */
-  #applyIllustrationMode = (poiElement, show) => {
-    if (poiElement.dotElement) {
-      poiElement.dotElement.hidden = show;
-    }
-    poiElement.illustrationElement.hidden = !show;
-  };
+  setCanonOnly(v) {
+    if (this.#canonOnly === v) return;
+    this.#canonOnly = v;
+    this.render(this.#curZoom, this.#curFont, this.#curIllustZoom);
+  }
 
-  /**
-   * Hides or restores non-canon POIs and re-renders.
-   * @param {boolean} value
-   */
-  setCanonOnly = (value) => {
-    if (this.#canonOnly === value) return;
-    this.#canonOnly = value;
-    this.render(
-      this.#currentZoom,
-      this.#currentBaseFontSize,
-      this.#currentIllustrationZoom,
-    );
-  };
+  setIllustrationsEnabled(v) {
+    if (this.#illustEnabled === v) return;
+    this.#illustEnabled = v;
+    this.render(this.#curZoom, this.#curFont, this.#curIllustZoom);
+  }
 
-  /**
-   * Enables or disables illustration images, falling back to dot markers.
-   * @param {boolean} value
-   */
-  setIllustrationsEnabled = (value) => {
-    if (this.#illustrationsEnabled === value) return;
-    this.#illustrationsEnabled = value;
-    this.render(
-      this.#currentZoom,
-      this.#currentBaseFontSize,
-      this.#currentIllustrationZoom,
-    );
-  };
-
-  /**
-   * Counter-rotates all POI labels to keep them horizontal while the map rotates.
-   * Sets CSS custom properties on the host so all POIs update in a single paint.
-   * @param {number} degrees - Current map rotation in degrees.
-   */
-  setRotation = (degrees) => {
+  setRotation(degrees) {
     this.style.setProperty("--poi-rotation", `${-degrees}deg`);
     this.style.setProperty("--illustration-rotation", `${degrees}deg`);
-  };
+  }
 }
 
 customElements.define("map-pois", MapPois);

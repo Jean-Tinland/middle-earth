@@ -9,993 +9,808 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 import TileManager, { MAX_TILE_ZOOM } from "../lib/tile-manager.js";
 
-/** The number of discrete zoom steps available. */
-const NUM_ZOOM_STEPS = 25;
-/** The maximum scale multiplier at the final zoom step. */
+const BASE_W = 1800;
+const BASE_H = 1300;
+const ZOOM_STEPS = 25;
 const MAX_SCALE = 20;
-/** Extra zoom steps granted on touch-primary (mobile) devices. */
-const MOBILE_EXTRA_ZOOM_STEPS = 8;
-/** Maximum scale multiplier on touch-primary (mobile) devices. */
+const MOBILE_EXTRA_STEPS = 8;
 const MOBILE_MAX_SCALE = 40;
-/** The accumulated deltaY required to trigger one zoom step. */
 const WHEEL_THRESHOLD = 100;
-/** Base map width used for layout coordinates. */
-const BASE_MAP_WIDTH = 1800;
-/** Base map height used for layout coordinates. */
-const BASE_MAP_HEIGHT = 1300;
-/** Minimum font scale applied on narrow portrait viewports. */
-const PORTRAIT_MIN_FONT_SCALE = 0.65;
-/** Effective font scale cap so size stays constant once scale reaches 9+. */
-const FONT_SCALE_LOCK_THRESHOLD = 8;
-const POI_ZOOM_REFERENCE_HEIGHT = 900;
-/** Duration of animated zoom transitions in milliseconds. */
-const ZOOM_TRANSITION_MS = 120;
-/** Small threshold used when comparing floating-point translate values. */
-const TRANSLATE_EPSILON = 0.01;
-/** Milliseconds of zoom inactivity before tile loading begins when zooming in. */
-const TILE_LOAD_DEBOUNCE_MS = 600;
-/** Milliseconds of zoom inactivity before tile loading begins when zooming out. */
-const TILE_LOAD_DEBOUNCE_ZOOM_OUT_MS = 150;
-/** Degrees of map rotation applied per horizontal pixel during shift-drag. */
+const ZOOM_MS = 120;
+const TILE_DEBOUNCE_IN = 600;
+const TILE_DEBOUNCE_OUT = 150;
 const ROTATION_SPEED = 0.3;
-const PINCH_ROTATE_ENGAGE_DEG = 7;
+const PINCH_ENGAGE_DEG = 7;
+const TX_EPS = 0.01;
+const FONT_BASE = 12;
+const FONT_LOCK = 8;
+const PORTRAIT_FONT_MIN = 0.65;
+const POI_REF_H = 900;
+const URL_DEBOUNCE = 400;
 
-/**
- * Maps a discrete zoom level to a tile zoom index (0–MAX_TILE_ZOOM).
- * Spreads the 8 available tile layers evenly across all zoom steps.
- * @param {number} zoomLevel - Integer from 0 to numZoomSteps.
- * @param {number} numZoomSteps - Total discrete zoom steps for this device.
- * @returns {number}
- */
-const computeTileZoom = (zoomLevel, numZoomSteps) =>
-  Math.min(
-    MAX_TILE_ZOOM,
-    Math.round((zoomLevel * MAX_TILE_ZOOM) / numZoomSteps),
-  );
+const tileZoomFor = (level, steps) =>
+  Math.min(MAX_TILE_ZOOM, Math.round((level * MAX_TILE_ZOOM) / steps));
 
-/**
- * Maps a discrete zoom level to a scale multiplier.
- * Uses an exponential curve so each step increases scale more than the last.
- * @param {number} zoomLevel - Integer from 0 to numZoomSteps.
- * @param {number} [numZoomSteps] - Total discrete zoom steps for this device.
- * @param {number} [maxScale] - Maximum scale multiplier for this device.
- * @returns {number}
- */
-const computeScaleForZoomLevel = (
-  zoomLevel,
-  numZoomSteps = NUM_ZOOM_STEPS,
-  maxScale = MAX_SCALE,
-) => {
-  if (zoomLevel <= 0) return 1;
-  if (zoomLevel >= numZoomSteps) return maxScale;
-  return Math.pow(maxScale, zoomLevel / numZoomSteps);
+const scaleFor = (level, steps = ZOOM_STEPS, max = MAX_SCALE) => {
+  if (level <= 0) return 1;
+  if (level >= steps) return max;
+  return max ** (level / steps);
 };
 
-const DEFAULTS = Object.freeze({
-  FONT_SIZE_REF: 12,
-  SCALE: 1,
-  ZOOM: 0,
-  ZOOM_LEVEL: 0,
-  TRANSLATE_X: 0,
-  TRANSLATE_Y: 0,
-  PREVIOUS_TOUCH: undefined,
-  ROTATION: 0,
-});
-
-/**
- * Map canvas using real-size rendering to avoid sub-pixel tile gaps.
- *
- * Instead of applying CSS scale() to a fixed-size container (which causes
- * compositor rounding gaps between tiles on WebKit/Blink), the canvas is
- * resized to its actual zoomed pixel dimensions. Tiles are placed at integer
- * coordinates inside this real-size container. Panning uses translate() only.
- *
- * @extends HTMLElement
- */
 export default class MapCanvas extends HTMLElement {
   constructor() {
     super();
 
-    this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
-    this.zoom = DEFAULTS.ZOOM;
-    this.scale = DEFAULTS.SCALE;
-    this.rotation = DEFAULTS.ROTATION;
-    this.fontSizeRef = DEFAULTS.FONT_SIZE_REF / (this.scale / 1.7);
-    this.translateX = DEFAULTS.TRANSLATE_X;
-    this.translateY = DEFAULTS.TRANSLATE_Y;
-    this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-    this.touchGestureMoved = false;
-    this.wheelDeltaAccumulator = 0;
-    this.dragRafId = null;
-    this.resizeRafId = null;
-    this.transitionTimeoutId = null;
-    this.urlStateTimeoutId = null;
-    this.pendingMovementX = 0;
-    this.pendingMovementY = 0;
-    this.isDragging = false;
-    this.canvasNaturalWidth = 0;
-    this.canvasNaturalHeight = 0;
-    this.tileManager = null;
+    // Zoom state
+    this.zoomLevel = 0;
+    this.zoom = 0;
+    this.scale = 1;
+    this.rotation = 0;
+
+    // Pan state
+    this.tx = 0;
+    this.ty = 0;
+
+    // Sizing
+    this.natW = 0;
+    this.natH = 0;
+
+    // Steps/scale (overridden for mobile)
+    this.steps = ZOOM_STEPS;
+    this.maxScale = MAX_SCALE;
+
+    // Font
+    this.fontRef = FONT_BASE;
+
+    // Touch tracking
+    /** @type {{x:number,y:number}|null} */
+    this.prevTouch = null;
+    this.touchMoved = false;
+    this.dragging = false;
+
+    // Pinch state
+    this.pinching = false;
+    this.pinchDist = 0;
+    this.pinchLevel = 0;
+    /** @type {{x:number,y:number}|null} */
+    this.pinchFocal = null;
+    this.pinchAngle = 0;
+    this.pinchRotating = false;
+    this.pinchAngleDelta = 0;
+
+    // Wheel
+    this.wheelAcc = 0;
+
+    // RAF/timer IDs
+    this.dragRaf = 0;
+    this.resizeRaf = 0;
+    this.transTimer = 0;
+    this.urlTimer = 0;
+
+    // Pending drag deltas
+    this.pdx = 0;
+    this.pdy = 0;
+
+    // References
+    /** @type {TileManager|null} */
+    this.tiles = null;
+    /** @type {MapPois|null} */
+    this.mapPois = null;
     this.maxPoiZoom = 0;
-    this.numZoomSteps = NUM_ZOOM_STEPS;
-    this.maxZoomScale = MAX_SCALE;
+    /** @type {HTMLElement|null} */
     this.mapCompass = null;
-    this.isPinching = false;
-    this.pinchStartDistance = 0;
-    this.pinchStartZoomLevel = 0;
-    this.pinchFocalPoint = null;
-    this.pinchCurrentAngle = 0;
-    this.pinchRotationEngaged = false;
-    this.pinchCumulativeAngleDelta = 0;
 
+    // Shadow DOM
     this.root = this.attachShadow({ mode: "open" });
-
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
     this.root.innerHTML = template();
   }
 
-  #canvasWidth = () => Math.round(this.canvasNaturalWidth * this.scale);
+  #cw = () => Math.round(this.natW * this.scale);
+  #ch = () => Math.round(this.natH * this.scale);
 
-  #canvasHeight = () => Math.round(this.canvasNaturalHeight * this.scale);
-
-  #syncTileManagerSize = () => {
-    if (!this.tileManager) return;
-    this.tileManager.canvasWidth = this.#canvasWidth();
-    this.tileManager.canvasHeight = this.#canvasHeight();
+  #syncTileSize = () => {
+    if (!this.tiles) return;
+    this.tiles.canvasWidth = this.#cw();
+    this.tiles.canvasHeight = this.#ch();
   };
 
-  #reset = () => {
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.tileManager.cancelPendingLoad();
-    this.canvas.style.removeProperty("transition");
-    this.tileManager.removeBackdrop();
-    this.zoomLevel = DEFAULTS.ZOOM_LEVEL;
-    this.zoom = DEFAULTS.ZOOM;
-    this.scale = DEFAULTS.SCALE;
-    this.rotation = DEFAULTS.ROTATION;
-    this.translateX = DEFAULTS.TRANSLATE_X;
-    this.translateY = DEFAULTS.TRANSLATE_Y;
-    this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-    this.#applyCanvasSize();
-    this.#syncTileManagerSize();
-    this.tileManager.resetLayers();
-    this.#updateFontSizeRef();
-    this.tileManager.renderTiles(this.zoom);
-    this.#renderPois();
-    this.#updateControls();
-    this.#updateCanvas();
-    this.#updateUrlState();
-    this.#dispatchZoomChange();
-    this.#notifyRotationChange();
+  #measure = () => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const fit = Math.min(vw / BASE_W, vh / BASE_H);
+    this.natW = Math.max(1, Math.floor(BASE_W * fit));
+    this.natH = Math.max(1, Math.floor(BASE_H * fit));
   };
 
-  #computePoiZoomOffset = () => {
-    const referenceNaturalWidth = Math.floor(
-      BASE_MAP_WIDTH * (POI_ZOOM_REFERENCE_HEIGHT / BASE_MAP_HEIGHT),
+  #applySize = () => {
+    const w = this.#cw();
+    const h = this.#ch();
+    const cs = this.canvas.style;
+    cs.maxWidth = "none";
+    cs.maxHeight = "none";
+    cs.width = `${w}px`;
+    cs.height = `${h}px`;
+    const ms = this.map.style;
+    ms.width = `${w}px`;
+    ms.height = `${h}px`;
+  };
+
+  #applyTransform = () => {
+    this.canvas.style.transform = `translate(${this.tx}px,${this.ty}px) rotate(${this.rotation}deg)`;
+  };
+
+  #clampBounds = () => {
+    const w = this.#cw();
+    const h = this.#ch();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const l = (vw - w) / 2 + this.tx;
+    const t = (vh - h) / 2 + this.ty;
+    if (l > 0) this.tx -= l;
+    if (t > 0) this.ty -= t;
+    if (l + w < vw) this.tx += vw - (l + w);
+    if (t + h < vh) this.ty += vh - (t + h);
+  };
+
+  #portraitScalar = () => {
+    const ar = window.innerWidth / window.innerHeight;
+    return Math.max(PORTRAIT_FONT_MIN, Math.min(1, ar));
+  };
+
+  #updateFont = () => {
+    const div = this.zoom === 0 ? 1.5 : 2;
+    const eff = Math.min(this.scale, FONT_LOCK);
+    this.fontRef =
+      (FONT_BASE / (eff / div)) * this.scale * this.#portraitScalar();
+    this.canvas.style.setProperty(
+      "--font-size-ref",
+      `${this.fontRef.toFixed(2)}px`,
     );
-    if (this.canvasNaturalWidth >= referenceNaturalWidth) return 0;
-    const rawOffset = Math.floor(
-      (this.numZoomSteps *
-        Math.log(referenceNaturalWidth / this.canvasNaturalWidth)) /
-        Math.log(this.maxZoomScale),
-    );
-    const maxAllowedOffset = Math.max(
-      0,
-      this.numZoomSteps - 1 - this.maxPoiZoom,
-    );
-    return Math.min(rawOffset, maxAllowedOffset);
   };
 
-  #computePoiFontSizeRef = () => {
-    if (this.scale <= MAX_SCALE) return this.fontSizeRef;
-    return this.fontSizeRef * (MAX_SCALE / this.scale);
+  #poiZoomOffset = () => {
+    const refW = Math.floor(BASE_W * (POI_REF_H / BASE_H));
+    if (this.natW >= refW) return 0;
+    const raw = Math.floor(
+      (this.steps * Math.log(refW / this.natW)) / Math.log(this.maxScale),
+    );
+    const cap = Math.max(0, this.steps - 1 - this.maxPoiZoom);
+    return Math.min(raw, cap);
   };
+
+  #poiFont = () =>
+    this.scale <= MAX_SCALE
+      ? this.fontRef
+      : this.fontRef * (MAX_SCALE / this.scale);
 
   #renderPois = () => {
     if (!this.mapPois) return;
-    const effectivePoiZoomLevel = Math.max(
-      0,
-      this.zoomLevel - this.#computePoiZoomOffset(),
-    );
-    this.mapPois.render(
-      effectivePoiZoomLevel,
-      this.#computePoiFontSizeRef(),
-      this.zoomLevel,
-    );
-  };
-
-  #getZoomFocalPoint = (e) => {
-    const viewportCenter = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    };
-
-    if (!e || e.type === "click") return viewportCenter;
-
-    if (Number.isFinite(e.clientX) && Number.isFinite(e.clientY)) {
-      return { x: e.clientX, y: e.clientY };
-    }
-
-    return viewportCenter;
-  };
-
-  #prepareAnimatedZoom = () => {
-    clearTimeout(this.transitionTimeoutId);
-    this.canvas.style.setProperty("transition", "none");
-    this.canvas.getBoundingClientRect();
-    this.canvas.style.setProperty(
-      "transition",
-      `transform ${ZOOM_TRANSITION_MS}ms var(--transition-easing)`,
-    );
-  };
-
-  #scheduleTransitionCleanup = () => {
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = setTimeout(() => {
-      this.canvas.style.removeProperty("transition");
-      this.tileManager.checkLayerHandoff();
-      this.transitionTimeoutId = null;
-    }, ZOOM_TRANSITION_MS);
-  };
-
-  #animateZoomTransition = (oldScale, oldTranslateX, oldTranslateY) => {
-    const fromScaleFactor = oldScale / this.scale;
-
-    this.canvas.style.setProperty(
-      "transform",
-      `translate(${oldTranslateX}px, ${oldTranslateY}px) rotate(${this.rotation}deg) scale(${fromScaleFactor})`,
-    );
-
-    this.canvas.getBoundingClientRect();
-
-    this.canvas.style.setProperty(
-      "transition",
-      `transform ${ZOOM_TRANSITION_MS}ms var(--transition-easing)`,
-    );
-    this.#updateCanvas();
-    this.#scheduleTransitionCleanup();
-  };
-
-  #adjustTranslateForZoom = (oldScale, focalPoint) => {
-    const vpCenterX = window.innerWidth / 2;
-    const vpCenterY = window.innerHeight / 2;
-    const oldW = Math.round(this.canvasNaturalWidth * oldScale);
-    const oldH = Math.round(this.canvasNaturalHeight * oldScale);
-    const newW = this.#canvasWidth();
-    const newH = this.#canvasHeight();
-
-    // Focal point position within the old canvas (pixels from left/top edge):
-    const mapX = focalPoint.x - (vpCenterX + this.translateX - oldW / 2);
-    const mapY = focalPoint.y - (vpCenterY + this.translateY - oldH / 2);
-
-    // Same proportional point in the new canvas:
-    const newMapX = (mapX / oldW) * newW;
-    const newMapY = (mapY / oldH) * newH;
-
-    // Compensate for both the focal-point scaling and the flex centering
-    // shift (the canvas origin moves by -(newW - oldW) / 2 when it grows).
-    this.translateX += mapX - newMapX + (newW - oldW) / 2;
-    this.translateY += mapY - newMapY + (newH - oldH) / 2;
-  };
-
-  #applyZoomStep = (targetLevel, focalPoint, animate = false) => {
-    const oldScale = this.scale;
-    const oldTranslateX = this.translateX;
-    const oldTranslateY = this.translateY;
-    const oldW = this.#canvasWidth();
-    const oldH = this.#canvasHeight();
-    const previousZoomLevel = this.zoomLevel;
-
-    this.zoomLevel = Math.max(0, Math.min(targetLevel, this.numZoomSteps));
-    this.scale = computeScaleForZoomLevel(
-      this.zoomLevel,
-      this.numZoomSteps,
-      this.maxZoomScale,
-    );
-    this.zoom = computeTileZoom(this.zoomLevel, this.numZoomSteps);
-
-    this.#applyCanvasSize();
-    this.#syncTileManagerSize();
-    this.tileManager.installBackdrop(oldW, oldH, this.#canvasWidth());
-    this.tileManager.resetLayers();
-    this.#adjustTranslateForZoom(oldScale, focalPoint);
-    this.#updateFontSizeRef();
-    this.#renderPois();
-
-    if (this.zoomLevel === 0) {
-      this.translateX = DEFAULTS.TRANSLATE_X;
-      this.translateY = DEFAULTS.TRANSLATE_Y;
-      this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-    } else {
-      this.#checkAndFixBoundaries();
-    }
-
-    if (animate) {
-      this.#animateZoomTransition(oldScale, oldTranslateX, oldTranslateY);
-    } else {
-      this.#updateCanvas();
-    }
-    this.#updateControls();
-    this.#updateUrlState();
-    this.#dispatchZoomChange();
-    this.tileManager.scheduleTileLoad(
-      this.zoom,
-      targetLevel < previousZoomLevel
-        ? TILE_LOAD_DEBOUNCE_ZOOM_OUT_MS
-        : TILE_LOAD_DEBOUNCE_MS,
-    );
-  };
-
-  #dispatchZoomChange = () => {
-    this.dispatchEvent(
-      new CustomEvent("zoom-change", {
-        bubbles: false,
-        detail: {
-          canvasNaturalWidth: this.canvasNaturalWidth,
-          scale: this.scale,
-        },
-      }),
-    );
-  };
-
-  zoomIn = (e) => {
-    if (this.zoomLevel >= this.numZoomSteps) return;
-    e.preventDefault();
-
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.canvas.style.removeProperty("transition");
-
-    this.#applyZoomStep(this.zoomLevel + 1, this.#getZoomFocalPoint(e), true);
-  };
-
-  zoomOut = (e) => {
-    if (this.zoomLevel <= 0) return;
-    e.preventDefault();
-
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.canvas.style.removeProperty("transition");
-
-    this.#applyZoomStep(this.zoomLevel - 1, this.#getZoomFocalPoint(e), true);
+    const eff = Math.max(0, this.zoomLevel - this.#poiZoomOffset());
+    this.mapPois.render(eff, this.#poiFont(), this.zoomLevel);
   };
 
   #updateControls = () => {
-    if (!this.controls?.zoomInButton || !this.controls?.zoomOutButton) return;
-
-    this.controls.zoomOutButton.disabled = this.zoomLevel === 0;
-    this.controls.zoomInButton.disabled = this.zoomLevel === this.numZoomSteps;
+    const c = this.controls;
+    if (!c?.zoomInButton || !c?.zoomOutButton) return;
+    c.zoomOutButton.disabled = this.zoomLevel === 0;
+    c.zoomInButton.disabled = this.zoomLevel === this.steps;
   };
 
-  #updateCanvas = () => {
-    this.canvas.style.setProperty(
-      "transform",
-      `translate(${this.translateX}px, ${this.translateY}px) rotate(${this.rotation}deg)`,
-    );
+  #rotateAroundCenter = (deg) => {
+    const rad = (deg * Math.PI) / 180;
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    const ox = this.tx;
+    const oy = this.ty;
+    this.tx = ox * c - oy * s;
+    this.ty = ox * s + oy * c;
+    this.rotation += deg;
   };
 
-  #rotateAroundViewportCenter = (degrees) => {
-    const rad = (degrees * Math.PI) / 180;
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const prevTx = this.translateX;
-    const prevTy = this.translateY;
-    this.translateX = prevTx * cos - prevTy * sin;
-    this.translateY = prevTx * sin + prevTy * cos;
-    this.rotation += degrees;
-  };
-
-  #applyRotationDelta = (movementX, movementY) => {
-    this.#rotateAroundViewportCenter((movementY - movementX) * ROTATION_SPEED);
-    this.#updateCanvas();
-    this.#notifyRotationChange();
-  };
-
-  #notifyRotationChange = () => {
+  #notifyRotation = () => {
     this.mapCompass?.setRotation(this.rotation);
     this.mapPois?.setRotation(this.rotation);
   };
 
   resetRotation = () => {
-    let normalized = ((this.rotation % 360) + 360) % 360;
-    if (normalized > 180) normalized -= 360;
-    if (Math.abs(normalized) < 0.01) return;
+    let n = ((this.rotation % 360) + 360) % 360;
+    if (n > 180) n -= 360;
+    if (Math.abs(n) < 0.01) return;
 
-    // Apply the normalized-equivalent rotation without animation.
-    // Visually identical since rotate(x) === rotate(x ± 360).
-    this.rotation = normalized;
-    this.canvas.style.setProperty("transition", "none");
+    this.rotation = n;
+    this.canvas.style.transition = "none";
     this.canvas.getBoundingClientRect();
-    this.#updateCanvas();
+    this.#applyTransform();
 
-    // Animate the short arc back to north.
-    this.#prepareAnimatedZoom();
-    this.#rotateAroundViewportCenter(-normalized);
+    this.#prepTransition();
+    this.#rotateAroundCenter(-n);
     this.rotation = 0;
-    this.#updateCanvas();
-    this.#scheduleTransitionCleanup();
-    this.#updateUrlState();
-    this.#notifyRotationChange();
+    this.#applyTransform();
+    this.#scheduleTransCleanup();
+    this.#scheduleUrlUpdate();
+    this.#notifyRotation();
   };
 
-  #computePortraitFontScalar = () => {
-    const aspectRatio = window.innerWidth / window.innerHeight;
-    return Math.max(PORTRAIT_MIN_FONT_SCALE, Math.min(1, aspectRatio));
+  #prepTransition = () => {
+    clearTimeout(this.transTimer);
+    this.canvas.style.transition = "none";
+    this.canvas.getBoundingClientRect(); // force reflow
+    this.canvas.style.transition = `transform ${ZOOM_MS}ms var(--transition-easing)`;
   };
 
-  #updateFontSizeRef = () => {
-    const divider = this.zoom === 0 ? 1.5 : 2;
-    const effectiveScale = Math.min(this.scale, FONT_SCALE_LOCK_THRESHOLD);
-    const portraitFontScalar = this.#computePortraitFontScalar();
-    this.fontSizeRef =
-      (DEFAULTS.FONT_SIZE_REF / (effectiveScale / divider)) *
-      this.scale *
-      portraitFontScalar;
-    this.canvas.style.setProperty(
-      "--font-size-ref",
-      `${this.fontSizeRef.toFixed(2)}px`,
+  #scheduleTransCleanup = () => {
+    clearTimeout(this.transTimer);
+    this.transTimer = setTimeout(() => {
+      this.canvas.style.removeProperty("transition");
+      this.tiles?.checkLayerHandoff();
+      this.transTimer = 0;
+    }, ZOOM_MS);
+  };
+
+  #adjustTranslate = (oldScale, focal) => {
+    const vpx = window.innerWidth / 2;
+    const vpy = window.innerHeight / 2;
+    const ow = Math.round(this.natW * oldScale);
+    const oh = Math.round(this.natH * oldScale);
+    const nw = this.#cw();
+    const nh = this.#ch();
+
+    const mx = focal.x - (vpx + this.tx - ow / 2);
+    const my = focal.y - (vpy + this.ty - oh / 2);
+    const nmx = (mx / ow) * nw;
+    const nmy = (my / oh) * nh;
+
+    this.tx += mx - nmx + (nw - ow) / 2;
+    this.ty += my - nmy + (nh - oh) / 2;
+  };
+
+  #applyZoom = (target, focal, animate = false) => {
+    const oldScale = this.scale;
+    const oldTx = this.tx;
+    const oldTy = this.ty;
+    const oldW = this.#cw();
+    const oldH = this.#ch();
+    const prevLevel = this.zoomLevel;
+    const prevTileZoom = this.zoom;
+
+    this.zoomLevel = Math.max(0, Math.min(target, this.steps));
+    this.scale = scaleFor(this.zoomLevel, this.steps, this.maxScale);
+    this.zoom = tileZoomFor(this.zoomLevel, this.steps);
+
+    this.#applySize();
+    this.#syncTileSize();
+
+    const tileZoomChanged = this.zoom !== prevTileZoom;
+
+    if (tileZoomChanged) {
+      this.tiles.installBackdrop(oldW, oldH, this.#cw());
+      this.tiles.resetLayers();
+    } else if (!this.tiles.resizeActiveLayer()) {
+      // No active layer (e.g. stolen for backdrop during rapid zoom):
+      // just rescale the existing backdrop if present.
+      if (this.tiles.hasBackdrop) {
+        this.tiles.installBackdrop(oldW, oldH, this.#cw());
+      }
+    }
+
+    this.#adjustTranslate(oldScale, focal);
+    this.#updateFont();
+    this.#renderPois();
+
+    if (this.zoomLevel === 0) {
+      this.tx = 0;
+      this.ty = 0;
+      this.prevTouch = null;
+    } else {
+      this.#clampBounds();
+    }
+
+    if (animate) {
+      // Set old transform, then transition to new
+      const sf = oldScale / this.scale;
+      this.canvas.style.transform = `translate(${oldTx}px,${oldTy}px) rotate(${this.rotation}deg) scale(${sf})`;
+      this.canvas.getBoundingClientRect();
+      this.canvas.style.transition = `transform ${ZOOM_MS}ms var(--transition-easing)`;
+      this.#applyTransform();
+      this.#scheduleTransCleanup();
+    } else {
+      this.#applyTransform();
+    }
+
+    this.#updateControls();
+    this.#scheduleUrlUpdate();
+    this.#dispatchZoom();
+
+    if (tileZoomChanged || this.tiles.activeTileZoom !== this.zoom) {
+      this.tiles.scheduleTileLoad(
+        this.zoom,
+        target < prevLevel ? TILE_DEBOUNCE_OUT : TILE_DEBOUNCE_IN,
+      );
+    }
+  };
+
+  #focal = (e) => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    if (!e || e.type === "click") return { x: cx, y: cy };
+    if (Number.isFinite(e.clientX) && Number.isFinite(e.clientY))
+      return { x: e.clientX, y: e.clientY };
+    return { x: cx, y: cy };
+  };
+
+  zoomIn = (e) => {
+    if (this.zoomLevel >= this.steps) return;
+    e.preventDefault();
+    clearTimeout(this.transTimer);
+    this.transTimer = 0;
+    this.canvas.style.removeProperty("transition");
+    this.#applyZoom(this.zoomLevel + 1, this.#focal(e), true);
+  };
+
+  zoomOut = (e) => {
+    if (this.zoomLevel <= 0) return;
+    e.preventDefault();
+    clearTimeout(this.transTimer);
+    this.transTimer = 0;
+    this.canvas.style.removeProperty("transition");
+    this.#applyZoom(this.zoomLevel - 1, this.#focal(e), true);
+  };
+
+  #dispatchZoom = () => {
+    this.dispatchEvent(
+      new CustomEvent("zoom-change", {
+        bubbles: false,
+        detail: { canvasNaturalWidth: this.natW, scale: this.scale },
+      }),
     );
   };
 
-  #measureNaturalDimensions = () => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const fitScale = Math.min(
-      viewportWidth / BASE_MAP_WIDTH,
-      viewportHeight / BASE_MAP_HEIGHT,
-    );
+  #reset = () => {
+    clearTimeout(this.transTimer);
+    this.transTimer = 0;
+    this.tiles.cancelPendingLoad();
+    this.canvas.style.removeProperty("transition");
+    this.tiles.removeBackdrop();
 
-    this.canvasNaturalWidth = Math.max(
-      1,
-      Math.floor(BASE_MAP_WIDTH * fitScale),
-    );
-    this.canvasNaturalHeight = Math.max(
-      1,
-      Math.floor(BASE_MAP_HEIGHT * fitScale),
-    );
+    this.zoomLevel = 0;
+    this.zoom = 0;
+    this.scale = 1;
+    this.rotation = 0;
+    this.tx = 0;
+    this.ty = 0;
+    this.prevTouch = null;
+
+    this.#applySize();
+    this.#syncTileSize();
+    this.tiles.resetLayers();
+    this.#updateFont();
+    this.tiles.renderTiles(0);
+    this.#renderPois();
+    this.#updateControls();
+    this.#applyTransform();
+    this.#scheduleUrlUpdate();
+    this.#dispatchZoom();
+    this.#notifyRotation();
   };
 
-  #applyCanvasSize = () => {
-    const w = this.#canvasWidth();
-    const h = this.#canvasHeight();
-    this.canvas.style.setProperty("max-width", "none");
-    this.canvas.style.setProperty("max-height", "none");
-    this.canvas.style.setProperty("width", `${w}px`);
-    this.canvas.style.setProperty("height", `${h}px`);
-    this.map.style.setProperty("width", `${w}px`);
-    this.map.style.setProperty("height", `${h}px`);
+  #flushDrag = () => {
+    if (this.pdx === 0 && this.pdy === 0) return;
+    this.tx += this.pdx;
+    this.ty += this.pdy;
+    this.pdx = 0;
+    this.pdy = 0;
+    this.#applyTransform();
   };
 
-  #handleResize = () => {
-    if (this.resizeRafId !== null) return;
-    this.resizeRafId = requestAnimationFrame(() => {
-      this.resizeRafId = null;
-      this.tileManager.cancelPendingLoad();
-      const previousWidth = this.canvasNaturalWidth;
-      const previousHeight = this.canvasNaturalHeight;
-      this.#measureNaturalDimensions();
-      const didNaturalSizeChange =
-        previousWidth !== this.canvasNaturalWidth ||
-        previousHeight !== this.canvasNaturalHeight;
+  #onMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.dragging = true;
+    clearTimeout(this.transTimer);
+    this.canvas.addEventListener("pointermove", this.#onDrag);
+    this.canvas.style.cursor = "grabbing";
+    this.canvas.style.transition = "none";
+  };
 
-      if (didNaturalSizeChange) {
-        this.tileManager.removeBackdrop();
-        this.tileManager.resetLayers();
+  #onMouseUp = (e) => {
+    if (!this.dragging) return;
+    this.dragging = false;
+    const wasPinch = this.pinching;
+    this.pinching = false;
+    const isTouch = e.type === "touchend";
+    if (!isTouch || this.touchMoved || wasPinch) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    this.canvas.removeEventListener("pointermove", this.#onDrag);
+    this.canvas.style.removeProperty("cursor");
+    this.canvas.style.removeProperty("transition");
+
+    if (this.dragRaf) {
+      cancelAnimationFrame(this.dragRaf);
+      this.dragRaf = 0;
+      this.pdx = 0;
+      this.pdy = 0;
+    }
+
+    this.prevTouch = null;
+    this.touchMoved = false;
+
+    if (this.zoomLevel === 0) {
+      const snapped = Math.abs(this.tx) > TX_EPS || Math.abs(this.ty) > TX_EPS;
+      this.tx = 0;
+      this.ty = 0;
+      this.#updateControls();
+      if (snapped) {
+        this.#prepTransition();
+        this.#applyTransform();
+        this.#scheduleTransCleanup();
+      } else {
+        this.#applyTransform();
+      }
+      this.#scheduleUrlUpdate();
+      return;
+    }
+
+    const otx = this.tx;
+    const oty = this.ty;
+    this.#clampBounds();
+    if (Math.abs(this.tx - otx) > TX_EPS || Math.abs(this.ty - oty) > TX_EPS) {
+      this.#prepTransition();
+      this.#applyTransform();
+      this.#scheduleTransCleanup();
+    } else {
+      this.#applyTransform();
+    }
+    this.#scheduleUrlUpdate();
+  };
+
+  #onDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.type === "touchmove") {
+      this.canvas.style.transition = "none";
+
+      if (this.pinching || e.touches.length === 2) {
+        if (!this.pinching) this.#initPinch(e);
+        this.touchMoved = true;
+        this.#pinchMove(e);
+        return;
       }
 
-      this.#applyCanvasSize();
-      this.#syncTileManagerSize();
-      this.tileManager.renderTiles(this.zoom);
-      if (this.zoomLevel === 0) {
-        return this.#reset();
+      const t = e.touches[0];
+      e.movementX = this.prevTouch ? t.clientX - this.prevTouch.x : 0;
+      e.movementY = this.prevTouch ? t.clientY - this.prevTouch.y : 0;
+
+      if (e.movementX !== 0 || e.movementY !== 0) this.touchMoved = true;
+
+      if (this.prevTouch) {
+        this.prevTouch.x = t.clientX;
+        this.prevTouch.y = t.clientY;
+      } else {
+        this.prevTouch = { x: t.clientX, y: t.clientY };
       }
-      this.#checkAndFixBoundaries();
-      this.#updateCanvas();
-      this.#dispatchZoomChange();
+    }
+
+    if (e.shiftKey && !this.pinching) {
+      this.#rotateAroundCenter((e.movementY - e.movementX) * ROTATION_SPEED);
+      this.#applyTransform();
+      this.#notifyRotation();
+      return;
+    }
+
+    this.pdx += e.movementX;
+    this.pdy += e.movementY;
+
+    if (this.dragRaf) return;
+    this.#flushDrag();
+    this.dragRaf = requestAnimationFrame(() => {
+      this.dragRaf = 0;
+      this.#flushDrag();
     });
   };
 
-  #touchStart = (e) => {
-    clearTimeout(this.transitionTimeoutId);
-    this.canvas.style.setProperty("transition", "none");
+  #onTouchStart = (e) => {
+    clearTimeout(this.transTimer);
+    this.canvas.style.transition = "none";
 
     if (e.touches.length === 2) {
       e.preventDefault();
-      this.touchGestureMoved = true;
-      this.isDragging = false;
-      this.previousTouch = undefined;
+      this.touchMoved = true;
+      this.dragging = false;
+      this.prevTouch = null;
       this.#initPinch(e);
       return;
     }
 
     if (e.touches.length !== 1) return;
-
-    this.touchGestureMoved = false;
-    this.isPinching = false;
-    this.isDragging = true;
-    const touch = e.touches[0];
-    if (this.previousTouch) {
-      this.previousTouch.clientX = touch.clientX;
-      this.previousTouch.clientY = touch.clientY;
+    this.touchMoved = false;
+    this.pinching = false;
+    this.dragging = true;
+    const t = e.touches[0];
+    if (this.prevTouch) {
+      this.prevTouch.x = t.clientX;
+      this.prevTouch.y = t.clientY;
     } else {
-      this.previousTouch = { clientX: touch.clientX, clientY: touch.clientY };
+      this.prevTouch = { x: t.clientX, y: t.clientY };
     }
   };
 
-  #applyPendingDrag = () => {
-    if (this.pendingMovementX === 0 && this.pendingMovementY === 0) return;
+  #touchAngle = (a, b) =>
+    Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX) * (180 / Math.PI);
 
-    this.translateX += this.pendingMovementX;
-    this.translateY += this.pendingMovementY;
-    this.pendingMovementX = 0;
-    this.pendingMovementY = 0;
-    this.#updateCanvas();
+  #initPinch = (e) => {
+    const a = e.touches[0];
+    const b = e.touches[1];
+    this.pinching = true;
+    this.dragging = true;
+    this.pinchDist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    this.pinchLevel = this.zoomLevel;
+    this.pinchFocal = {
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2,
+    };
+    this.pinchAngle = this.#touchAngle(a, b);
+    this.pinchRotating = false;
+    this.pinchAngleDelta = 0;
   };
 
-  #dragStart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    this.isDragging = true;
-    clearTimeout(this.transitionTimeoutId);
-    this.canvas.addEventListener("pointermove", this.#dragging);
-    this.canvas.style.setProperty("cursor", "grabbing");
-    this.canvas.style.setProperty("transition", "none");
-  };
+  #pinchMove = (e) => {
+    if (e.touches.length !== 2 || this.pinchDist === 0) return;
+    const a = e.touches[0];
+    const b = e.touches[1];
 
-  #dragEnd = (e) => {
-    if (!this.isDragging) return;
-    this.isDragging = false;
-    const wasPinching = this.isPinching;
-    this.isPinching = false;
-    const isTouchEnd = e.type === "touchend";
-    const shouldPreventDefault =
-      !isTouchEnd || this.touchGestureMoved || wasPinching;
+    const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    const ratio = dist / this.pinchDist;
+    const delta = Math.round(
+      (Math.log(ratio) * this.steps) / Math.log(this.maxScale),
+    );
+    const target = Math.max(0, Math.min(this.steps, this.pinchLevel + delta));
+    const zoomed = target !== this.zoomLevel;
+    if (zoomed) this.#applyZoom(target, this.pinchFocal);
 
-    if (shouldPreventDefault) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    const ang = this.#touchAngle(a, b);
+    let adelta = ang - this.pinchAngle;
+    if (adelta > 180) adelta -= 360;
+    if (adelta < -180) adelta += 360;
+    this.pinchAngle = ang;
 
-    this.canvas.removeEventListener("pointermove", this.#dragging);
-    this.canvas.style.removeProperty("cursor");
-    this.canvas.style.removeProperty("transition");
-
-    if (this.dragRafId !== null) {
-      cancelAnimationFrame(this.dragRafId);
-      this.dragRafId = null;
-      this.pendingMovementX = 0;
-      this.pendingMovementY = 0;
-    }
-
-    this.previousTouch = undefined;
-    this.touchGestureMoved = false;
-
-    if (this.zoomLevel === 0) {
-      const didSnapToDefault =
-        Math.abs(this.translateX - DEFAULTS.TRANSLATE_X) > TRANSLATE_EPSILON ||
-        Math.abs(this.translateY - DEFAULTS.TRANSLATE_Y) > TRANSLATE_EPSILON;
-
-      this.translateX = DEFAULTS.TRANSLATE_X;
-      this.translateY = DEFAULTS.TRANSLATE_Y;
-      this.previousTouch = DEFAULTS.PREVIOUS_TOUCH;
-      this.#updateControls();
-
-      if (didSnapToDefault) {
-        this.#prepareAnimatedZoom();
-        this.#updateCanvas();
-        this.#scheduleTransitionCleanup();
-        this.#updateUrlState();
-        return;
-      }
-
-      this.#updateCanvas();
-      this.#updateUrlState();
-      return;
-    }
-
-    const previousTranslateX = this.translateX;
-    const previousTranslateY = this.translateY;
-    this.#checkAndFixBoundaries();
-    const didSnapToBoundary =
-      Math.abs(this.translateX - previousTranslateX) > TRANSLATE_EPSILON ||
-      Math.abs(this.translateY - previousTranslateY) > TRANSLATE_EPSILON;
-
-    if (didSnapToBoundary) {
-      this.#prepareAnimatedZoom();
-      this.#updateCanvas();
-      this.#scheduleTransitionCleanup();
-    } else {
-      this.#updateCanvas();
-    }
-    this.#updateUrlState();
-  };
-
-  #checkAndFixBoundaries = () => {
-    const w = this.#canvasWidth();
-    const h = this.#canvasHeight();
-    const vpW = window.innerWidth;
-    const vpH = window.innerHeight;
-
-    // Canvas top-left in screen space:
-    const left = (vpW - w) / 2 + this.translateX;
-    const top = (vpH - h) / 2 + this.translateY;
-    const right = left + w;
-    const bottom = top + h;
-
-    if (left > 0) this.translateX -= left;
-    if (top > 0) this.translateY -= top;
-    if (right < vpW) this.translateX += vpW - right;
-    if (bottom < vpH) this.translateY += vpH - bottom;
-  };
-
-  #dragging = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (e.type === "touchmove") {
-      this.canvas.style.setProperty("transition", "none");
-
-      if (this.isPinching || e.touches.length === 2) {
-        if (!this.isPinching) this.#initPinch(e);
-        this.touchGestureMoved = true;
-        this.#handlePinchMove(e);
-        return;
-      }
-
-      const touch = e.touches[0];
-
-      e.movementX = this.previousTouch
-        ? touch.clientX - this.previousTouch.clientX
-        : 0;
-      e.movementY = this.previousTouch
-        ? touch.clientY - this.previousTouch.clientY
-        : 0;
-
-      if (e.movementX !== 0 || e.movementY !== 0) {
-        this.touchGestureMoved = true;
-      }
-
-      if (this.previousTouch) {
-        this.previousTouch.clientX = touch.clientX;
-        this.previousTouch.clientY = touch.clientY;
+    if (!this.pinchRotating) {
+      if (zoomed) {
+        this.pinchAngleDelta = 0;
       } else {
-        this.previousTouch = { clientX: touch.clientX, clientY: touch.clientY };
+        this.pinchAngleDelta += adelta;
+        if (Math.abs(this.pinchAngleDelta) >= PINCH_ENGAGE_DEG) {
+          this.pinchRotating = true;
+          this.#rotateAroundCenter(this.pinchAngleDelta);
+          this.#applyTransform();
+          this.#notifyRotation();
+        }
       }
+    } else if (Math.abs(adelta) > 0.1) {
+      this.#rotateAroundCenter(adelta);
+      this.#applyTransform();
+      this.#notifyRotation();
     }
+  };
 
-    if (e.shiftKey && !this.isPinching) {
-      this.#applyRotationDelta(e.movementX, e.movementY);
-      return;
-    }
+  #onWheel = (e) => {
+    this.wheelAcc += e.deltaY;
+    if (Math.abs(this.wheelAcc) < WHEEL_THRESHOLD) return;
+    const steps = Math.trunc(this.wheelAcc / WHEEL_THRESHOLD);
+    this.wheelAcc -= steps * WHEEL_THRESHOLD;
+    clearTimeout(this.transTimer);
+    this.transTimer = 0;
+    this.canvas.style.removeProperty("transition");
+    if (steps > 0) this.zoomOut(e);
+    else this.zoomIn(e);
+  };
 
-    this.pendingMovementX += e.movementX;
-    this.pendingMovementY += e.movementY;
+  #onDblClick = (e) => {
+    if (e.shiftKey) this.zoomOut(e);
+    else this.zoomIn(e);
+  };
 
-    if (this.dragRafId !== null) return;
-
-    this.#applyPendingDrag();
-
-    this.dragRafId = requestAnimationFrame(() => {
-      this.dragRafId = null;
-      this.#applyPendingDrag();
+  #onResize = () => {
+    if (this.resizeRaf) return;
+    this.resizeRaf = requestAnimationFrame(() => {
+      this.resizeRaf = 0;
+      this.tiles.cancelPendingLoad();
+      const pw = this.natW;
+      const ph = this.natH;
+      this.#measure();
+      if (pw !== this.natW || ph !== this.natH) {
+        this.tiles.removeBackdrop();
+        this.tiles.resetLayers();
+      }
+      this.#applySize();
+      this.#syncTileSize();
+      this.tiles.renderTiles(this.zoom);
+      if (this.zoomLevel === 0) return this.#reset();
+      this.#clampBounds();
+      this.#applyTransform();
+      this.#dispatchZoom();
     });
   };
 
-  #touchAngle = (t1, t2) =>
-    Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) *
-    (180 / Math.PI);
-
-  #initPinch = (e) => {
-    const t1 = e.touches[0];
-    const t2 = e.touches[1];
-    this.isPinching = true;
-    this.isDragging = true;
-    this.pinchStartDistance = Math.hypot(
-      t2.clientX - t1.clientX,
-      t2.clientY - t1.clientY,
-    );
-    this.pinchStartZoomLevel = this.zoomLevel;
-    this.pinchFocalPoint = {
-      x: (t1.clientX + t2.clientX) / 2,
-      y: (t1.clientY + t2.clientY) / 2,
-    };
-    this.pinchCurrentAngle = this.#touchAngle(t1, t2);
-    this.pinchRotationEngaged = false;
-    this.pinchCumulativeAngleDelta = 0;
-  };
-
-  #handlePinchMove = (e) => {
-    if (e.touches.length !== 2 || this.pinchStartDistance === 0) return;
-
-    const t1 = e.touches[0];
-    const t2 = e.touches[1];
-
-    const currentDistance = Math.hypot(
-      t2.clientX - t1.clientX,
-      t2.clientY - t1.clientY,
-    );
-    const ratio = currentDistance / this.pinchStartDistance;
-    const zoomDelta = Math.round(
-      (Math.log(ratio) * this.numZoomSteps) / Math.log(this.maxZoomScale),
-    );
-    const targetLevel = Math.max(
-      0,
-      Math.min(this.numZoomSteps, this.pinchStartZoomLevel + zoomDelta),
-    );
-    const didZoom = targetLevel !== this.zoomLevel;
-    if (didZoom) {
-      this.#applyZoomStep(targetLevel, this.pinchFocalPoint);
-    }
-
-    const newAngle = this.#touchAngle(t1, t2);
-    let angleDelta = newAngle - this.pinchCurrentAngle;
-    // Normalise to (-180, 180) to avoid wrap-around jumps.
-    if (angleDelta > 180) angleDelta -= 360;
-    if (angleDelta < -180) angleDelta += 360;
-    this.pinchCurrentAngle = newAngle;
-
-    if (!this.pinchRotationEngaged) {
-      // Reset accumulator whenever scale is actively changing so that
-      // incidental twist during a zoom gesture never triggers rotation.
-      if (didZoom) {
-        this.pinchCumulativeAngleDelta = 0;
-      } else {
-        this.pinchCumulativeAngleDelta += angleDelta;
-        if (
-          Math.abs(this.pinchCumulativeAngleDelta) >= PINCH_ROTATE_ENGAGE_DEG
-        ) {
-          this.pinchRotationEngaged = true;
-          this.#rotateAroundViewportCenter(this.pinchCumulativeAngleDelta);
-          this.#updateCanvas();
-          this.#notifyRotationChange();
-        }
-      }
-    } else if (Math.abs(angleDelta) > 0.1) {
-      this.#rotateAroundViewportCenter(angleDelta);
-      this.#updateCanvas();
-      this.#notifyRotationChange();
-    }
-  };
-
-  #loadPois = async () => {
-    const pois = await fetch("/assets/data/pois.json");
-    const data = await pois.json();
-    this.pois = data.pois;
-    this.maxPoiZoom = this.pois.reduce(
-      (max, p) => (p.zoom > max ? p.zoom : max),
-      0,
-    );
-  };
-
-  #drawPois = () => {
-    this.mapPois = new MapPois(this.pois);
-    this.map.appendChild(this.mapPois);
-    this.#applyStoredPoiPreferences();
-  };
-
-  #applyStoredPoiPreferences = () => {
-    const canonOnly = localStorage.getItem("map-canon-only") === "true";
-    const illustrationsEnabled =
-      localStorage.getItem("map-illustrations") !== "false";
-    this.mapPois.setCanonOnly(canonOnly);
-    this.mapPois.setIllustrationsEnabled(illustrationsEnabled);
-  };
-
-  #handleCanonOnlyChange = (e) => {
-    this.mapPois?.setCanonOnly(e.detail.canonOnly);
-  };
-
-  #handleIllustrationsChange = (e) => {
-    this.mapPois?.setIllustrationsEnabled(e.detail.illustrationsEnabled);
-  };
-
-  #onMapLoad = () => {
-    this.setAttribute("ready", "");
-  };
-
-  #handleCanvasDoubleClick = (e) => {
-    if (e.shiftKey) {
-      this.zoomOut(e);
-    } else {
-      this.zoomIn(e);
-    }
-  };
-
-  #handleMouseWheel = (e) => {
-    this.wheelDeltaAccumulator += e.deltaY;
-
-    if (Math.abs(this.wheelDeltaAccumulator) < WHEEL_THRESHOLD) return;
-
-    const steps = Math.trunc(this.wheelDeltaAccumulator / WHEEL_THRESHOLD);
-    this.wheelDeltaAccumulator -= steps * WHEEL_THRESHOLD;
-
-    clearTimeout(this.transitionTimeoutId);
-    this.transitionTimeoutId = null;
-    this.canvas.style.removeProperty("transition");
-
-    if (steps > 0) {
-      this.zoomOut(e);
-    } else {
-      this.zoomIn(e);
-    }
-  };
-
-  #getPercentageCoordinates = async (e) => {
-    const params = new URLSearchParams(window.location.search);
-    const debugEnabled = params.has("debug");
-    if (!debugEnabled) return;
-    const { left, top, width, height } = this.canvas.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    await navigator.clipboard.writeText(`[${x.toFixed(2)}, ${y.toFixed(2)}]`);
-  };
-
-  #computeMapCenterFractions = () => {
-    const w = this.#canvasWidth();
-    const h = this.#canvasHeight();
+  #centerFractions = () => {
+    const w = this.#cw();
+    const h = this.#ch();
     if (w === 0 || h === 0) return null;
-    return {
-      x: 0.5 - this.translateX / w,
-      y: 0.5 - this.translateY / h,
-    };
+    return { x: 0.5 - this.tx / w, y: 0.5 - this.ty / h };
   };
 
-  #updateUrlState = () => {
-    clearTimeout(this.urlStateTimeoutId);
-    this.urlStateTimeoutId = setTimeout(this.#commitUrlState, 400);
+  #scheduleUrlUpdate = () => {
+    clearTimeout(this.urlTimer);
+    this.urlTimer = setTimeout(this.#commitUrl, URL_DEBOUNCE);
   };
 
-  #commitUrlState = () => {
-    this.urlStateTimeoutId = null;
-    const params = new URLSearchParams(window.location.search);
+  #commitUrl = () => {
+    this.urlTimer = 0;
+    const p = new URLSearchParams(window.location.search);
     if (this.zoomLevel === 0) {
-      params.delete("z");
-      params.delete("x");
-      params.delete("y");
-      params.delete("r");
+      p.delete("z");
+      p.delete("x");
+      p.delete("y");
+      p.delete("r");
     } else {
-      const center = this.#computeMapCenterFractions();
-      if (!center) return;
-      params.set("z", String(this.zoomLevel));
-      params.set("x", center.x.toFixed(4));
-      params.set("y", center.y.toFixed(4));
-      if (Math.abs(this.rotation) > 0.01) {
-        params.set("r", this.rotation.toFixed(1));
-      } else {
-        params.delete("r");
-      }
+      const c = this.#centerFractions();
+      if (!c) return;
+      p.set("z", String(this.zoomLevel));
+      p.set("x", c.x.toFixed(4));
+      p.set("y", c.y.toFixed(4));
+      if (Math.abs(this.rotation) > 0.01) p.set("r", this.rotation.toFixed(1));
+      else p.delete("r");
     }
-
-    const search = params.toString();
-    const url = search
-      ? `${window.location.pathname}?${search}`
-      : window.location.pathname;
-    history.replaceState(null, "", url);
+    const s = p.toString();
+    history.replaceState(
+      null,
+      "",
+      s ? `${window.location.pathname}?${s}` : window.location.pathname,
+    );
   };
 
-  #restoreStateFromUrl = () => {
-    const params = new URLSearchParams(window.location.search);
-    const z = parseInt(params.get("z"), 10);
-    const x = parseFloat(params.get("x"));
-    const y = parseFloat(params.get("y"));
-
-    if (!Number.isFinite(z) || z < 1 || z > this.numZoomSteps) return;
+  #restoreUrl = () => {
+    const p = new URLSearchParams(window.location.search);
+    const z = parseInt(p.get("z"), 10);
+    const x = parseFloat(p.get("x"));
+    const y = parseFloat(p.get("y"));
+    if (!Number.isFinite(z) || z < 1 || z > this.steps) return;
     if (!Number.isFinite(x) || x < 0 || x > 1) return;
     if (!Number.isFinite(y) || y < 0 || y > 1) return;
 
     this.zoomLevel = z;
-    this.scale = computeScaleForZoomLevel(
-      z,
-      this.numZoomSteps,
-      this.maxZoomScale,
-    );
-    this.zoom = computeTileZoom(this.zoomLevel, this.numZoomSteps);
+    this.scale = scaleFor(z, this.steps, this.maxScale);
+    this.zoom = tileZoomFor(this.zoomLevel, this.steps);
+    this.tx = (0.5 - x) * this.#cw();
+    this.ty = (0.5 - y) * this.#ch();
+    this.#clampBounds();
 
-    const w = this.#canvasWidth();
-    const h = this.#canvasHeight();
-    this.translateX = (0.5 - x) * w;
-    this.translateY = (0.5 - y) * h;
-    this.#checkAndFixBoundaries();
-
-    const r = parseFloat(params.get("r"));
-    if (Number.isFinite(r)) {
-      this.rotation = r;
-    }
+    const r = parseFloat(p.get("r"));
+    if (Number.isFinite(r)) this.rotation = r;
   };
 
-  #waitForPageLoad = async () => {
-    if (document.readyState === "complete") return;
-    await new Promise((resolve) => {
-      window.addEventListener("load", resolve, { once: true });
-    });
+  #onDebugClick = async (e) => {
+    if (!new URLSearchParams(window.location.search).has("debug")) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    await navigator.clipboard.writeText(`[${x.toFixed(2)}, ${y.toFixed(2)}]`);
   };
+
+  #applyPoiPrefs = () => {
+    const canon = localStorage.getItem("map-canon-only") === "true";
+    const illust = localStorage.getItem("map-illustrations") !== "false";
+    this.mapPois.setCanonOnly(canon);
+    this.mapPois.setIllustrationsEnabled(illust);
+  };
+
+  #onCanonChange = (e) => this.mapPois?.setCanonOnly(e.detail.canonOnly);
+  #onIllustChange = (e) =>
+    this.mapPois?.setIllustrationsEnabled(e.detail.illustrationsEnabled);
 
   async connectedCallback() {
     this.canvas = this.root.querySelector(".canvas");
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
     this.mapCompass = this.root.querySelector("map-compass");
+
     if (window.matchMedia("(pointer: coarse)").matches) {
-      this.numZoomSteps = NUM_ZOOM_STEPS + MOBILE_EXTRA_ZOOM_STEPS;
-      this.maxZoomScale = MOBILE_MAX_SCALE;
+      this.steps = ZOOM_STEPS + MOBILE_EXTRA_STEPS;
+      this.maxScale = MOBILE_MAX_SCALE;
     }
-    await this.#waitForPageLoad();
-    await this.#loadPois();
-    this.#measureNaturalDimensions();
-    this.tileManager = new TileManager(
+
+    // Wait for full page load
+    if (document.readyState !== "complete") {
+      await new Promise((r) =>
+        window.addEventListener("load", r, { once: true }),
+      );
+    }
+
+    // Load POIs
+    const res = await fetch("/assets/data/pois.json");
+    const data = await res.json();
+    const pois = data.pois;
+    this.maxPoiZoom = 0;
+    for (let i = 0; i < pois.length; i++) {
+      if (pois[i].zoom > this.maxPoiZoom) this.maxPoiZoom = pois[i].zoom;
+    }
+
+    this.#measure();
+    this.tiles = new TileManager(
       this.map,
-      BASE_MAP_WIDTH,
-      BASE_MAP_HEIGHT,
+      BASE_W,
+      BASE_H,
       window.matchMedia("(pointer: coarse)").matches,
     );
-    this.#restoreStateFromUrl();
-    this.#applyCanvasSize();
-    this.#syncTileManagerSize();
-    this.tileManager.renderTiles(this.zoom);
-    this.#drawPois();
-    this.#onMapLoad();
-    this.#updateFontSizeRef();
-    this.#renderPois();
-    this.#notifyRotationChange();
-    this.#updateCanvas();
-    this.#updateControls();
-    this.#dispatchZoomChange();
 
-    this.canvas.addEventListener("dblclick", this.#handleCanvasDoubleClick);
-    this.canvas.addEventListener("mousedown", this.#dragStart);
-    this.canvas.addEventListener("mouseup", this.#dragEnd);
-    this.canvas.addEventListener("touchstart", this.#touchStart, {
+    this.#restoreUrl();
+    this.#applySize();
+    this.#syncTileSize();
+    this.tiles.renderTiles(this.zoom);
+
+    // Draw POIs
+    this.mapPois = new MapPois(pois);
+    this.map.appendChild(this.mapPois);
+    this.#applyPoiPrefs();
+
+    this.setAttribute("ready", "");
+    this.#updateFont();
+    this.#renderPois();
+    this.#notifyRotation();
+    this.#applyTransform();
+    this.#updateControls();
+    this.#dispatchZoom();
+
+    // Event listeners
+    this.canvas.addEventListener("dblclick", this.#onDblClick);
+    this.canvas.addEventListener("mousedown", this.#onMouseDown);
+    this.canvas.addEventListener("mouseup", this.#onMouseUp);
+    this.canvas.addEventListener("touchstart", this.#onTouchStart, {
       passive: false,
     });
-    this.canvas.addEventListener("touchmove", this.#dragging, {
+    this.canvas.addEventListener("touchmove", this.#onDrag, { passive: false });
+    this.canvas.addEventListener("touchend", this.#onMouseUp, {
       passive: false,
     });
-    this.canvas.addEventListener("touchend", this.#dragEnd, { passive: false });
-    this.canvas.addEventListener("click", this.#getPercentageCoordinates);
-    window.addEventListener("wheel", this.#handleMouseWheel);
-    window.addEventListener("mouseout", this.#dragEnd);
-    window.addEventListener("resize", this.#handleResize);
-    this.root.addEventListener(
-      "poi-canon-only-change",
-      this.#handleCanonOnlyChange,
-    );
+    this.canvas.addEventListener("click", this.#onDebugClick);
+    window.addEventListener("wheel", this.#onWheel);
+    window.addEventListener("mouseout", this.#onMouseUp);
+    window.addEventListener("resize", this.#onResize);
+    this.root.addEventListener("poi-canon-only-change", this.#onCanonChange);
     this.root.addEventListener(
       "poi-illustrations-change",
-      this.#handleIllustrationsChange,
+      this.#onIllustChange,
     );
   }
 
   disconnectedCallback() {
-    if (this.dragRafId !== null) {
-      cancelAnimationFrame(this.dragRafId);
-    }
-    clearTimeout(this.transitionTimeoutId);
-    clearTimeout(this.urlStateTimeoutId);
-    if (this.resizeRafId !== null) {
-      cancelAnimationFrame(this.resizeRafId);
-    }
-    this.tileManager?.destroy();
-    window.removeEventListener("resize", this.#handleResize);
-    window.removeEventListener("mouseout", this.#dragEnd);
-    window.removeEventListener("wheel", this.#handleMouseWheel);
-    this.canvas.removeEventListener("click", this.#getPercentageCoordinates);
-    this.root.removeEventListener(
-      "poi-canon-only-change",
-      this.#handleCanonOnlyChange,
-    );
+    if (this.dragRaf) cancelAnimationFrame(this.dragRaf);
+    clearTimeout(this.transTimer);
+    clearTimeout(this.urlTimer);
+    if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
+    this.tiles?.destroy();
+
+    window.removeEventListener("resize", this.#onResize);
+    window.removeEventListener("mouseout", this.#onMouseUp);
+    window.removeEventListener("wheel", this.#onWheel);
+    this.canvas.removeEventListener("click", this.#onDebugClick);
+    this.root.removeEventListener("poi-canon-only-change", this.#onCanonChange);
     this.root.removeEventListener(
       "poi-illustrations-change",
-      this.#handleIllustrationsChange,
+      this.#onIllustChange,
     );
-    this.canvas.removeEventListener("touchend", this.#dragEnd);
-    this.canvas.removeEventListener("touchmove", this.#dragging);
-    this.canvas.removeEventListener("touchstart", this.#touchStart);
-    this.canvas.removeEventListener("mouseup", this.#dragEnd);
-    this.canvas.removeEventListener("mousedown", this.#dragStart);
-    this.canvas.removeEventListener("dblclick", this.#handleCanvasDoubleClick);
+    this.canvas.removeEventListener("touchend", this.#onMouseUp);
+    this.canvas.removeEventListener("touchmove", this.#onDrag);
+    this.canvas.removeEventListener("touchstart", this.#onTouchStart);
+    this.canvas.removeEventListener("mouseup", this.#onMouseUp);
+    this.canvas.removeEventListener("mousedown", this.#onMouseDown);
+    this.canvas.removeEventListener("dblclick", this.#onDblClick);
   }
 }
 

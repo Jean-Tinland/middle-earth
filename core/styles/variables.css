@@ -4,7 +4,6 @@
   --white: #fff;
 
   --primary: #643322;
-  --secondary: var(--black);
 
   --paper: #f0e8d7;
   --water-label: #616a6c;
@@ -20,8 +19,6 @@
 
   --shadow-100: 0px 3px 6px rgba(0, 0, 0, 0.12);
   --shadow-200: 0 5px 10px rgba(0, 0, 0, 0.12);
-  --shadow-300: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-400: 0 30px 60px rgba(0, 0, 0, 0.12);
 
   --transition-easing: cubic-bezier(0.4, 0.1, 0.2, 0.9);
 

@@ -57,7 +57,7 @@ const styles = /* css */ `
 .labels {
   display: flex;
   justify-content: space-between;
-  width: calc(100% + 0px);
+  width: 100%;
   pointer-events: none;
 }
 

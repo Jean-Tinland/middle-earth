@@ -15,7 +15,6 @@ export default class MapModal extends HTMLElement {
       icon: "",
       title: "",
       content: "",
-      backdrop: false,
       closeButton: true,
     };
 
@@ -29,9 +28,6 @@ export default class MapModal extends HTMLElement {
   }
 
   close = () => {
-    if (typeof this.options.onClose === "function") {
-      this.options.onClose();
-    }
     this.setAttribute("closing", "");
     setTimeout(() => {
       this.remove();
@@ -60,8 +56,8 @@ export default class MapModal extends HTMLElement {
   #handleKeyPress = (e) => {
     if (e.key !== "Escape") return;
     const allModals = document.querySelectorAll("map-modal");
-    const isLastModal = allModals[allModals.length - 1];
-    if (this !== isLastModal) return;
+    const lastModal = allModals[allModals.length - 1];
+    if (this !== lastModal) return;
     this.close();
   };
 
@@ -74,7 +70,7 @@ export default class MapModal extends HTMLElement {
   };
 
   #handleFocus = (e) => {
-    const isTabPressed = e.key === "Tab" || e.keyCode === 9;
+    const isTabPressed = e.key === "Tab";
     if (!isTabPressed) return;
 
     if (e.shiftKey) {
@@ -96,7 +92,6 @@ export default class MapModal extends HTMLElement {
     this.backdrop = this.root.querySelector(".backdrop");
     this.modalTitle = this.root.querySelector(".modal__title");
     this.modalContent = this.root.querySelector(".modal__content");
-    this.modalButtons = this.root.querySelector(".modal__buttons");
 
     document.body.style.setProperty("overflow", "hidden");
 
@@ -111,10 +106,6 @@ export default class MapModal extends HTMLElement {
       ? this.closeButton.addEventListener("click", this.close)
       : this.closeButton.remove();
 
-    if (this.options.backdrop) {
-      this.backdrop.addEventListener("click", this.close);
-    }
-
     document.addEventListener("keydown", this.#handleKeyPress);
     this.root.addEventListener("keydown", this.#handleFocus);
 
@@ -125,9 +116,6 @@ export default class MapModal extends HTMLElement {
     this.root.removeEventListener("keydown", this.#handleFocus);
     document.removeEventListener("keydown", this.#handleKeyPress);
 
-    if (this.options.backdrop) {
-      this.backdrop.removeEventListener("click", this.close);
-    }
     if (this.options.closeButton) {
       this.closeButton.removeEventListener("click", this.close);
     }
