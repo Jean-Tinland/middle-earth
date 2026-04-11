@@ -3,7 +3,7 @@ import MapPopover from "./map-popover.js";
 
 const BASE_FONT = 16;
 const ILLUST_ZOOM = 13;
-const ILLUST_MULT = 2.6;
+const ILLUST_MULT = 1.3;
 
 const TEXT_MULT = Object.freeze({
   region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8, 4: 0.7 }),
