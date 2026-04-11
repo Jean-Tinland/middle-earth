@@ -1049,7 +1049,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Dale",
-      "position": [59.64, 16.39],
+      "position": [59.38, 16.04],
       "size": 2,
       "zoom": 8
     },
@@ -1718,14 +1718,6 @@
       "source": "Canon",
       "name": "Angbor Citadel",
       "position": [50.23, 67.89],
-      "size": 3,
-      "zoom": 13
-    },
-    {
-      "kind": "common-place",
-      "source": "Canon",
-      "name": "Cair Andros",
-      "position": [48.52, 20.96],
       "size": 3,
       "zoom": 13
     },
