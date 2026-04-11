@@ -15,7 +15,9 @@ sharp.concurrency(1);
 async function loadSource(zoom) {
   const path = join(INPUT_DIR, `map-${zoom}.jpg`);
   const buffer = Buffer.from(await Bun.file(path).arrayBuffer());
-  const { width, height } = await sharp(buffer).metadata();
+  const { width, height } = await sharp(buffer, {
+    limitInputPixels: 400000000,
+  }).metadata();
   return { zoom, buffer, width, height };
 }
 
@@ -39,7 +41,7 @@ function collectTileJobs(sources) {
         const outPath = join(OUTPUT_DIR, `${zoom}`, `${row}-${col}.jpg`);
 
         jobs.push(() =>
-          sharp(buffer, { sequentialRead: false })
+          sharp(buffer, { sequentialRead: false, limitInputPixels: 400000000 })
             .extract({ left, top, width: tileWidth, height: tileHeight })
             .jpeg({ quality: JPEG_QUALITY })
             .toFile(outPath),
