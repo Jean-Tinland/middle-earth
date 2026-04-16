@@ -4,6 +4,8 @@ This project aims to provide an **interactive map of Middle-earth** at the end o
 
 [Open Middle-earth map](https://middle-earth.jeantinland.com).
 
+You can follow [this journal](https://www.jeantinland.com/journal/lotr/) to see the development and creation process of the map.
+
 ![Middle-earth interactive map](./assets/images/preview.png)
 
 > [!NOTE]

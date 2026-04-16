@@ -32,6 +32,7 @@ export const content = /* html */ `
       <p>
         This project aims to provide an <b>interactive map of Middle-earth</b> at the end of the Third Age as <b>imagined by J.R.R. Tolkien</b> in his books.
       </p>
+      <p>You can follow the development and creation process of the map in <a href="https://www.jeantinland.com/journal/lotr/" target="_blank" rel="nofollow noopener">this journal</a>.</p>
     </div>
     <div class="credits">
       <h2>Credits</h2>
