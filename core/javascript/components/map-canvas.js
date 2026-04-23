@@ -11,10 +11,10 @@ import TileManager, { MAX_TILE_ZOOM } from "../lib/tile-manager.js";
 
 const BASE_W = 1800;
 const BASE_H = 1300;
-const ZOOM_STEPS = 25;
-const MAX_SCALE = 20;
-const MOBILE_EXTRA_STEPS = 8;
-const MOBILE_MAX_SCALE = 40;
+const ZOOM_STEPS = 26;
+const MAX_SCALE = 24;
+const MOBILE_EXTRA_STEPS = 9;
+const MOBILE_MAX_SCALE = 48;
 const WHEEL_THRESHOLD = 100;
 const ZOOM_MS = 120;
 const TILE_DEBOUNCE_IN = 600;

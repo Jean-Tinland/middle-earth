@@ -7,18 +7,21 @@ const VIEWPORT_PADDING = 12;
 const SEARCH_ENGINES = Object.freeze([
   {
     label: "LOTR Wiki",
+    sources: ["Canon"],
     buildUrl: (encoded) =>
       `https://lotr.fandom.com/wiki/Special:Search?query=${encoded}&scope=internal&navigationSearch=true`,
   },
   {
-    label: "Notion Club Archives",
-    buildUrl: (encoded) =>
-      `https://notionclubarchives.fandom.com/wiki/Special:Search?query=${encoded}&scope=internal&navigationSearch=true`,
-  },
-  {
     label: "Tolkien Gateway",
+    sources: ["Canon"],
     buildUrl: (encoded) =>
       `https://tolkiengateway.net/w/index.php?fulltext=1&search=${encoded}&title=Special:Search&ns0=1`,
+  },
+  {
+    label: "Notion Club Archives",
+    sources: ["Canon", "MERP"],
+    buildUrl: (encoded) =>
+      `https://notionclubarchives.fandom.com/wiki/Special:Search?query=${encoded}&scope=internal&navigationSearch=true`,
   },
 ]);
 
@@ -49,12 +52,17 @@ export default class MapPopover extends HTMLElement {
     this.root.innerHTML = this.#buildTemplate(name, source);
   }
 
-  #buildSearchLinks = (name) => {
+  #buildSearchLinks = (name, source) => {
     const encoded = encodeURIComponent(name);
-    return SEARCH_ENGINES.map(({ label, buildUrl }, index) => {
-      const separator = index < SEARCH_ENGINES.length - 1 ? ",&nbsp;" : "";
-      return `<a href="${buildUrl(encoded)}" class="search-link" target="_blank" rel="noopener noreferrer">${label}</a>${separator}`;
-    }).join("");
+    const filteredEngines = SEARCH_ENGINES.filter(({ sources }) =>
+      sources.includes(source),
+    );
+    return filteredEngines
+      .map(({ label, buildUrl }, index) => {
+        const separator = index < filteredEngines.length - 1 ? ",&nbsp;" : "";
+        return `<a href="${buildUrl(encoded)}" class="search-link" target="_blank" rel="noopener noreferrer">${label}</a>${separator}`;
+      })
+      .join("");
   };
 
   #buildTemplate = (name, source) => /* html */ `
@@ -64,7 +72,7 @@ export default class MapPopover extends HTMLElement {
       </button>
       <div class="name">${name}</div>
       <div class="source">Source: ${source}</div>
-      <div class="search-label">Search on: ${this.#buildSearchLinks(name)}</div>
+      <div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>
     </div>
   `;
 

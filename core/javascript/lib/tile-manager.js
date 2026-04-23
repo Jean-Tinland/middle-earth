@@ -1,6 +1,6 @@
 const TILE_SIZE = 512;
-const MAX_TILE_ZOOM = 7;
-const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10];
+const MAX_TILE_ZOOM = 8;
+const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 
 const DESKTOP_PRELOAD_MARGIN = 128;
 const DESKTOP_BATCH_SIZE = 10;
