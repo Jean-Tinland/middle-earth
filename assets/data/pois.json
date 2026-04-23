@@ -551,8 +551,7 @@
       "name": "Minas Tirith",
       "position": [56.06, 65.73],
       "size": 1,
-      "zoom": 3,
-      "illustration": "/assets/images/places/minas_tirith.png"
+      "zoom": 3
     },
     {
       "kind": "city",
@@ -568,8 +567,7 @@
       "name": "Minas Morgul",
       "position": [59.4, 64.54],
       "size": 2,
-      "zoom": 8,
-      "illustration": "/assets/images/places/minas_morgul.png"
+      "zoom": 8
     },
     {
       "kind": "city",
@@ -833,8 +831,7 @@
       "name": "Tharbad",
       "position": [32.05, 36.79],
       "size": 2,
-      "zoom": 8,
-      "illustration": "/assets/images/places/tharbad.png"
+      "zoom": 8
     },
     {
       "kind": "city",
@@ -858,8 +855,7 @@
       "name": "Isengard",
       "position": [38.26, 52.32],
       "size": 2,
-      "zoom": 8,
-      "illustration": "/assets/images/places/isengard.png"
+      "zoom": 8
     },
     {
       "kind": "city",
@@ -1371,8 +1367,7 @@
       "name": "Bag End",
       "position": [23.13, 23.44],
       "size": 4,
-      "zoom": 21,
-      "illustration": "/assets/images/places/bag_end.png"
+      "zoom": 21
     },
     {
       "kind": "common-place",
@@ -1500,8 +1495,7 @@
       "name": "Argonath",
       "position": [52.46, 54.63],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/argonath.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1509,8 +1503,7 @@
       "name": "Amon Hen",
       "position": [52.6, 57.17],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/amon_hen.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1670,8 +1663,7 @@
       "name": "The Black Gate",
       "position": [59.71, 57.21],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/the_black_gate.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1727,8 +1719,7 @@
       "name": "Cirith Ungol",
       "position": [59.61, 63.66],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/cirith_ungol.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1776,8 +1767,7 @@
       "name": "Tower Hills",
       "position": [16.24, 26.71],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/tower_hills.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
@@ -1857,8 +1847,7 @@
       "name": "Barad-dûr",
       "position": [65.58, 61.66],
       "size": 3,
-      "zoom": 13,
-      "illustration": "/assets/images/places/barad_dur.png"
+      "zoom": 13
     },
     {
       "kind": "common-place",
