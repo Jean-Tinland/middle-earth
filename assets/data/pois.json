@@ -309,13 +309,13 @@
       "kind": "region",
       "source": "Canon",
       "name": "The Wold",
-      "position": [49.28, 48.59],
+      "position": [50.0, 47.53],
       "zoom": 3,
       "size": 3
     },
     {
       "kind": "region",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Gathod",
       "position": [79.27, 49.43],
       "zoom": 3,
@@ -323,7 +323,7 @@
     },
     {
       "kind": "region",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Sagathavuld",
       "position": [71.65, 51.35],
       "zoom": 3,
@@ -332,7 +332,7 @@
     {
       "kind": "region",
       "source": "Canon",
-      "name": "West Emnet",
+      "name": "Westemnet",
       "position": [44.73, 55.76],
       "zoom": 3,
       "size": 3
@@ -340,7 +340,7 @@
     {
       "kind": "region",
       "source": "Canon",
-      "name": "East Emnet",
+      "name": "Eastemnet",
       "position": [48.42, 56.7],
       "zoom": 3,
       "size": 3
@@ -349,7 +349,7 @@
       "kind": "region",
       "source": "Canon",
       "name": "The Brown Lands",
-      "position": [56.49, 45.75],
+      "position": [53.3, 44.62],
       "zoom": 3,
       "size": 3
     },
@@ -573,7 +573,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Ilanin",
       "position": [70.62, 31.86],
       "size": 2,
@@ -581,7 +581,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Szrel-Kain",
       "position": [76.51, 33.13],
       "size": 2,
@@ -589,7 +589,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Mistrand",
       "position": [81.87, 44.94],
       "size": 2,
@@ -1564,7 +1564,7 @@
       "kind": "common-place",
       "source": "Canon",
       "name": "Havens of Umbar",
-      "position": [46.12, 96.2],
+      "position": [45.52, 94.78],
       "size": 3,
       "zoom": 13
     },
