@@ -14,9 +14,9 @@ You can follow [this journal](https://www.jeantinland.com/journal/lotr/) to see 
 ## Credits
 
 - Map drawn in Figma with custom terrain & landmark elements.
-- Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks:
+<!-- - Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-Earth paintings and artworks:
   - Tharbad is drawn based on Rob Alexander's painting of the city: [Tharbad](https://tolkiengateway.net/wiki/Tharbad#/media/File:Rob_Alexander_-_The_Ruins_of_Tharbad.jpg).
-  - Tower Hill is drawn based on the painting of the same place by Nasmith Elostirion: [Tower Hill](https://lotr.fandom.com/wiki/Tower_Hills?file=Nasmith_elostirion.jpg).
+  - Tower Hill is drawn based on the painting of the same place by Nasmith Elostirion: [Tower Hill](https://lotr.fandom.com/wiki/Tower_Hills?file=Nasmith_elostirion.jpg). -->
 - Points of interest have been collected from various sources, including:
   - Original maps by J.R.R. Tolkien and his son Christopher Tolkien.
   - **The Atlas of Middle-earth** by Karen Wynn Fonstad.
