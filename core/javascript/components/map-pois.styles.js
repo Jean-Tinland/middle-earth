@@ -97,6 +97,7 @@ const styles = /* css */ `
   .poi[data-kind="hamlet"] .dot {
     border: none;
     box-shadow: none;
+    transform: scale(0.7);
   }
 
   .poi:is([data-kind="city"], [data-kind="hamlet"])[data-size="1"] .dot {
