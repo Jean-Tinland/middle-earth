@@ -86,11 +86,7 @@ export const content = /* html */ `
     </div>
     <div class="known-issues">
       <h2>Known issues</h2>
-      <ul>
-        <li>
-          After prolonged use, the map can totally freeze on IOS devices. A simple page refresh fixes the issue. I'm working on finding a solution.
-        </li>
-      </ul>
+      <p>There is no known issue at the moment.</p>
     </div>
   </div>
 `;
