@@ -60,7 +60,7 @@ export const content = /* html */ `
           Button's icons: extracted from <a href="https://remixicon.com/" target="_blank" rel="nofollow noopener">Remix Icon collection</a>.
         </li>
         <li>
-          Favicon: <a href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" ref="nofollow noopener" href="https://icons8.com">Icons8</a>.
+          Favicon: <a href="https://icons8.com/icon/20169/one-ring" target="_blank" rel="nofollow noopener">One Ring</a> icon by <a target="_blank" rel="nofollow noopener" href="https://icons8.com">Icons8</a>.
         </li>
         <li>
           Map texture overlay: <a href="https://www.freepik.com/free-ai-image/wooden-floor-background_4100933.htm#fromView=keyword&page=1&position=0&uuid=cb06f3fd-0006-4ddd-93a7-8622848f46be&query=Old+Map+Texture" target="_blank" rel="nofollow noopener">Image by rawpixel.com on Freepik</a>.
@@ -79,7 +79,9 @@ export const content = /* html */ `
     <div class="source">
       <h2>Source</h2>
       <p>
-        <b>Source code is available on github <a href="https://github.com/Jean-Tinland/middle-earth/" target="_blank">here</a></b>.
+        <b>Source code is available on github <a href="https://github.com/Jean-Tinland/middle-earth/" target="_blank" rel="noopener noreferrer">here</a></b>.
+        <br />
+        Project overview, methodology and FAQ are available on the <a href="/about.html">about page</a>.
         <br />
         Feel free to open issue or contribute if you'd like anything fixed or added.
       </p>

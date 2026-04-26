@@ -1,0 +1,29 @@
+# Middle-Earth Interactive Map
+
+> Unofficial fan-made interactive map of Middle-earth at the end of the Third Age.
+
+## Canonical site
+
+- https://middle-earth.jeantinland.com/
+
+## Primary pages
+
+- / : Interactive map application
+- /about.html : Project overview, sources, and FAQ
+
+## Data references
+
+- /assets/data/pois.json : Points of interest dataset
+- /assets/schemas/pois.json : JSON Schema for POI data
+
+## Crawl and interpretation guidance
+
+- Query parameters z, x, y, and r represent map viewport state only.
+- Treat https://middle-earth.jeantinland.com/ as the canonical URL for map-state variants.
+- Use /about.html for concise methodology and FAQ context.
+
+## Attribution guidance
+
+- Suggested citation name: Middle-Earth Interactive Map by Jean Tinland.
+- Source code repository: https://github.com/Jean-Tinland/middle-earth/
+- Development journal: https://www.jeantinland.com/journal/lotr/

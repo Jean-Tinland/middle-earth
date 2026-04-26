@@ -4,62 +4,217 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
 
-    <!-- HTML Meta Tags -->
     <title>Middle-Earth Interactive Map</title>
     <meta
       name="description"
-      content="Explore the interactive map of Middle-Earth, the legendary world created by J.R.R. Tolkien."
+      content="Explore an interactive map of Middle-earth at the end of the Third Age, with zoomable landmarks, regions, and sources from Tolkien map references."
     />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="Jean Tinland" />
 
-    <!-- Mobile Meta Tags -->
+    <meta name="theme-color" content="#100f0f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="theme-color" content="#100f0f" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Middle-Earth Map" />
 
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="https://middle-earth.jeantinland.com/" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Middle-Earth Interactive Map" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://middle-earth.jeantinland.com/" />
     <meta property="og:title" content="Middle-Earth Interactive Map" />
     <meta
       property="og:description"
-      content="Explore the interactive map of Middle-Earth, the legendary world created by J.R.R. Tolkien."
+      content="Explore an interactive map of Middle-earth at the end of the Third Age with map legend, place filters, and zoomable regions."
     />
     <meta
       property="og:image"
       content="https://middle-earth.jeantinland.com/assets/images/preview.png"
     />
-
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:domain" content="middle-earth.jeantinland.com" />
     <meta
-      property="twitter:url"
-      content="https://middle-earth.jeantinland.com/"
+      property="og:image:alt"
+      content="Hand-drawn style interactive map of Middle-earth."
     />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:domain" content="middle-earth.jeantinland.com" />
+    <meta name="twitter:url" content="https://middle-earth.jeantinland.com/" />
     <meta name="twitter:title" content="Middle-Earth Interactive Map" />
     <meta
       name="twitter:description"
-      content="Explore the interactive map of Middle-Earth, the legendary world created by J.R.R. Tolkien."
+      content="Explore an interactive map of Middle-earth at the end of the Third Age with zoomable points of interest."
     />
     <meta
       name="twitter:image"
       content="https://middle-earth.jeantinland.com/assets/images/preview.png"
     />
+    <meta
+      name="twitter:image:alt"
+      content="Hand-drawn style interactive map of Middle-earth."
+    />
 
-    <link rel="canonical" href="https://github.com/Jean-Tinland/middle-earth" />
-    <link rel="icon" type="image/svg+xml" href="./assets/images/favicon.svg" />
+    <link rel="canonical" href="https://middle-earth.jeantinland.com/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://middle-earth.jeantinland.com/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://middle-earth.jeantinland.com/"
+    />
+    <link
+      rel="sitemap"
+      type="application/xml"
+      href="https://middle-earth.jeantinland.com/sitemap.xml"
+    />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg" />
     <link rel="stylesheet" href="./core/styles/variables.css" />
     <link rel="stylesheet" href="./core/styles/reset.css" />
     <link rel="stylesheet" href="./core/styles/fonts.css" />
     <link rel="stylesheet" href="./core/styles/base.css" />
+
+    <style>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://middle-earth.jeantinland.com/#website",
+            "url": "https://middle-earth.jeantinland.com/",
+            "name": "Middle-Earth Interactive Map",
+            "description": "Explore an interactive map of Middle-earth at the end of the Third Age.",
+            "inLanguage": "en",
+            "publisher": {
+              "@id": "https://middle-earth.jeantinland.com/#person"
+            }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://middle-earth.jeantinland.com/#app",
+            "name": "Middle-Earth Interactive Map",
+            "url": "https://middle-earth.jeantinland.com/",
+            "description": "A fan-made interactive map of Middle-earth with zoomable points of interest and map legend filters.",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web Browser",
+            "isAccessibleForFree": true,
+            "browserRequirements": "Requires JavaScript",
+            "image": "https://middle-earth.jeantinland.com/assets/images/preview.png",
+            "screenshot": "https://middle-earth.jeantinland.com/assets/images/preview.png",
+            "creator": {
+              "@id": "https://middle-earth.jeantinland.com/#person"
+            }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://middle-earth.jeantinland.com/#person",
+            "name": "Jean Tinland",
+            "url": "https://www.jeantinland.com/",
+            "sameAs": [
+              "https://www.jeantinland.com/",
+              "https://github.com/Jean-Tinland"
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
+    <main id="app" role="main" aria-label="Middle-Earth Interactive Map">
+      <h1 class="sr-only">Middle-Earth Interactive Map</h1>
+      <p class="sr-only">
+        Explore a hand-drawn, interactive map of Middle-earth with zoomable
+        places, landmarks, and region names.
+      </p>
+    </main>
+
+    <noscript>
+      <style>
+        html,
+        body {
+          overflow: auto;
+          touch-action: auto;
+          background: #f0e8d7;
+          color: #100f0f;
+          font-family: "IM Fell DW Pica", serif;
+          line-height: 1.5;
+        }
+
+        .noscript-content {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 24px;
+        }
+
+        .noscript-content h1,
+        .noscript-content h2 {
+          margin: 16px 0 10px;
+        }
+
+        .noscript-content p,
+        .noscript-content li {
+          margin: 0 0 10px;
+        }
+
+        .noscript-content ul {
+          list-style: disc;
+          padding-left: 20px;
+        }
+
+        .noscript-content a {
+          text-decoration: underline;
+        }
+      </style>
+
+      <main class="noscript-content">
+        <h1>Middle-Earth Interactive Map</h1>
+        <p>
+          This unofficial fan-made project lets you explore Middle-earth at the
+          end of the Third Age with zoomable points of interest, labels, and
+          source filtering.
+        </p>
+        <p>JavaScript is required to use the interactive map.</p>
+
+        <h2>Useful links</h2>
+        <ul>
+          <li><a href="/about.html">About, methodology, and FAQ</a></li>
+          <li>
+            <a href="https://www.jeantinland.com/journal/lotr/"
+              >Project journal</a
+            >
+          </li>
+          <li>
+            <a href="https://github.com/Jean-Tinland/middle-earth/"
+              >Source code repository</a
+            >
+          </li>
+        </ul>
+      </main>
+    </noscript>
+
     <script
       type="module"
       src="./core/javascript/components/map-canvas.js"
@@ -69,7 +224,10 @@
         "load",
         async () => {
           await customElements.whenDefined("map-canvas");
-          document.body.appendChild(document.createElement("map-canvas"));
+          const appRoot = document.getElementById("app");
+          if (appRoot) {
+            appRoot.appendChild(document.createElement("map-canvas"));
+          }
         },
         { once: true },
       );

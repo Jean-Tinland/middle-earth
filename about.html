@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>About Middle-Earth Interactive Map | Sources and FAQ</title>
+    <meta
+      name="description"
+      content="Learn how the Middle-earth interactive map is built, what sources are used, and get answers to common questions about map data and features."
+    />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="author" content="Jean Tinland" />
+    <meta name="theme-color" content="#100f0f" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Middle-Earth Interactive Map" />
+    <meta property="og:locale" content="en_US" />
+    <meta
+      property="og:url"
+      content="https://middle-earth.jeantinland.com/about.html"
+    />
+    <meta property="og:title" content="About Middle-Earth Interactive Map" />
+    <meta
+      property="og:description"
+      content="Methodology, map sources, and FAQ for the fan-made interactive Middle-earth map."
+    />
+    <meta
+      property="og:image"
+      content="https://middle-earth.jeantinland.com/assets/images/preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="Hand-drawn style interactive map of Middle-earth."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:domain" content="middle-earth.jeantinland.com" />
+    <meta
+      name="twitter:url"
+      content="https://middle-earth.jeantinland.com/about.html"
+    />
+    <meta name="twitter:title" content="About Middle-Earth Interactive Map" />
+    <meta
+      name="twitter:description"
+      content="Methodology, map sources, and FAQ for the fan-made interactive Middle-earth map."
+    />
+    <meta
+      name="twitter:image"
+      content="https://middle-earth.jeantinland.com/assets/images/preview.png"
+    />
+
+    <link
+      rel="canonical"
+      href="https://middle-earth.jeantinland.com/about.html"
+    />
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg" />
+    <link rel="stylesheet" href="./core/styles/variables.css" />
+    <link rel="stylesheet" href="./core/styles/fonts.css" />
+
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #100f0f;
+        font-family: "IM Fell DW Pica", serif;
+        line-height: 1.55;
+        background: linear-gradient(180deg, #f4eddc 0%, #efe5cf 100%);
+      }
+
+      .page {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 24px 20px 40px;
+      }
+
+      .breadcrumbs {
+        margin-bottom: 14px;
+        font-size: 0.95rem;
+      }
+
+      .breadcrumbs a {
+        color: #643322;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.25;
+        margin: 18px 0 10px;
+      }
+
+      p,
+      li {
+        font-size: 1.05rem;
+      }
+
+      ul {
+        margin: 8px 0 14px;
+        padding-left: 20px;
+      }
+
+      .lede {
+        font-size: 1.12rem;
+        margin-bottom: 12px;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.52);
+        border: 1px solid rgba(100, 51, 34, 0.25);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .faq-item + .faq-item {
+        margin-top: 12px;
+      }
+
+      .faq-item h3 {
+        margin-bottom: 6px;
+      }
+
+      .actions {
+        margin-top: 24px;
+      }
+
+      .actions a {
+        display: inline-block;
+        border-radius: 6px;
+        border: 1px solid rgba(100, 51, 34, 0.35);
+        padding: 8px 12px;
+        color: #100f0f;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      .actions a:hover {
+        background: rgba(100, 51, 34, 0.1);
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          padding: 18px 14px 30px;
+        }
+      }
+    </style>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "AboutPage",
+            "@id": "https://middle-earth.jeantinland.com/about.html#about",
+            "url": "https://middle-earth.jeantinland.com/about.html",
+            "name": "About Middle-Earth Interactive Map",
+            "inLanguage": "en",
+            "isPartOf": {
+              "@id": "https://middle-earth.jeantinland.com/#website"
+            },
+            "about": {
+              "@type": "CreativeWork",
+              "name": "Middle-Earth Interactive Map"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://middle-earth.jeantinland.com/about.html#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What does the map include?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The map includes regions, cities, hamlets, rivers, mountains, forests, seas, and notable places with zoom-based visibility and optional illustrations."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Where do points of interest come from?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Points of interest are curated from Tolkien map references, The Atlas of Middle-earth by Karen Wynn Fonstad, and MERP map material."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I share a specific map position?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Zoom level, map center, and rotation are persisted in URL parameters so specific views can be shared directly."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is this an official Middle-earth project?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. This is an unofficial fan-made project and is not affiliated with the Tolkien Estate, Middle-earth Enterprises, or film studios."
+                }
+              }
+            ]
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Map",
+                "item": "https://middle-earth.jeantinland.com/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "About",
+                "item": "https://middle-earth.jeantinland.com/about.html"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <main class="page">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">Interactive map</a> / About
+      </nav>
+
+      <h1>About the Middle-Earth Interactive Map</h1>
+      <p class="lede">
+        This project provides a fan-made interactive map of Middle-earth at the
+        end of the Third Age with zoom controls, point-of-interest labels, and
+        source filtering.
+      </p>
+
+      <section aria-labelledby="what-includes">
+        <h2 id="what-includes">What the map includes</h2>
+        <ul>
+          <li>
+            Map labels for regions, forests, mountain ranges, rivers, and seas.
+          </li>
+          <li>
+            Points of interest grouped by size and type (hamlets, towns, cities,
+            notable places).
+          </li>
+          <li>
+            Source-aware filtering so users can show canon references only.
+          </li>
+          <li>
+            Sharable views through URL state (zoom level, center, and rotation).
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="sources-and-method" class="card">
+        <h2 id="sources-and-method">Sources and methodology</h2>
+        <p>
+          Places are collected from several references including original
+          Tolkien cartography, Christopher Tolkien maps, The Atlas of
+          Middle-earth by Karen Wynn Fonstad, and MERP map material.
+        </p>
+        <p>
+          The drawing, terrain composition, and interaction design are
+          handcrafted to keep the map legible at multiple zoom levels.
+        </p>
+      </section>
+
+      <section aria-labelledby="faq">
+        <h2 id="faq">Frequently asked questions</h2>
+
+        <article class="faq-item">
+          <h3>What does the map include?</h3>
+          <p>
+            The map includes regions, cities, hamlets, rivers, mountains,
+            forests, seas, and notable places with zoom-based visibility and
+            optional illustrations.
+          </p>
+        </article>
+
+        <article class="faq-item">
+          <h3>Where do points of interest come from?</h3>
+          <p>
+            Points of interest are curated from Tolkien map references, The
+            Atlas of Middle-earth by Karen Wynn Fonstad, and MERP map material.
+          </p>
+        </article>
+
+        <article class="faq-item">
+          <h3>Can I share a specific map position?</h3>
+          <p>
+            Yes. Zoom level, map center, and rotation are persisted in URL
+            parameters so specific views can be shared directly.
+          </p>
+        </article>
+
+        <article class="faq-item">
+          <h3>Is this an official Middle-earth project?</h3>
+          <p>
+            No. This is an unofficial fan-made project and is not affiliated
+            with the Tolkien Estate, Middle-earth Enterprises, or film studios.
+          </p>
+        </article>
+      </section>
+
+      <section aria-labelledby="credits-links">
+        <h2 id="credits-links">Project links</h2>
+        <ul>
+          <li><a href="/">Open the interactive map</a></li>
+          <li>
+            <a href="https://www.jeantinland.com/journal/lotr/"
+              >Read the development journal</a
+            >
+          </li>
+          <li>
+            <a href="https://github.com/Jean-Tinland/middle-earth/"
+              >Browse the source code on GitHub</a
+            >
+          </li>
+        </ul>
+      </section>
+
+      <p class="actions">
+        <a href="/">Back to the map</a>
+      </p>
+    </main>
+  </body>
+</html>
