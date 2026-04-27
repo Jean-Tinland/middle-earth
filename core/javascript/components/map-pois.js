@@ -10,7 +10,7 @@ const TEXT_MULT = Object.freeze({
   forest: Object.freeze({ 1: 0.95, 2: 0.8, 3: 0.65, 4: 0.55 }),
   mountain: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.45, 4: 0.4 }),
   "common-place": Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.6, 4: 0.5 }),
-  sea: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.55, 4: 0.45 }),
+  sea: Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.55, 4: 0.45 }),
   city: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45, 4: 0.4 }),
   hamlet: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.4, 4: 0.4 }),
   river: Object.freeze({ 1: 0.75, 2: 0.65, 3: 0.55 }),
