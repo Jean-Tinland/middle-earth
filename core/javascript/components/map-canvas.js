@@ -67,6 +67,8 @@ export default class MapCanvas extends HTMLElement {
     this.prevTouch = null;
     this.touchMoved = false;
     this.dragging = false;
+    this.mouseMoved = false;
+    this.suppressPoiClick = false;
 
     // Pinch state
     this.pinching = false;
@@ -409,10 +411,19 @@ export default class MapCanvas extends HTMLElement {
     e.preventDefault();
     e.stopPropagation();
     this.dragging = true;
+    this.mouseMoved = false;
+    this.suppressPoiClick = false;
     clearTimeout(this.transTimer);
     this.canvas.addEventListener("pointermove", this.#onDrag);
     this.canvas.style.cursor = "grabbing";
     this.canvas.style.transition = "none";
+  };
+
+  #onCanvasClickCapture = (e) => {
+    if (!this.suppressPoiClick) return;
+    this.suppressPoiClick = false;
+    e.preventDefault();
+    e.stopImmediatePropagation();
   };
 
   #onMouseUp = (e) => {
@@ -421,6 +432,11 @@ export default class MapCanvas extends HTMLElement {
     const wasPinch = this.pinching;
     this.pinching = false;
     const isTouch = e.type === "touchend";
+    const isMouseUp = e.type === "mouseup";
+    if (isMouseUp) {
+      this.suppressPoiClick = this.mouseMoved;
+      this.mouseMoved = false;
+    }
     if (!isTouch || this.touchMoved || wasPinch) {
       e.preventDefault();
       e.stopPropagation();
@@ -497,6 +513,10 @@ export default class MapCanvas extends HTMLElement {
       }
     }
 
+    if (e.type !== "touchmove" && (e.movementX !== 0 || e.movementY !== 0)) {
+      this.mouseMoved = true;
+    }
+
     if (e.shiftKey && !this.pinching) {
       this.#rotateAroundCenter((e.movementY - e.movementX) * ROTATION_SPEED);
       this.#applyTransform();
@@ -518,6 +538,7 @@ export default class MapCanvas extends HTMLElement {
   #onTouchStart = (e) => {
     clearTimeout(this.transTimer);
     this.canvas.style.transition = "none";
+    this.suppressPoiClick = false;
 
     if (e.touches.length === 2) {
       e.preventDefault();
@@ -769,6 +790,7 @@ export default class MapCanvas extends HTMLElement {
 
     // Event listeners
     this.canvas.addEventListener("dblclick", this.#onDblClick);
+    this.canvas.addEventListener("click", this.#onCanvasClickCapture, true);
     this.canvas.addEventListener("mousedown", this.#onMouseDown);
     this.canvas.addEventListener("mouseup", this.#onMouseUp);
     this.canvas.addEventListener("touchstart", this.#onTouchStart, {
@@ -799,6 +821,7 @@ export default class MapCanvas extends HTMLElement {
     window.removeEventListener("resize", this.#onResize);
     window.removeEventListener("mouseout", this.#onMouseUp);
     window.removeEventListener("wheel", this.#onWheel);
+    this.canvas.removeEventListener("click", this.#onCanvasClickCapture, true);
     this.canvas.removeEventListener("click", this.#onDebugClick);
     this.root.removeEventListener("poi-canon-only-change", this.#onCanonChange);
     this.root.removeEventListener(
