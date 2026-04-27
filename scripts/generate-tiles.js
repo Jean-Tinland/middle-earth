@@ -88,9 +88,7 @@ function renderProgress(doneRows, totalRows, doneTiles, totalTiles) {
   const filled = Math.round((doneRows / totalRows) * BAR_WIDTH);
   const bar = "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
   const percent = String(Math.floor((doneRows / totalRows) * 100)).padStart(3);
-  process.stdout.write(
-    `\r${bar} ${doneRows}/${totalRows} rows  ${percent}%  |  ${doneTiles}/${totalTiles} tiles`,
-  );
+  process.stdout.write(`\r${bar} ${doneRows}/${totalRows} rows  ${percent}%`);
 }
 
 async function runWithWorkers(jobs, workerCount, totalRows, totalTiles) {
