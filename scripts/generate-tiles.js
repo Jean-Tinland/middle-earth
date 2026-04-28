@@ -6,7 +6,7 @@ const TILE_SIZE = 512;
 const ZOOM_LEVELS = 9;
 const INPUT_DIR = "./assets/images/map";
 const OUTPUT_DIR = "./assets/images/map/tiles";
-const JPEG_QUALITY = 95;
+const JPEG_QUALITY = 100;
 const WORKER_COUNT = 4;
 const INPUT_PIXEL_LIMIT = 400000000;
 
