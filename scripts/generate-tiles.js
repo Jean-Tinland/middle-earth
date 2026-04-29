@@ -1,10 +1,22 @@
 import sharp from "sharp";
-import { mkdir } from "fs/promises";
+import { mkdir, rm } from "fs/promises";
 import { join } from "path";
 
 const TILE_SIZE = 512;
-const ZOOM_LEVELS = 9;
-const INPUT_DIR = "./assets/images/map";
+const ZOOM_SIZES = [
+  { width: 1900, height: 1300 },
+  { width: 3800, height: 2600 },
+  { width: 5700, height: 3900 },
+  { width: 7600, height: 5200 },
+  { width: 9500, height: 6500 },
+  { width: 11400, height: 7800 },
+  { width: 15200, height: 10400 },
+  { width: 19000, height: 13000 },
+  { width: 22800, height: 15600 },
+];
+const ZOOM_LEVELS = ZOOM_SIZES.length;
+const INPUT_MAP_DIR = "./assets/images/map";
+const INPUT_MAP_PATH = join(INPUT_MAP_DIR, "map.jpg");
 const OUTPUT_DIR = "./assets/images/map/tiles";
 const JPEG_QUALITY = 100;
 const WORKER_COUNT = 4;
@@ -13,13 +25,68 @@ const INPUT_PIXEL_LIMIT = 400000000;
 // Each tile is small (512px); one libvips thread per tile avoids contention.
 sharp.concurrency(1);
 
-async function loadSource(zoom) {
-  const path = join(INPUT_DIR, `map-${zoom}.jpg`);
-  const buffer = Buffer.from(await Bun.file(path).arrayBuffer());
+async function loadBaseMap() {
+  const buffer = Buffer.from(await Bun.file(INPUT_MAP_PATH).arrayBuffer());
   const { width, height } = await sharp(buffer, {
     limitInputPixels: INPUT_PIXEL_LIMIT,
   }).metadata();
-  return { zoom, buffer, width, height };
+
+  return { buffer, width, height };
+}
+
+function validateBaseMapSize(baseMap) {
+  const expectedMaxZoom = ZOOM_SIZES[ZOOM_LEVELS - 1];
+  if (
+    baseMap.width !== expectedMaxZoom.width ||
+    baseMap.height !== expectedMaxZoom.height
+  ) {
+    throw new Error(
+      `Invalid map.jpg dimensions: got ${baseMap.width}x${baseMap.height}, expected ${expectedMaxZoom.width}x${expectedMaxZoom.height}.`,
+    );
+  }
+}
+
+async function buildZoomSource(baseMap, zoom) {
+  const targetSize = ZOOM_SIZES[zoom];
+  const isMaxZoom =
+    baseMap.width === targetSize.width && baseMap.height === targetSize.height;
+
+  const buffer = isMaxZoom
+    ? baseMap.buffer
+    : await sharp(baseMap.buffer, {
+        limitInputPixels: INPUT_PIXEL_LIMIT,
+      })
+        .resize(targetSize.width, targetSize.height, {
+          fit: "fill",
+          kernel: sharp.kernel.lanczos3,
+        })
+        .jpeg({ quality: JPEG_QUALITY })
+        .toBuffer();
+
+  return {
+    zoom,
+    buffer,
+    width: targetSize.width,
+    height: targetSize.height,
+  };
+}
+
+async function buildZoomSources(baseMap, targetZooms) {
+  const sources = [];
+
+  for (const zoom of targetZooms) {
+    sources.push(await buildZoomSource(baseMap, zoom));
+  }
+
+  return sources;
+}
+
+async function removeLegacyZoomMaps() {
+  const zoomMapPaths = Array.from({ length: ZOOM_LEVELS }, (_, zoom) =>
+    join(INPUT_MAP_DIR, `map-${zoom}.jpg`),
+  );
+
+  await Promise.all(zoomMapPaths.map((path) => rm(path, { force: true })));
 }
 
 async function writeRowTiles(source, row) {
@@ -131,16 +198,18 @@ async function main() {
   const start = performance.now();
   const targetZooms = resolveTargetZooms();
 
-  console.log("Generating tiles...\n");
+  console.log("Generating zoom levels from map.jpg...\n");
 
-  const [sources] = await Promise.all([
-    Promise.all(targetZooms.map((zoom) => loadSource(zoom))),
-    Promise.all(
-      targetZooms.map((zoom) =>
-        mkdir(join(OUTPUT_DIR, `${zoom}`), { recursive: true }),
-      ),
+  const baseMap = await loadBaseMap();
+  validateBaseMapSize(baseMap);
+
+  await Promise.all(
+    targetZooms.map((zoom) =>
+      mkdir(join(OUTPUT_DIR, `${zoom}`), { recursive: true }),
     ),
-  ]);
+  );
+
+  const sources = await buildZoomSources(baseMap, targetZooms);
 
   const { jobs, totalRows, totalTiles } = collectTileJobs(sources);
   console.log(
@@ -148,9 +217,13 @@ async function main() {
   );
 
   await runWithWorkers(jobs, WORKER_COUNT, totalRows, totalTiles);
+  await removeLegacyZoomMaps();
 
   const elapsed = ((performance.now() - start) / 1000).toFixed(1);
   console.log(`Done in ${elapsed}s`);
 }
 
-main();
+main().catch((error) => {
+  console.error(error.message);
+  process.exit(1);
+});
