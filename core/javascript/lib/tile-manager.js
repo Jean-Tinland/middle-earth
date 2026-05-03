@@ -1,6 +1,8 @@
 const TILE_SIZE = 512;
 const MAX_TILE_ZOOM = 8;
 const ZOOM_SOURCE_SCALE = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const TILES_CANON_DIR = "./assets/images/map/tiles";
+const TILES_EXTENDED_DIR = "./assets/images/map/tiles-extended";
 
 const DESKTOP_PRELOAD_MARGIN = 128;
 const DESKTOP_BATCH_SIZE = 10;
@@ -25,6 +27,8 @@ export default class TileManager {
   #batch;
   /** @type {number} */
   #margin;
+  /** @type {string} */
+  #tilesDir;
 
   // Active layer state
   /** @type {number} */
@@ -86,7 +90,7 @@ export default class TileManager {
   static #INTERSECTING = 4;
   static #IN_FLIGHT = 8;
 
-  constructor(container, baseW, baseH, mobile = false) {
+  constructor(container, baseW, baseH, mobile = false, canonOnly = false) {
     this.#version = document.documentElement.dataset.buildVersion || "0";
     this.#container = container;
     this.#baseW = baseW;
@@ -94,6 +98,21 @@ export default class TileManager {
     this.#mobile = mobile;
     this.#batch = mobile ? MOBILE_BATCH_SIZE : DESKTOP_BATCH_SIZE;
     this.#margin = mobile ? MOBILE_PRELOAD_MARGIN : DESKTOP_PRELOAD_MARGIN;
+    this.#tilesDir = canonOnly ? TILES_CANON_DIR : TILES_EXTENDED_DIR;
+  }
+
+  setCanonOnly(canonOnly, zoom = this.#activeZoom) {
+    const nextDir = canonOnly ? TILES_CANON_DIR : TILES_EXTENDED_DIR;
+    if (nextDir === this.#tilesDir) return;
+
+    this.#tilesDir = nextDir;
+    this.cancelPendingLoad();
+    this.removeBackdrop();
+    this.resetLayers();
+
+    const targetZoom =
+      Number.isFinite(zoom) && zoom >= 0 ? zoom : Math.max(0, this.#activeZoom);
+    this.renderTiles(targetZoom);
   }
 
   get activeTileZoom() {
@@ -283,8 +302,7 @@ export default class TileManager {
         const w = colEdge[c + 1] - left;
         const h = rowEdge[r + 1] - top;
 
-        srcs[i] =
-          `./assets/images/map/tiles/${zoom}/${r}-${c}.jpg?v=${this.#version}`;
+        srcs[i] = `${this.#tilesDir}/${zoom}/${r}-${c}.jpg?v=${this.#version}`;
 
         const ph = document.createElement("div");
         ph.style.cssText = `display:block;position:absolute;left:${left}px;top:${top}px;width:${w}px;height:${h}px;pointer-events:none;contain:strict;`;

@@ -27,6 +27,8 @@ const FONT_LOCK = 8;
 const PORTRAIT_FONT_MIN = 0.65;
 const POI_REF_H = 900;
 const URL_DEBOUNCE = 400;
+const STORAGE_KEY_CANON_ONLY = "map-canon-only";
+const STORAGE_KEY_ILLUSTRATIONS = "map-illustrations";
 
 const tileZoomFor = (level, steps) =>
   Math.min(MAX_TILE_ZOOM, Math.round((level * MAX_TILE_ZOOM) / steps));
@@ -725,13 +727,18 @@ export default class MapCanvas extends HTMLElement {
   };
 
   #applyPoiPrefs = () => {
-    const canon = localStorage.getItem("map-canon-only") === "true";
-    const illust = localStorage.getItem("map-illustrations") !== "false";
+    const canon = localStorage.getItem(STORAGE_KEY_CANON_ONLY) === "true";
+    const illust = localStorage.getItem(STORAGE_KEY_ILLUSTRATIONS) !== "false";
+    this.tiles?.setCanonOnly(canon, this.zoom);
     this.mapPois.setCanonOnly(canon);
     this.mapPois.setIllustrationsEnabled(illust);
   };
 
-  #onCanonChange = (e) => this.mapPois?.setCanonOnly(e.detail.canonOnly);
+  #onCanonChange = (e) => {
+    const canonOnly = e.detail.canonOnly;
+    this.tiles?.setCanonOnly(canonOnly, this.zoom);
+    this.mapPois?.setCanonOnly(canonOnly);
+  };
   #onIllustChange = (e) =>
     this.mapPois?.setIllustrationsEnabled(e.detail.illustrationsEnabled);
 
@@ -740,8 +747,9 @@ export default class MapCanvas extends HTMLElement {
     this.map = this.root.querySelector(".map");
     this.controls = this.root.querySelector("map-controls");
     this.mapCompass = this.root.querySelector("map-compass");
+    const isCoarse = window.matchMedia("(pointer: coarse)").matches;
 
-    if (window.matchMedia("(pointer: coarse)").matches) {
+    if (isCoarse) {
       this.steps = ZOOM_STEPS + MOBILE_EXTRA_STEPS;
       this.maxScale = MOBILE_MAX_SCALE;
     }
@@ -763,12 +771,8 @@ export default class MapCanvas extends HTMLElement {
     }
 
     this.#measure();
-    this.tiles = new TileManager(
-      this.map,
-      BASE_W,
-      BASE_H,
-      window.matchMedia("(pointer: coarse)").matches,
-    );
+    const canonOnly = localStorage.getItem(STORAGE_KEY_CANON_ONLY) === "true";
+    this.tiles = new TileManager(this.map, BASE_W, BASE_H, isCoarse, canonOnly);
 
     this.#restoreUrl();
     this.#applySize();
