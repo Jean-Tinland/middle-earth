@@ -763,7 +763,7 @@ export default class MapCanvas extends HTMLElement {
 
     // Load POIs
     const buildVersion = document.documentElement.dataset.buildVersion;
-    const endpoint = `"/assets/data/pois.json?v=${buildVersion}"`;
+    const endpoint = `/assets/data/pois.json?v=${buildVersion}`;
     const res = await fetch(endpoint);
     const data = await res.json();
     const pois = data.pois;
