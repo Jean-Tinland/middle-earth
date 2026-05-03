@@ -875,7 +875,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Derwath",
       "position": [43.13, 56.67],
       "size": 3,
@@ -883,7 +883,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Gineard",
       "position": [42.41, 53.88],
       "size": 3,
@@ -891,7 +891,7 @@
     },
     {
       "kind": "city",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Onodrith",
       "position": [52.52, 53.5],
       "size": 3,
