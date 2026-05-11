@@ -493,7 +493,7 @@
       "kind": "sea",
       "source": "Canon",
       "name": "Lake Evendim",
-      "position": [27.38, 17.31],
+      "position": [26.42, 18.61],
       "size": 3,
       "zoom": 8
     },
@@ -549,7 +549,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Minas Tirith",
-      "position": [58.37, 65.73],
+      "position": [58.56, 65.66],
       "size": 1,
       "zoom": 3
     },
@@ -701,7 +701,7 @@
       "kind": "hamlet",
       "source": "Canon",
       "name": "Bywater",
-      "position": [27.4, 24.24],
+      "position": [27.41, 24.28],
       "size": 4,
       "zoom": 21
     },
@@ -773,7 +773,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Sarn Ford",
-      "position": [29.87, 30.71],
+      "position": [30.08, 30.71],
       "size": 4,
       "zoom": 18
     },
@@ -797,7 +797,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Ruins of Annúminas",
-      "position": [26.23, 19.97],
+      "position": [26.5, 19.56],
       "size": 3,
       "zoom": 8
     },
@@ -1493,7 +1493,7 @@
       "kind": "forest",
       "source": "Canon",
       "name": "Druadan Forest",
-      "position": [57.45, 64.13],
+      "position": [57.94, 64.46],
       "size": 3,
       "zoom": 13
     },
