@@ -9,7 +9,7 @@ import template from "./map-canvas.template.js";
 import styles from "./map-canvas.styles.js";
 import TileManager, { MAX_TILE_ZOOM } from "../lib/tile-manager.js";
 
-const BASE_W = 1800;
+const BASE_W = 1900;
 const BASE_H = 1300;
 const ZOOM_STEPS = 26;
 const MAX_SCALE = 24;
