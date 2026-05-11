@@ -91,17 +91,11 @@ const styles = /* css */ `
     aspect-ratio: 1;
     border: 2px solid var(--white);
     border-radius: 50%;
-    box-shadow: 0 0 2px rgb(0 0 0 / 0.5);
   }
 
   .poi[data-kind="hamlet"] .dot {
     border: none;
-    box-shadow: none;
     transform: scale(0.7);
-  }
-
-  .poi:is([data-kind="city"], [data-kind="hamlet"])[data-size="1"] .dot {
-    border-radius: 0;
   }
 
   .illustration {
