@@ -103,6 +103,7 @@ const styles = /* css */ `
     height: auto;
     margin: 0 auto;
     transform: rotate(var(--illustration-rotation, 0deg));
+    filter: drop-shadow(2px 2px 6px var(--shadow));
   }
 
   .illustration[hidden] {

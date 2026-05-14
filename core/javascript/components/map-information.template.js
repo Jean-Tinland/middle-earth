@@ -40,7 +40,6 @@ export const content = /* html */ `
         <li>
           Map drawn by myself from existing Middle-earth maps in Figma with custom terrain & landmark elements.
         </li>
-        <!--
         <li>
           Notable places drawing created by myself in Figma. They are inspired by the movie trilogy and various representation of existing Middle-earth paintings and artworks.
           <ul>
@@ -52,7 +51,6 @@ export const content = /* html */ `
             </li>
           </ul>
         </li>
-        -->
         <li>
           Points of interest have been collected from various sources, including original maps by J.R.R. Tolkien and his son Christopher Tolkien, <b>The Atlas of Middle-earth</b> by Karen Wynn Fonstad and <b>MERP maps</b> by various artists.
         </li>
