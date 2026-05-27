@@ -11,6 +11,8 @@ You can follow [this journal](https://www.jeantinland.com/journal/lotr/) to see 
 > [!NOTE]
 > Zoom level, map center and rotation are preserved in the URL, so you can share a specific view of the map by sharing the URL.
 
+**Notice: As I am working simultaneously on a lot of projects, things here may seem to move slowly but they are still in progress. I'm always monitoring my notifications and messages, so if you have any questions or want to chat about anything, feel free [to reach out](https://www.jeantinland.com/contact/)!**
+
 ## Credits
 
 - Map drawn in Figma with custom terrain & landmark elements.
