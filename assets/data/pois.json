@@ -920,7 +920,7 @@
     {
       "kind": "city",
       "source": "Canon",
-      "name": "City of the corsairs",
+      "name": "Umbar",
       "position": [50.12, 94.91],
       "size": 2,
       "zoom": 8
@@ -930,22 +930,150 @@
       "source": "MERP",
       "name": "Ramlond",
       "position": [52.55, 89.76],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Mirlond",
+      "position": [51.67, 88.05],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Barad Harn",
+      "position": [51.39, 82.72],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Methir",
+      "position": [52.14, 78.86],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Arthrad Poros",
+      "position": [60.24, 75.61],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Bar Malduin",
+      "position": [60.31, 82.61],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Imlad Carnen",
+      "position": [60.89, 84.07],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Gobel Ancalimon",
+      "position": [59.45, 88.99],
       "size": 2,
       "zoom": 8
     },
     {
       "kind": "city",
       "source": "MERP",
-      "name": "Gobel Ancalimon",
-      "position": [57.14, 89.57],
-      "size": 2,
-      "zoom": 8
+      "name": "Tharven",
+      "position": [59.16, 88.6],
+      "size": 3,
+      "zoom": 13
     },
     {
       "kind": "city",
       "source": "MERP",
       "name": "Amrûn",
       "position": [64.04, 88.86],
+      "size": 2,
+      "zoom": 8
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Sturlûrza Khand",
+      "position": [81.0, 85.09],
+      "size": 2,
+      "zoom": 8
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Laôrki",
+      "position": [84.13, 83.68],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Ammu Khand",
+      "position": [84.92, 78.34],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Olbamarl",
+      "position": [83.81, 72.43],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Ûbesêsh",
+      "position": [81.81, 74.24],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Kyzilkum",
+      "position": [80.67, 76.58],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Ovatbrac",
+      "position": [81.51, 87.67],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Korondaj",
+      "position": [72.42, 87.12],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "Canon",
+      "name": "Ruins of Framsburg",
+      "position": [50.18, 14.34],
       "size": 2,
       "zoom": 8
     },
@@ -992,8 +1120,16 @@
     {
       "kind": "city",
       "source": "MERP",
-      "name": "Everhaven",
+      "name": "Uilond",
       "position": [35.09, 72.99],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Annúlond",
+      "position": [34.19, 69.72],
       "size": 3,
       "zoom": 13
     },
