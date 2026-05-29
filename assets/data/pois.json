@@ -655,7 +655,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Edhellond",
-      "position": [46.52, 69.86],
+      "position": [46.29, 69.25],
       "size": 2,
       "zoom": 8
     },
@@ -872,6 +872,14 @@
     {
       "kind": "city",
       "source": "Canon",
+      "name": "Calenhad",
+      "position": [54.72, 62.78],
+      "size": 3,
+      "zoom": 18
+    },
+    {
+      "kind": "city",
+      "source": "Canon",
       "name": "Dunharrow",
       "position": [46.74, 60.02],
       "size": 3,
@@ -1008,6 +1016,14 @@
     {
       "kind": "city",
       "source": "MERP",
+      "name": "Fanuilond",
+      "position": [51.74, 75.12],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
       "name": "Gobel Tolfalas",
       "position": [49.92, 78.79],
       "size": 3,
@@ -1018,6 +1034,22 @@
       "source": "MERP",
       "name": "Rondalph",
       "position": [43.95, 68.82],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Glanhir",
+      "position": [46.89, 68.37],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Spathlin",
+      "position": [48.7, 67.78],
       "size": 3,
       "zoom": 13
     },
