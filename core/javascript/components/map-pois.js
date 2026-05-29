@@ -12,6 +12,7 @@ const TEXT_MULT = Object.freeze({
   "common-place": Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.6, 4: 0.5 }),
   sea: Object.freeze({ 1: 0.8, 2: 0.7, 3: 0.55, 4: 0.45 }),
   city: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45, 4: 0.4 }),
+  fortress: Object.freeze({ 1: 0.65, 2: 0.55, 3: 0.45, 4: 0.4 }),
   hamlet: Object.freeze({ 1: 0.6, 2: 0.5, 3: 0.4, 4: 0.4 }),
   river: Object.freeze({ 1: 0.75, 2: 0.65, 3: 0.55 }),
 });
@@ -48,6 +49,8 @@ export default class MapPois extends HTMLElement {
   #flags;
   /** @type {string[]} POI names */
   #poiNames;
+  /** @type {string[]} POI kinds */
+  #poiKinds;
   /** @type {string[]} POI sources */
   #poiSources;
 
@@ -98,6 +101,7 @@ export default class MapPois extends HTMLElement {
     this.#dotMult = new Float32Array(n);
     this.#flags = new Uint8Array(n);
     this.#poiNames = new Array(n);
+    this.#poiKinds = new Array(n);
     this.#poiSources = new Array(n);
 
     const frag = document.createDocumentFragment();
@@ -107,10 +111,13 @@ export default class MapPois extends HTMLElement {
       const { name, kind, position, size, zoom, illustration, source } = p;
 
       this.#poiNames[i] = name;
+      this.#poiKinds[i] = kind;
       this.#poiSources[i] = source;
       this.#textMult[i] = TEXT_MULT[kind]?.[size] ?? 1;
       this.#dotMult[i] =
-        kind === "city" || kind === "hamlet" ? (DOT_MULT[size] ?? 0.3) : 0;
+        kind === "city" || kind === "hamlet" || kind === "fortress"
+          ? (DOT_MULT[size] ?? 0.3)
+          : 0;
 
       let flags = 0;
       if (source === "Canon") flags |= MapPois.#CANON;
@@ -126,7 +133,7 @@ export default class MapPois extends HTMLElement {
       el.dataset.size = size;
 
       let dot = null;
-      if (kind === "city" || kind === "hamlet") {
+      if (kind === "city" || kind === "hamlet" || kind === "fortress") {
         dot = document.createElement("div");
         dot.className = "dot";
         el.appendChild(dot);
@@ -204,6 +211,7 @@ export default class MapPois extends HTMLElement {
 
     const pop = new MapPopover(
       this.#poiNames[idx],
+      this.#poiKinds[idx],
       this.#poiSources[idx],
       cx,
       cy,

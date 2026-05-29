@@ -17,6 +17,7 @@
             "enum": [
               "region",
               "city",
+              "fortress",
               "hamlet",
               "river",
               "mountain",

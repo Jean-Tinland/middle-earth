@@ -31,7 +31,7 @@ const styles = /* css */ `
     text-transform: uppercase;
   }
 
-  .poi:is([data-kind="city"], [data-kind="hamlet"]) {
+  .poi:is([data-kind="city"], [data-kind="hamlet"], [data-kind="fortress"]) {
     font-weight: 700;
   }
 
@@ -78,19 +78,23 @@ const styles = /* css */ `
     font-style: italic;
   }
 
-  .poi:is([data-kind="city"], [data-kind="hamlet"]) .name {
+  .poi:is([data-kind="city"], [data-kind="hamlet"], [data-kind="fortress"]) .name {
     position: absolute;
     top: calc(100% + 1px);
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .poi:is([data-kind="city"], [data-kind="hamlet"]) .dot {
+  .poi:is([data-kind="city"], [data-kind="hamlet"], [data-kind="fortress"]) .dot {
     position: relative;
     background-color: var(--primary);
     aspect-ratio: 1;
     border: 2px solid var(--white);
     border-radius: 50%;
+  }
+
+  .poi[data-kind="fortress"] .dot {
+    border-radius: 1px;
   }
 
   .poi[data-kind="hamlet"] .dot {

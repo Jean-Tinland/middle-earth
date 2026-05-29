@@ -85,7 +85,13 @@ const styles = /* css */ `
     font-weight: 700;
     line-height: 1.3;
     padding-right: 28px;
-    margin-bottom: 4px;
+    margin-bottom: 1px;
+  }
+
+
+  .kind {
+    font-size: 0.9em;
+    font-style: italic;
   }
 
   .source {
@@ -93,6 +99,7 @@ const styles = /* css */ `
     font-style: italic;
     margin-bottom: 10px;
   }
+
 
   .search-label {
     font-size: 0.82em;

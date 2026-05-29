@@ -555,7 +555,7 @@
       "illustration": "/assets/images/places/minas_tirith.png"
     },
     {
-      "kind": "city",
+      "kind": "fortress",
       "source": "Canon",
       "name": "Dol Amroth",
       "position": [45.08, 72.28],
@@ -563,7 +563,7 @@
       "zoom": 3
     },
     {
-      "kind": "city",
+      "kind": "fortress",
       "source": "Canon",
       "name": "Minas Morgul",
       "position": [61.9, 64.54],
@@ -881,7 +881,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Dunharrow",
-      "position": [46.74, 60.02],
+      "position": [46.59, 59.8],
       "size": 3,
       "zoom": 13
     },
@@ -952,8 +952,8 @@
     {
       "kind": "city",
       "source": "Canon",
-      "name": "Framsburg",
-      "position": [50.14, 14.2],
+      "name": "Ruins of Framsburg",
+      "position": [50.18, 14.34],
       "size": 2,
       "zoom": 8
     },
@@ -1009,7 +1009,7 @@
       "kind": "city",
       "source": "MERP",
       "name": "Sarlond",
-      "position": [49.11, 74.76],
+      "position": [49.26, 74.79],
       "size": 3,
       "zoom": 13
     },
@@ -1720,10 +1720,10 @@
       "zoom": 13
     },
     {
-      "kind": "common-place",
+      "kind": "fortress",
       "source": "Canon",
       "name": "Helm's Deep",
-      "position": [43.76, 54.93],
+      "position": [43.44, 55.11],
       "size": 3,
       "zoom": 13
     },

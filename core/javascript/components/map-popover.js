@@ -25,6 +25,18 @@ const SEARCH_ENGINES = Object.freeze([
   },
 ]);
 
+const KINDS_LABELS = Object.freeze({
+  region: "Region",
+  forest: "Forest",
+  mountain: "Mountain",
+  "common-place": "Common Place",
+  sea: "Sea",
+  river: "River",
+  city: "City",
+  fortress: "Fortress",
+  hamlet: "Hamlet",
+});
+
 export default class MapPopover extends HTMLElement {
   #clickX;
   #clickY;
@@ -34,11 +46,12 @@ export default class MapPopover extends HTMLElement {
 
   /**
    * @param {string} name - The POI name.
+   * @param {string} kind - The POI kind (e.g. "city", "forest").
    * @param {string} source - The POI source (e.g. "Canon").
    * @param {number} clickX - Viewport X coordinate of the originating click.
    * @param {number} clickY - Viewport Y coordinate of the originating click.
    */
-  constructor(name, source, clickX, clickY) {
+  constructor(name, kind, source, clickX, clickY) {
     super();
 
     this.#clickX = clickX;
@@ -49,7 +62,7 @@ export default class MapPopover extends HTMLElement {
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
 
-    this.root.innerHTML = this.#buildTemplate(name, source);
+    this.root.innerHTML = this.#buildTemplate(name, kind, source);
   }
 
   #buildSearchLinks = (name, source) => {
@@ -65,12 +78,12 @@ export default class MapPopover extends HTMLElement {
       .join("");
   };
 
-  #buildTemplate = (name, source) => /* html */ `
+  #buildTemplate = (name, kind, source) => /* html */ `
     <div class="popover">
       <button class="close-button" aria-label="Close">
         ${renderIcon("close", "close-button-icon")}
       </button>
-      <div class="name">${name}</div>
+      <div class="name">${name} <span class="kind">(${KINDS_LABELS[kind] || kind})</span></div>
       <div class="source">Source: ${source}</div>
       <div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>
     </div>
