@@ -7,30 +7,55 @@ export default function template() {
     </button>
     <div class="panel">
       <div class="panel__content">
-        <section class="group">
+        <section class="group group--two-col">
           <h3 class="group__title">Cities &amp; places</h3>
-          <ul class="entries">
-            <li class="entry">
-              <span class="city-dot city-dot--xs" aria-hidden="true"></span>
-              <span class="entry__label">Hamlet</span>
-            </li>
-            <li class="entry">
-              <span class="city-dot city-dot--sm" aria-hidden="true"></span>
-              <span class="entry__label">Village</span>
-            </li>
-            <li class="entry">
-              <span class="city-dot city-dot--md" aria-hidden="true"></span>
-              <span class="entry__label">Town</span>
-            </li>
-            <li class="entry">
-              <span class="city-dot city-dot--lg" aria-hidden="true"></span>
-              <span class="entry__label">City</span>
-            </li>
-            <li class="entry">
-              <span class="text-sample text-sample--common-place" aria-hidden="true">Landmark</span>
-              <span class="entry__label">Notable place</span>
-            </li>
-          </ul>
+          <div class="group__row">
+            <ul class="entries">
+              <li class="entry">
+                <span class="city-dot city-dot--xs" aria-hidden="true"></span>
+                <span class="entry__label">Hamlet</span>
+              </li>
+              <li class="entry">
+                <span class="city-dot city-dot--sm" aria-hidden="true"></span>
+                <span class="entry__label">Village</span>
+              </li>
+              <li class="entry">
+                <span class="city-dot city-dot--md" aria-hidden="true"></span>
+                <span class="entry__label">Town</span>
+              </li>
+              <li class="entry">
+                <span class="city-dot city-dot--lg" aria-hidden="true"></span>
+                <span class="entry__label">City</span>
+              </li>
+            </ul>
+
+            <ul class="entries">
+              <li class="entry">
+                 <span class="fortress-dot fortress-dot--xs" aria-hidden="true"></span>
+                <span class="entry__label">Fort</span>
+              </li>
+              <li class="entry">
+                <span class="fortress-dot fortress-dot--sm" aria-hidden="true"></span>
+                <span class="entry__label">Stronghold</span>
+              </li>
+              <li class="entry">
+                <span class="fortress-dot fortress-dot--md" aria-hidden="true"></span>
+                <span class="entry__label">Castle</span>
+              </li>
+              <li class="entry">
+                <span class="fortress-dot fortress-dot--lg" aria-hidden="true"></span>
+                <span class="entry__label">Fortress</span>
+              </li>
+            </ul>
+          </div>
+          <div class="group__row">
+            <ul class="entries">
+              <li class="entry">
+                <span class="text-sample text-sample--common-place" aria-hidden="true">Landmark</span>
+                <span class="entry__label">Notable place</span>
+              </li>
+            </ul>
+          </div>
         </section>
         <section class="group">
           <h3 class="group__title">Lands &amp; areas</h3>

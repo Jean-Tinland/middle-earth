@@ -130,7 +130,7 @@ const styles = /* css */ `
 
   .city-dot {
     flex-shrink: 0;
-    width: 24px;
+    width: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -161,6 +161,52 @@ const styles = /* css */ `
   }
 
   .city-dot--lg::before {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* Two-column layout for the top legend (cities + fortress samples) */
+  .group--two-col .group__row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .group--two-col .entries {
+    flex: 0 0 auto;
+  }
+
+  .fortress-dot {
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fortress-dot::before {
+    content: "";
+    display: block;
+    background-color: var(--primary);
+    border: 2px solid var(--white);
+    border-radius: 1px;
+  }
+
+  .fortress-dot--xs::before {
+    width: 5px;
+    height: 5px;
+  }
+
+  .fortress-dot--sm::before {
+    width: 7px;
+    height: 7px;
+  }
+
+  .fortress-dot--md::before {
+    width: 10px;
+    height: 10px;
+  }
+
+  .fortress-dot--lg::before {
     width: 13px;
     height: 13px;
   }
