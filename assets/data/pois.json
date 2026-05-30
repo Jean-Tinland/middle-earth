@@ -1200,6 +1200,62 @@
     {
       "kind": "city",
       "source": "MERP",
+      "name": "Rendûl",
+      "position": [44.99, 64.99],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Rond Rhandir",
+      "position": [41.89, 64.54],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Lond Galen",
+      "position": [38.26, 69.86],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Serelond",
+      "position": [38.23, 69.32],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Annogwain",
+      "position": [35.27, 64.14],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "fortress",
+      "source": "MERP",
+      "name": "Tharagrondost",
+      "position": [30.58, 72.01],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Bar Morthil",
+      "position": [25.39, 74.37],
+      "size": 4,
+      "zoom": 18
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
       "name": "Minas Brethil",
       "position": [54.84, 69.09],
       "size": 3,
