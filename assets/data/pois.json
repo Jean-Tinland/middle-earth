@@ -1192,6 +1192,14 @@
     {
       "kind": "city",
       "source": "MERP",
+      "name": "Ossarnen",
+      "position": [48.83, 63.67],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
       "name": "Minas Brethil",
       "position": [54.84, 69.09],
       "size": 3,
