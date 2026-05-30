@@ -567,7 +567,7 @@
       "source": "Canon",
       "name": "Minas Morgul",
       "position": [61.9, 64.54],
-      "size": 2,
+      "size": 1,
       "zoom": 8,
       "illustration": "/assets/images/places/minas_morgul.png"
     },
@@ -1158,7 +1158,7 @@
       "zoom": 13
     },
     {
-      "kind": "city",
+      "kind": "fortress",
       "source": "MERP",
       "name": "Gobel Tolfalas",
       "position": [49.92, 78.79],
@@ -1897,7 +1897,7 @@
       "zoom": 13
     },
     {
-      "kind": "common-place",
+      "kind": "fortress",
       "source": "Canon",
       "name": "Cair Andros",
       "position": [59.43, 62.43],
@@ -1905,8 +1905,8 @@
       "zoom": 13
     },
     {
-      "kind": "common-place",
-      "source": "Canon",
+      "kind": "fortress",
+      "source": "MERP",
       "name": "Angbor Citadel",
       "position": [52.85, 67.89],
       "size": 3,
