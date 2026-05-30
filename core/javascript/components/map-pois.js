@@ -51,6 +51,8 @@ export default class MapPois extends HTMLElement {
   #poiNames;
   /** @type {string[]} POI kinds */
   #poiKinds;
+  /** @type {number[]} POI sizes */
+  #poiSizes;
   /** @type {string[]} POI sources */
   #poiSources;
 
@@ -102,6 +104,7 @@ export default class MapPois extends HTMLElement {
     this.#flags = new Uint8Array(n);
     this.#poiNames = new Array(n);
     this.#poiKinds = new Array(n);
+    this.#poiSizes = new Array(n);
     this.#poiSources = new Array(n);
 
     const frag = document.createDocumentFragment();
@@ -112,6 +115,7 @@ export default class MapPois extends HTMLElement {
 
       this.#poiNames[i] = name;
       this.#poiKinds[i] = kind;
+      this.#poiSizes[i] = size;
       this.#poiSources[i] = source;
       this.#textMult[i] = TEXT_MULT[kind]?.[size] ?? 1;
       this.#dotMult[i] =
@@ -212,6 +216,7 @@ export default class MapPois extends HTMLElement {
     const pop = new MapPopover(
       this.#poiNames[idx],
       this.#poiKinds[idx],
+      this.#poiSizes[idx],
       this.#poiSources[idx],
       cx,
       cy,

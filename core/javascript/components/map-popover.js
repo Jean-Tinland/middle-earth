@@ -32,8 +32,8 @@ const KINDS_LABELS = Object.freeze({
   "common-place": "Common Place",
   sea: "Sea",
   river: "River",
-  city: "City",
-  fortress: "Fortress",
+  city: ["City", "Town", "Village", "Settlement"],
+  fortress: ["Fortress", "Castle", "Stronghold", "Fort"],
   hamlet: "Hamlet",
 });
 
@@ -47,11 +47,12 @@ export default class MapPopover extends HTMLElement {
   /**
    * @param {string} name - The POI name.
    * @param {string} kind - The POI kind (e.g. "city", "forest").
+   * @param {number} size - The POI size (e.g. 1, 2, 3).
    * @param {string} source - The POI source (e.g. "Canon").
    * @param {number} clickX - Viewport X coordinate of the originating click.
    * @param {number} clickY - Viewport Y coordinate of the originating click.
    */
-  constructor(name, kind, source, clickX, clickY) {
+  constructor(name, kind, size, source, clickX, clickY) {
     super();
 
     this.#clickX = clickX;
@@ -62,7 +63,7 @@ export default class MapPopover extends HTMLElement {
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
 
-    this.root.innerHTML = this.#buildTemplate(name, kind, source);
+    this.root.innerHTML = this.#buildTemplate(name, kind, size, source);
   }
 
   #buildSearchLinks = (name, source) => {
@@ -78,16 +79,22 @@ export default class MapPopover extends HTMLElement {
       .join("");
   };
 
-  #buildTemplate = (name, kind, source) => /* html */ `
+  #buildTemplate = (name, kind, size, source) => {
+    const kindLabel = KINDS_LABELS[kind];
+    const kindText = Array.isArray(kindLabel)
+      ? kindLabel[size - 1]
+      : kindLabel || kind;
+    return /* html */ `
     <div class="popover">
       <button class="close-button" aria-label="Close">
         ${renderIcon("close", "close-button-icon")}
       </button>
-      <div class="name">${name} <span class="kind">(${KINDS_LABELS[kind] || kind})</span></div>
+      <div class="name">${name} <span class="kind">(${kindText})</span></div>
       <div class="source">Source: ${source}</div>
       <div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>
     </div>
   `;
+  };
 
   #position = () => {
     const { width, height } = this.getBoundingClientRect();
