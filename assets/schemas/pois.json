@@ -27,6 +27,10 @@
             ],
             "description": "The kind of point of interest"
           },
+          "customKindLabel": {
+            "type": "string",
+            "description": "The custom label to use for the point of interest, it will take precedence over the default label for the kind of point of interest (optional)"
+          },
           "name": {
             "type": "string",
             "description": "The name of the point of interest"

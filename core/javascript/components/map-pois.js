@@ -51,6 +51,8 @@ export default class MapPois extends HTMLElement {
   #poiNames;
   /** @type {string[]} POI kinds */
   #poiKinds;
+  /** @type {string[]} POI custom kind labels (if any) */
+  #poiCustomKindLabels;
   /** @type {number[]} POI sizes */
   #poiSizes;
   /** @type {string[]} POI sources */
@@ -104,6 +106,7 @@ export default class MapPois extends HTMLElement {
     this.#flags = new Uint8Array(n);
     this.#poiNames = new Array(n);
     this.#poiKinds = new Array(n);
+    this.#poiCustomKindLabels = new Array(n);
     this.#poiSizes = new Array(n);
     this.#poiSources = new Array(n);
 
@@ -111,10 +114,20 @@ export default class MapPois extends HTMLElement {
 
     for (let i = 0; i < n; i++) {
       const p = pois[i];
-      const { name, kind, position, size, zoom, illustration, source } = p;
+      const {
+        name,
+        kind,
+        position,
+        size,
+        zoom,
+        illustration,
+        source,
+        customKindLabel,
+      } = p;
 
       this.#poiNames[i] = name;
       this.#poiKinds[i] = kind;
+      this.#poiCustomKindLabels[i] = customKindLabel;
       this.#poiSizes[i] = size;
       this.#poiSources[i] = source;
       this.#textMult[i] = TEXT_MULT[kind]?.[size] ?? 1;
@@ -216,6 +229,7 @@ export default class MapPois extends HTMLElement {
     const pop = new MapPopover(
       this.#poiNames[idx],
       this.#poiKinds[idx],
+      this.#poiCustomKindLabels[idx],
       this.#poiSizes[idx],
       this.#poiSources[idx],
       cx,

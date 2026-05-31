@@ -47,12 +47,13 @@ export default class MapPopover extends HTMLElement {
   /**
    * @param {string} name - The POI name.
    * @param {string} kind - The POI kind (e.g. "city", "forest").
+   * @param {string} customKindLabel - The POI custom kind label (if any, e.g. "Capital city").
    * @param {number} size - The POI size (e.g. 1, 2, 3).
    * @param {string} source - The POI source (e.g. "Canon").
    * @param {number} clickX - Viewport X coordinate of the originating click.
    * @param {number} clickY - Viewport Y coordinate of the originating click.
    */
-  constructor(name, kind, size, source, clickX, clickY) {
+  constructor(name, kind, customKindLabel, size, source, clickX, clickY) {
     super();
 
     this.#clickX = clickX;
@@ -63,7 +64,13 @@ export default class MapPopover extends HTMLElement {
     sheet.replaceSync(styles);
     this.root.adoptedStyleSheets = [sheet];
 
-    this.root.innerHTML = this.#buildTemplate(name, kind, size, source);
+    this.root.innerHTML = this.#buildTemplate(
+      name,
+      kind,
+      customKindLabel,
+      size,
+      source,
+    );
   }
 
   #buildSearchLinks = (name, source) => {
@@ -79,8 +86,8 @@ export default class MapPopover extends HTMLElement {
       .join("");
   };
 
-  #buildTemplate = (name, kind, size, source) => {
-    const kindLabel = KINDS_LABELS[kind];
+  #buildTemplate = (name, kind, customKindLabel, size, source) => {
+    const kindLabel = customKindLabel || KINDS_LABELS[kind];
     const kindText = Array.isArray(kindLabel)
       ? kindLabel[size - 1]
       : kindLabel || kind;

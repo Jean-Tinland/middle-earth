@@ -1247,6 +1247,7 @@
     },
     {
       "kind": "city",
+      "customKindLabel": "Manor",
       "source": "MERP",
       "name": "Bar Morthil",
       "position": [25.39, 74.37],
