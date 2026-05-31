@@ -1209,7 +1209,7 @@
       "kind": "city",
       "source": "MERP",
       "name": "Rond Rhandir",
-      "position": [41.89, 64.54],
+      "position": [42.06, 64.92],
       "size": 3,
       "zoom": 13
     },
@@ -1600,7 +1600,7 @@
     },
     {
       "kind": "common-place",
-      "source": "Canon",
+      "source": "MERP",
       "name": "Tol Fuin",
       "position": [5.21, 10.03],
       "size": 1,
