@@ -151,7 +151,7 @@
       "name": "",
       "position": [7.75, 16.72],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -159,7 +159,7 @@
       "name": "",
       "position": [7.72, 18.24],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "city",
@@ -183,7 +183,7 @@
       "name": "",
       "position": [9.38, 18.11],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -191,7 +191,7 @@
       "name": "",
       "position": [9.49, 17.38],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -199,7 +199,7 @@
       "name": "",
       "position": [8.49, 19.85],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -207,7 +207,7 @@
       "name": "",
       "position": [8.78, 20.25],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -215,7 +215,7 @@
       "name": "",
       "position": [7.77, 20.8],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -223,7 +223,7 @@
       "name": "",
       "position": [7.75, 22.65],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -231,7 +231,7 @@
       "name": "",
       "position": [7.87, 23.6],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -239,7 +239,7 @@
       "name": "",
       "position": [10.2, 26.04],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -247,7 +247,7 @@
       "name": "",
       "position": [11.23, 27.07],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -255,7 +255,207 @@
       "name": "",
       "position": [11.57, 26.61],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.12, 25.65],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [10.61, 24.74],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [10.62, 24.48],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [9.33, 23.18],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.84, 20.07],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [10.41, 20.05],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [9.91, 18.88],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.91, 19.72],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.55, 19.73],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.32, 19.83],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.09, 18.24],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.22, 17.54],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.53, 17.4],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.9, 17.5],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.67, 21.96],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.31, 21.58],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.51, 21.38],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.93, 23.64],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.22, 24.03],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.89, 24.09],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [15.29, 24.73],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [15.12, 25.43],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Mirimar",
+      "position": [11.15, 22.65],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Tir Iawen",
+      "position": [12.58, 24.6],
+      "size": 3,
+      "zoom": 13
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Vinyathrad",
+      "position": [11.24, 20.68],
+      "size": 3,
+      "zoom": 13
     },
     {
       "kind": "city",
@@ -266,12 +466,20 @@
       "zoom": 18
     },
     {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Londolas",
+      "position": [13.21, 12.34],
+      "size": 4,
+      "zoom": 18
+    },
+    {
       "kind": "hamlet",
       "source": "MERP",
       "name": "",
       "position": [8.72, 25.07],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
     },
     {
       "kind": "hamlet",
@@ -279,7 +487,159 @@
       "name": "",
       "position": [9.56, 25.39],
       "size": 4,
-      "zoom": 21
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.75, 25.17],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.39, 25.73],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [17.18, 24.12],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [18.06, 24.33],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [17.89, 23.35],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.91, 16.85],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [14.31, 17.27],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.51, 15.35],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.27, 13.99],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.16, 13.36],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.79, 12.87],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.79, 12.83],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.39, 8.68],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [10.9, 9.82],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.26, 9.93],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.05, 11.35],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [12.56, 10.69],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.34, 11.26],
+      "size": 4,
+      "zoom": 17
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [13.58, 11.68],
+      "size": 4,
+      "zoom": 17
     },
     {
       "kind": "mountain",
