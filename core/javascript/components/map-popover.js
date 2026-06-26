@@ -96,9 +96,9 @@ export default class MapPopover extends HTMLElement {
       <button class="close-button" aria-label="Close">
         ${renderIcon("close", "close-button-icon")}
       </button>
-      <div class="name">${name} <span class="kind">(${kindText})</span></div>
+      <div class="name">${name || "Unknown"} <span class="kind">(${kindText})</span></div>
       <div class="source">Source: ${source}</div>
-      <div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>
+      ${!name ? "" : `<div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>`}
     </div>
   `;
   };

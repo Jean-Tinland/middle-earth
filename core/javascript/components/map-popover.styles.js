@@ -100,6 +100,9 @@ const styles = /* css */ `
     margin-bottom: 10px;
   }
 
+  .source:last-child {
+    margin-bottom: 0;
+  }
 
   .search-label {
     font-size: 0.82em;
