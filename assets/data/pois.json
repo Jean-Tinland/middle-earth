@@ -146,6 +146,142 @@
       "size": 3
     },
     {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [7.75, 16.72],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [7.72, 18.24],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Estomar",
+      "position": [7.81, 19.99],
+      "size": 4,
+      "zoom": 18
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Toronost",
+      "position": [8.62, 16.57],
+      "size": 4,
+      "zoom": 18
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [9.38, 18.11],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [9.49, 17.38],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [8.49, 19.85],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [8.78, 20.25],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [7.77, 20.8],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [7.75, 22.65],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [7.87, 23.6],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [10.2, 26.04],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.23, 27.07],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [11.57, 26.61],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "city",
+      "source": "MERP",
+      "name": "Anerniath",
+      "position": [8.68, 24.12],
+      "size": 4,
+      "zoom": 18
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [8.72, 25.07],
+      "size": 4,
+      "zoom": 21
+    },
+    {
+      "kind": "hamlet",
+      "source": "MERP",
+      "name": "",
+      "position": [9.56, 25.39],
+      "size": 4,
+      "zoom": 21
+    },
+    {
       "kind": "mountain",
       "source": "Canon",
       "name": "Emyn Uial",
