@@ -32,8 +32,8 @@ const KINDS_LABELS = Object.freeze({
   "common-place": "Common Place",
   sea: "Sea",
   river: "River",
-  city: ["City", "Town", "Village", "Settlement"],
-  fortress: ["Fortress", "Castle", "Stronghold", "Fort"],
+  city: ["City", "Town", "Village", "Small village"],
+  fortress: ["Fortress", "Castle", "Fort", "Watchtower"],
   hamlet: "Hamlet",
 });
 
@@ -50,10 +50,20 @@ export default class MapPopover extends HTMLElement {
    * @param {string} customKindLabel - The POI custom kind label (if any, e.g. "Capital city").
    * @param {number} size - The POI size (e.g. 1, 2, 3).
    * @param {string} source - The POI source (e.g. "Canon").
+   * @param {number[]} position - The POI position (percentages).
    * @param {number} clickX - Viewport X coordinate of the originating click.
    * @param {number} clickY - Viewport Y coordinate of the originating click.
    */
-  constructor(name, kind, customKindLabel, size, source, clickX, clickY) {
+  constructor(
+    name,
+    kind,
+    customKindLabel,
+    size,
+    source,
+    position,
+    clickX,
+    clickY,
+  ) {
     super();
 
     this.#clickX = clickX;
@@ -70,6 +80,7 @@ export default class MapPopover extends HTMLElement {
       customKindLabel,
       size,
       source,
+      position,
     );
   }
 
@@ -86,17 +97,21 @@ export default class MapPopover extends HTMLElement {
       .join("");
   };
 
-  #buildTemplate = (name, kind, customKindLabel, size, source) => {
+  #buildTemplate = (name, kind, customKindLabel, size, source, position) => {
     const kindLabel = customKindLabel || KINDS_LABELS[kind];
     const kindText = Array.isArray(kindLabel)
       ? kindLabel[size - 1]
       : kindLabel || kind;
+
+    const isDebug = new URLSearchParams(window.location.search).has("debug");
+
     return /* html */ `
     <div class="popover">
       <button class="close-button" aria-label="Close">
         ${renderIcon("close", "close-button-icon")}
       </button>
       <div class="name">${name || "Unknown"} <span class="kind">(${kindText})</span></div>
+      ${isDebug ? `<div class="debug">${JSON.stringify(position).replace(",", ", ")}</div>` : ""}
       <div class="source">Source: ${source}</div>
       ${!name ? "" : `<div class="search-label">Search on: ${this.#buildSearchLinks(name, source)}</div>`}
     </div>

@@ -127,6 +127,18 @@ const styles = /* css */ `
     outline-offset: var(--focus-ring-offset);
     border-radius: 2px;
   }
+
+  .debug {
+    width: fit-content;
+    margin-bottom: 6px;
+    font-size: 0.75em;
+    color: var(--secondary);
+    font-family: monospace;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    padding: 4px 6px;
+    border-radius: var(--radius);
+  }
 `;
 
 export default styles;
