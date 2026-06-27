@@ -74,7 +74,6 @@ const styles = /* css */ `
   @keyframes panel-appear {
     from {
       opacity: 0;
-      transform: scale(var(--surface-appear-scale));
     }
   }
 

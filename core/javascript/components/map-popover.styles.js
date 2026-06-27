@@ -10,7 +10,6 @@ const styles = /* css */ `
   @keyframes popover-appear {
     from {
       opacity: 0;
-      transform: scale(var(--surface-appear-scale));
     }
   }
 
@@ -23,7 +22,6 @@ const styles = /* css */ `
   @keyframes popover-disappear {
     to {
       opacity: 0;
-      transform: scale(var(--surface-appear-scale));
     }
   }
 

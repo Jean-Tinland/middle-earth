@@ -24,7 +24,6 @@
 
   --overlay-backdrop: rgba(0, 0, 0, 0.65);
 
-  --surface-appear-scale: 0.96;
   --surface-inset-shadow: 0 0 8px rgba(100, 51, 34, 0.35);
   --surface-inner-frame-inset: 4px;
   --surface-inner-frame-color: rgba(100, 51, 34, 0.22);
