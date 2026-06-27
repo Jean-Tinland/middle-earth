@@ -4,6 +4,7 @@ import MapPopover from "./map-popover.js";
 const BASE_FONT = 16;
 const ILLUST_ZOOM = 13;
 const ILLUST_MULT = 1.6;
+const IMAGE_MULT = 0.75;
 
 const TEXT_MULT = Object.freeze({
   region: Object.freeze({ 1: 1.45, 2: 1.15, 3: 0.8, 4: 0.7 }),
@@ -41,6 +42,8 @@ export default class MapPois extends HTMLElement {
   #dots;
   /** @type {(HTMLImageElement|null)[]} Illustration images */
   #illusts;
+  /** @type {(HTMLImageElement|null)[]} POIs images */
+  #images;
   /** @type {Float32Array} Text size multiplier per POI */
   #textMult;
   /** @type {Float32Array} Dot size multiplier per POI (0 if none) */
@@ -53,10 +56,14 @@ export default class MapPois extends HTMLElement {
   #poiKinds;
   /** @type {string[]} POI custom kind labels (if any) */
   #poiCustomKindLabels;
+  /** @type {boolean[]} Whether to hide POI names */
+  #poiHideNames;
   /** @type {number[]} POI sizes */
   #poiSizes;
   /** @type {string[]} POI sources */
   #poiSources;
+  /** @type {number[][]} POI positions (percentages) */
+  #poiPositions;
 
   /** @type {Map<number, number[]>} zoom → array of indices */
   #buckets = new Map();
@@ -64,6 +71,8 @@ export default class MapPois extends HTMLElement {
   #thresholds = [];
   /** @type {number[]} Indices of POIs with illustrations */
   #illustIndices = [];
+  /** @type {number[]} Indices of POIs with images */
+  #imageIndices = [];
 
   #lastZoom = -1;
   #lastFont = -1;
@@ -101,6 +110,7 @@ export default class MapPois extends HTMLElement {
     this.#names = new Array(n);
     this.#dots = new Array(n);
     this.#illusts = new Array(n);
+    this.#images = new Array(n);
     this.#textMult = new Float32Array(n);
     this.#dotMult = new Float32Array(n);
     this.#flags = new Uint8Array(n);
@@ -109,7 +119,8 @@ export default class MapPois extends HTMLElement {
     this.#poiCustomKindLabels = new Array(n);
     this.#poiSizes = new Array(n);
     this.#poiSources = new Array(n);
-
+    this.#poiPositions = new Array(n);
+    this.#poiHideNames = new Array(n);
     const frag = document.createDocumentFragment();
 
     for (let i = 0; i < n; i++) {
@@ -123,12 +134,14 @@ export default class MapPois extends HTMLElement {
         illustration,
         source,
         customKindLabel,
+        hideName,
       } = p;
 
       this.#poiNames[i] = name;
       this.#poiKinds[i] = kind;
       this.#poiCustomKindLabels[i] = customKindLabel;
       this.#poiSizes[i] = size;
+      this.#poiHideNames[i] = hideName;
       this.#poiSources[i] = source;
       this.#textMult[i] = TEXT_MULT[kind]?.[size] ?? 1;
       this.#dotMult[i] =
@@ -148,6 +161,7 @@ export default class MapPois extends HTMLElement {
       el.style.cssText = `top:${position[1]}%;left:${position[0]}%;`;
       el.dataset.kind = kind;
       el.dataset.size = size;
+      this.#poiPositions[i] = position;
 
       let dot = null;
       if (kind === "city" || kind === "hamlet" || kind === "fortress") {
@@ -156,6 +170,23 @@ export default class MapPois extends HTMLElement {
         el.appendChild(dot);
       }
       this.#dots[i] = dot;
+
+      let image = null;
+      if (
+        !illustration &&
+        (kind === "city" || kind === "hamlet" || kind === "fortress")
+      ) {
+        const randomIndex = Math.floor(Math.random() * 4) + 1;
+        image = document.createElement("img");
+        image.className = "poi-image";
+        image.src = `/assets/images/pois/${kind}/${size}/${randomIndex}.png?v=${this.#version}`;
+        image.alt = name;
+        image.hidden = true;
+        image.loading = "lazy";
+        el.appendChild(image);
+        this.#imageIndices.push(i);
+      }
+      this.#images[i] = image;
 
       let illust = null;
       if (illustration) {
@@ -173,6 +204,7 @@ export default class MapPois extends HTMLElement {
       const nameEl = document.createElement("div");
       nameEl.className = "name";
       nameEl.textContent = name;
+      if (hideName) nameEl.hidden = true;
       el.appendChild(nameEl);
       this.#names[i] = nameEl;
       this.#els[i] = el;
@@ -232,6 +264,7 @@ export default class MapPois extends HTMLElement {
       this.#poiCustomKindLabels[idx],
       this.#poiSizes[idx],
       this.#poiSources[idx],
+      this.#poiPositions[idx],
       cx,
       cy,
     );
@@ -257,6 +290,9 @@ export default class MapPois extends HTMLElement {
     const ill = this.#illusts[idx];
     if (ill) ill.style.width = `${this.#px(font * ILLUST_MULT)}px`;
 
+    const img = this.#images[idx];
+    if (img) img.style.width = `${this.#px(font * IMAGE_MULT)}px`;
+
     if (this.#dotMult[idx] > 0) {
       const ds = this.#px(font * this.#dotMult[idx]);
       const dot = this.#dots[idx];
@@ -268,6 +304,11 @@ export default class MapPois extends HTMLElement {
   #applyIllustMode(idx, show) {
     if (this.#dots[idx]) this.#dots[idx].hidden = show;
     this.#illusts[idx].hidden = !show;
+  }
+
+  #applyImageMode(idx, show) {
+    if (this.#dots[idx]) this.#dots[idx].hidden = show;
+    this.#images[idx].hidden = !show;
   }
 
   render(zoom, baseFontSize, illustrationZoom = zoom) {
@@ -295,7 +336,12 @@ export default class MapPois extends HTMLElement {
 
         if (show && !wasShowing) {
           this.#applySizes(idx, font);
-          if (f & MapPois.#HAS_ILLUST) this.#applyIllustMode(idx, illustMode);
+          if (f & MapPois.#HAS_ILLUST) {
+            this.#applyIllustMode(idx, illustMode);
+          }
+          if (this.#images[idx]) {
+            this.#applyImageMode(idx, illustMode);
+          }
           this.#els[idx].hidden = false;
         } else if (!show && wasShowing) {
           this.#els[idx].hidden = true;
@@ -309,6 +355,10 @@ export default class MapPois extends HTMLElement {
       for (let i = 0, ilen = this.#illustIndices.length; i < ilen; i++) {
         const idx = this.#illustIndices[i];
         if (!this.#els[idx].hidden) this.#applyIllustMode(idx, illustMode);
+      }
+      for (let i = 0, ilen = this.#imageIndices.length; i < ilen; i++) {
+        const idx = this.#imageIndices[i];
+        if (!this.#els[idx].hidden) this.#applyImageMode(idx, illustMode);
       }
     }
 
@@ -335,7 +385,7 @@ export default class MapPois extends HTMLElement {
 
   setRotation(degrees) {
     this.style.setProperty("--poi-rotation", `${-degrees}deg`);
-    this.style.setProperty("--illustration-rotation", `${degrees}deg`);
+    this.style.setProperty("--image-rotation", `${degrees}deg`);
   }
 }
 

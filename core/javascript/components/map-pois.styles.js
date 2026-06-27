@@ -85,6 +85,10 @@ const styles = /* css */ `
     transform: translateX(-50%);
   }
 
+  .poi-image:not([hidden]) + .name {
+    translate: 0 -25%;
+  }
+
   .poi:is([data-kind="city"], [data-kind="hamlet"], [data-kind="fortress"]) .dot {
     position: relative;
     background-color: var(--primary);
@@ -102,16 +106,22 @@ const styles = /* css */ `
     transform: scale(0.7);
   }
 
-  .illustration {
+  .illustration,
+  .poi-image {
     display: block;
     height: auto;
     margin: 0 auto;
-    transform: rotate(var(--illustration-rotation, 0deg));
+    transform: rotate(var(--image-rotation, 0deg));
     filter: drop-shadow(2px 2px 6px var(--shadow));
   }
 
-  .illustration[hidden] {
+  .illustration[hidden],
+  .poi-image[hidden] {
     display: none;
+    }
+    
+  .poi-image {
+    translate: 0 -25%;
   }
 `;
 
