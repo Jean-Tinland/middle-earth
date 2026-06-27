@@ -445,7 +445,7 @@
       "kind": "city",
       "source": "MERP",
       "name": "Tir Iawen",
-      "position": [12.58, 24.6],
+      "position": [12.53, 24.63],
       "size": 3,
       "zoom": 13
     },
@@ -1020,8 +1020,17 @@
     {
       "kind": "city",
       "source": "Canon",
+      "name": "Mithlond",
+      "position": [19.23, 24.69],
+      "hideName": true,
+      "size": 2,
+      "zoom": 8
+    },
+    {
+      "kind": "city",
+      "source": "Canon",
       "name": "Forlond",
-      "position": [11.57, 24.13],
+      "position": [11.6, 24.04],
       "size": 2,
       "zoom": 8
     },
@@ -1167,7 +1176,7 @@
       "kind": "city",
       "source": "Canon",
       "name": "Hobbiton",
-      "position": [27.13, 24.08],
+      "position": [27.16, 24.02],
       "size": 3,
       "zoom": 8
     },
@@ -1199,7 +1208,7 @@
       "kind": "hamlet",
       "source": "Canon",
       "name": "Bywater",
-      "position": [27.41, 24.28],
+      "position": [27.4, 24.41],
       "size": 4,
       "zoom": 21
     },
@@ -1374,7 +1383,7 @@
       "zoom": 18
     },
     {
-      "kind": "city",
+      "kind": "fortress",
       "source": "Canon",
       "name": "Dunharrow",
       "position": [46.59, 59.8],
@@ -1418,7 +1427,7 @@
       "source": "Canon",
       "name": "Umbar",
       "position": [50.12, 94.91],
-      "size": 2,
+      "size": 1,
       "zoom": 8
     },
     {
@@ -1506,7 +1515,7 @@
       "source": "MERP",
       "name": "Sturlûrza Khand",
       "position": [81.0, 85.09],
-      "size": 2,
+      "size": 1,
       "zoom": 8
     },
     {
@@ -2421,7 +2430,7 @@
       "source": "Canon",
       "name": "Helm's Deep",
       "position": [43.44, 55.11],
-      "size": 3,
+      "size": 2,
       "zoom": 13
     },
     {
