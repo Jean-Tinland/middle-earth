@@ -176,10 +176,10 @@ export default class MapPois extends HTMLElement {
         !illustration &&
         (kind === "city" || kind === "hamlet" || kind === "fortress")
       ) {
-        const randomIndex = Math.floor(Math.random() * 4) + 1;
+        const index = this.#getDeterministiqueRandom(name);
         image = document.createElement("img");
         image.className = "poi-image";
-        image.src = `/assets/images/pois/${kind}/${size}/${randomIndex}.png?v=${this.#version}`;
+        image.src = `/assets/images/pois/${kind}/${size}/${index}.png?v=${this.#version}`;
         image.alt = name;
         image.hidden = true;
         image.loading = "lazy";
@@ -225,6 +225,21 @@ export default class MapPois extends HTMLElement {
     // Delegated click handler: one listener for all POIs
     this.root.appendChild(frag);
     this.root.addEventListener("click", this.#onClick);
+  }
+
+  /**
+   * Returns a deterministic pseudo-random number between 1 and 4 generator function based on a string seed.
+   * @param {string} seed - The seed for the random number generator.
+   * @returns {number} A pseudo-random number between 1 and 4.
+   */
+  #getDeterministiqueRandom(seed) {
+    let hash = 0;
+    for (let i = 0; i < seed.toString().length; i++) {
+      const char = seed.toString().charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return (Math.abs(hash) % 4) + 1; // Return a number between 1 and 4
   }
 
   #onClick = (e) => {
