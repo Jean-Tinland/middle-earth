@@ -176,7 +176,9 @@ export default class MapPois extends HTMLElement {
         !illustration &&
         (kind === "city" || kind === "hamlet" || kind === "fortress")
       ) {
-        const index = this.#getDeterministiqueRandom(name);
+        const index = this.#getDeterministicRandom(
+          name || JSON.stringify(position),
+        );
         image = document.createElement("img");
         image.className = "poi-image";
         image.src = `/assets/images/pois/${kind}/${size}/${index}.png?v=${this.#version}`;
@@ -232,7 +234,7 @@ export default class MapPois extends HTMLElement {
    * @param {string} seed - The seed for the random number generator.
    * @returns {number} A pseudo-random number between 1 and 4.
    */
-  #getDeterministiqueRandom(seed) {
+  #getDeterministicRandom(seed) {
     let hash = 0;
     for (let i = 0; i < seed.toString().length; i++) {
       const char = seed.toString().charCodeAt(i);
