@@ -112,6 +112,9 @@ const styles = /* css */ `
     height: auto;
     margin: 0 auto;
     transform: rotate(var(--image-rotation, 0deg));
+    }
+    
+  .illustration {
     filter: drop-shadow(2px 2px 6px var(--shadow));
   }
 
