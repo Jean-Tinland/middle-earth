@@ -94,8 +94,8 @@ const styles = /* css */ `
 
 .modal__close-button {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   width: 34px;
   height: 34px;
   display: flex;
@@ -159,8 +159,8 @@ const styles = /* css */ `
   content: "";
   position: absolute;
   top: 0;
-  left: var(--surface-inner-frame-inset);
-  right: var(--surface-inner-frame-inset);
+  left: calc(var(--surface-inner-frame-inset) * 3);
+  right: calc(var(--surface-inner-frame-inset) * 3);
   border-top: 1px solid var(--surface-divider-color);
   pointer-events: none;
 }
@@ -172,16 +172,6 @@ const styles = /* css */ `
 
   .modal {
     min-height: 120px;
-  }
-
-  .modal__close-button {
-    width: 34px;
-    height: 34px;
-  }
-
-  .modal__close-button-icon {
-    width: 20px;
-    height: 20px;
   }
 }
 `;
