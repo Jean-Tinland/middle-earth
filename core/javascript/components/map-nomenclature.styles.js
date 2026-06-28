@@ -143,10 +143,19 @@ const styles = /* css */ `
     border-radius: 50%;
   }
 
-  .city-dot--xs::before {
+  :host([poi-images-visible="true"]) .city-dot::before {
+    content: none;
+  }
+
+  .city-dot--hamlet::before {
     width: 5px;
     height: 5px;
     border: none;
+  }
+
+  .city-dot--xs::before {
+    width: 5px;
+    height: 5px;
   }
 
   .city-dot--sm::before {
@@ -162,6 +171,17 @@ const styles = /* css */ `
   .city-dot--lg::before {
     width: 13px;
     height: 13px;
+  }
+
+  :host([poi-images-visible="true"]) img {
+    display: block;
+    width: 18px;
+    height: 18px;
+    translate: 0 -20%;
+  }
+
+  :host([poi-images-visible="false"]) img {
+    display: none;
   }
 
   /* Two-column layout for the top legend (cities + fortress samples) */
@@ -190,6 +210,10 @@ const styles = /* css */ `
     border-radius: 1px;
   }
 
+  :host([poi-images-visible="true"]) .fortress-dot::before {
+    content: none;
+  }
+
   .fortress-dot--xs::before {
     width: 5px;
     height: 5px;
@@ -208,6 +232,17 @@ const styles = /* css */ `
   .fortress-dot--lg::before {
     width: 13px;
     height: 13px;
+  }
+
+  :host([poi-images-visible="true"]) .fortress-dot img {
+    display: block;
+    width: 18px;
+    height: 18px;
+    translate: 0 -20%;
+  }
+
+  :host([poi-images-visible="false"]) .fortress-dot img {
+    display: none;
   }
 
   .text-sample {

@@ -16,6 +16,10 @@ export default class MapNomenclature extends HTMLElement {
     this.root.innerHTML = template();
   }
 
+  #updatePoiImagesVisibility = (visible) => {
+    this.setAttribute("poi-images-visible", visible);
+  };
+
   #toggle = () => {
     this.panel.hasAttribute("open") ? this.#close() : this.#open();
   };
@@ -70,6 +74,7 @@ export default class MapNomenclature extends HTMLElement {
         detail: { illustrationsEnabled },
       }),
     );
+    this.#updatePoiImagesVisibility(illustrationsEnabled);
   };
 
   connectedCallback() {
@@ -77,6 +82,10 @@ export default class MapNomenclature extends HTMLElement {
     this.panel = this.root.querySelector(".panel");
     this.canonOnlyCheckbox = this.root.querySelector("#canon-only");
     this.illustrationsCheckbox = this.root.querySelector("#show-illustrations");
+
+    const illustrationsEnabled =
+      localStorage.getItem(STORAGE_KEY_ILLUSTRATIONS) !== "false";
+    this.#updatePoiImagesVisibility(illustrationsEnabled);
 
     this.canonOnlyCheckbox.checked =
       localStorage.getItem(STORAGE_KEY_CANON_ONLY) === "true";

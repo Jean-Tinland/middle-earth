@@ -12,38 +12,60 @@ export default function template() {
           <div class="group__row">
             <ul class="entries">
               <li class="entry">
-                <span class="city-dot city-dot--xs" aria-hidden="true"></span>
+                <span class="city-dot city-dot--hamlet" aria-hidden="true">
+                  <img src="/assets/images/pois/hamlet/4/1.png" alt="" />
+                </span>
                 <span class="entry__label">Hamlet</span>
               </li>
               <li class="entry">
-                <span class="city-dot city-dot--sm" aria-hidden="true"></span>
+                <span class="city-dot city-dot--xs" aria-hidden="true">
+                  <img src="/assets/images/pois/city/4/1.png" alt="" />
+                </span>
+                <span class="entry__label">Small village</span>
+              </li>
+              <li class="entry">
+                <span class="city-dot city-dot--sm" aria-hidden="true">
+                  <img src="/assets/images/pois/city/3/1.png" alt="" />
+                </span>
                 <span class="entry__label">Village</span>
               </li>
               <li class="entry">
-                <span class="city-dot city-dot--md" aria-hidden="true"></span>
+                <span class="city-dot city-dot--md" aria-hidden="true">
+                  <img src="/assets/images/pois/city/2/1.png" alt="" />
+                </span>
                 <span class="entry__label">Town</span>
               </li>
               <li class="entry">
-                <span class="city-dot city-dot--lg" aria-hidden="true"></span>
+                <span class="city-dot city-dot--lg" aria-hidden="true">
+                  <img src="/assets/images/pois/city/1/1.png" alt="" />
+                </span>
                 <span class="entry__label">City</span>
               </li>
             </ul>
 
             <ul class="entries">
               <li class="entry">
-                 <span class="fortress-dot fortress-dot--xs" aria-hidden="true"></span>
+                 <span class="fortress-dot fortress-dot--xs" aria-hidden="true">
+                  <img src="/assets/images/pois/fortress/4/1.png" alt="" />
+                </span>
+                <span class="entry__label">Watchtower</span>
+              </li>
+              <li class="entry">
+                <span class="fortress-dot fortress-dot--sm" aria-hidden="true">
+                  <img src="/assets/images/pois/fortress/3/1.png" alt="" />
+                </span>
                 <span class="entry__label">Fort</span>
               </li>
               <li class="entry">
-                <span class="fortress-dot fortress-dot--sm" aria-hidden="true"></span>
-                <span class="entry__label">Stronghold</span>
-              </li>
-              <li class="entry">
-                <span class="fortress-dot fortress-dot--md" aria-hidden="true"></span>
+                <span class="fortress-dot fortress-dot--md" aria-hidden="true">
+                  <img src="/assets/images/pois/fortress/2/1.png" alt="" />
+                </span>
                 <span class="entry__label">Castle</span>
               </li>
               <li class="entry">
-                <span class="fortress-dot fortress-dot--lg" aria-hidden="true"></span>
+                <span class="fortress-dot fortress-dot--lg" aria-hidden="true">
+                  <img src="/assets/images/pois/fortress/1/1.png" alt="" />
+                </span>
                 <span class="entry__label">Fortress</span>
               </li>
             </ul>
